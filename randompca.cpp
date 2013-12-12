@@ -76,11 +76,15 @@ MatrixXd random_pca(MatrixXd X, bool transpose,
 
    std::cout << " M: " << dim(M) << std::endl;
    std::cout << "QR ... ";
-   std::cout << " Y: " << dim(Y);
+   std::cout << " Y: " << dim(Y) << std::endl;
    ColPivHouseholderQR<MatrixXd> qr(Y);
-   MatrixXd Q = qr.matrixQ();
-   Q = Q.leftCols(Y.cols());
-   std::cout << " Q: " << dim(Q);
+
+   std::cout << ">>>>>>>>>>>>>>" << std::endl;
+
+   MatrixXd Z = qr.matrixQ();
+   MatrixXd Q = Z.leftCols(Y.cols());
+
+   std::cout << " Q: " << dim(Q) << std::endl;
    MatrixXd B = Q.transpose() * M;
    std::cout << " done" << std::endl;
 
