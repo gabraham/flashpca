@@ -30,8 +30,11 @@ int main(int argc, char * argv[])
    std::cout << ">>> Begin SVD" << std::endl;
    // TODO: sample SNPs
    // TODO: filter by LD
-   
-   MatrixXd P = random_pca(data.X, false);
+
+   bool transpose = data.X.rows() < data.X.cols();
+   MatrixXd P = random_pca(data.X, transpose);
+
+   std::cout << "P: " << dim(P) << std::endl;
 
    save_text("pcs.txt", P);
    

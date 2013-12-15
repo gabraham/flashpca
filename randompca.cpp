@@ -54,11 +54,10 @@ void normalize(MatrixXd X)
 MatrixXd random_pca(MatrixXd X, bool transpose,
    unsigned int ndim, unsigned int nextra, unsigned int maxiter)
 {
-   MatrixXd M;
+   MatrixXd M = standardize(X);
+   std::cout << "transpose: " << transpose << std::endl;
    if(transpose)
-      M = standardize(X.transpose());
-   else
-      M = standardize(X);
+      M.transposeInPlace();
 
    unsigned int total_dim = ndim + nextra;
    MatrixXd R = make_gaussian(M.cols(), total_dim);
@@ -77,17 +76,20 @@ MatrixXd random_pca(MatrixXd X, bool transpose,
    std::cout << " M: " << dim(M) << std::endl;
    std::cout << "QR ... ";
    std::cout << " Y: " << dim(Y);
+
    ColPivHouseholderQR<MatrixXd> qr(Y);
-   MatrixXd Q = qr.matrixQ();
-   Q = Q.leftCols(Y.cols());
+   MatrixXd Q = MatrixXd::Identity(Y.rows(), Y.cols());
+   Q = qr.householderQ() * Q;
+
+   Q.conservativeResize(NoChange, Y.cols());
    std::cout << " Q: " << dim(Q);
    MatrixXd B = Q.transpose() * M;
    std::cout << " done" << std::endl;
 
-   std::cout << "SVD ... " << "B:" << dim(B);
+   std::cout << "SVD ... " << "B:" << dim(B) << std::endl;
    JacobiSVD<MatrixXd> svd(B, ComputeThinU | ComputeThinV);
  
-   // TODO: untested
+   //// TODO: untested
    if(transpose)
    {
       return (svd.matrixU().leftCols(ndim).transpose() * M).transpose();
