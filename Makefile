@@ -29,7 +29,7 @@ debug: $(OBJ)
 	$(CXX) $(CXXFLAGS) -o flashpca $^ $(LDFLAGS)
 
 flashpca: LDFLAGS = $(BOOST)
-flashpca: CXXFLAGS += -O3 -DNDEBUG -funroll-loops -ftree-vectorize
+flashpca: CXXFLAGS += -g -O3 -DNDEBUG -funroll-loops -ftree-vectorize
 flashpca: $(OBJ)
 	$(CXX) $(CXXFLAGS) -o flashpca $^ $(LDFLAGS)
 

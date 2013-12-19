@@ -2,6 +2,7 @@
 #include "randompca.hpp"
 #include "util.hpp"
 
+// TODO: old redsvd code, replace
 void sampleTwoGaussian(double& f1, double& f2){
   double v1 = (double)(rand() + 1.f) / ((double)RAND_MAX+2.f);
   double v2 = (double)(rand() + 1.f) / ((double)RAND_MAX+2.f);
@@ -10,7 +11,7 @@ void sampleTwoGaussian(double& f1, double& f2){
   f2 = len * sin(2.f * M_PI * v2);
 }
 
-// redsvd, replace
+// TODO: old redsvd code, replace
 void sampleGaussianMat(MatrixXd& mat){
   for (int i = 0; i < mat.rows(); ++i){
     int j = 0;
@@ -41,7 +42,7 @@ MatrixXd make_gaussian(unsigned int rows, unsigned int cols)
 }
 
 // normalize each column of X to unit l2 norm
-void normalize(MatrixXd X)
+void normalize(MatrixXd& X)
 {
    unsigned int p = X.cols();
    for(unsigned int j = 0 ; j < p ; j++)
@@ -51,53 +52,76 @@ void normalize(MatrixXd X)
    }
 }
 
-MatrixXd random_pca(MatrixXd X, bool transpose,
+MatrixXd RandomPCA::pca(MatrixXd X, bool transpose,
    unsigned int ndim, unsigned int nextra, unsigned int maxiter)
 {
-   MatrixXd M = standardize(X);
-   std::cout << "transpose: " << transpose << std::endl;
+   M = standardize(X);
+   std::cout << timestamp() << " Transpose: " 
+      << (transpose ? "yes" : "no") << std::endl;
    if(transpose)
+   {
+      std::cout << timestamp() << " transpose start" << std::endl;
       M.transposeInPlace();
+      std::cout << timestamp() << " transpose done" << std::endl;
+   }
 
    unsigned int total_dim = ndim + nextra;
    MatrixXd R = make_gaussian(M.cols(), total_dim);
-   std::cout << dim(X) << std::endl;
-   std::cout << dim(M) << std::endl;
-   std::cout << dim(R) << std::endl;
+   save_text("R.txt", R);
    MatrixXd Y = M * R;
+   std::cout << timestamp() << " dim(Y): " << dim(Y) << std::endl;
+   normalize(Y);
+   MatrixXd Yn;
 
    for(unsigned int iter = 0 ; iter < maxiter ; iter++)
    {
-      std::cout << "iter " << iter << std::endl;
-      Y = M * (M.transpose() * Y);
-      normalize(Y);
+      std::cout << timestamp() << " iter " << iter << " ";
+      Yn = M * (M.transpose() * Y);
+      normalize(Yn);
+      double diff =  (Y -  Yn).array().square().sum() / Y.size(); 
+      std::cout << diff << std::endl;
+      Y = Yn;
+      if(diff < tol)
+	 break;
    }
 
-   std::cout << " M: " << dim(M) << std::endl;
-   std::cout << "QR ... ";
-   std::cout << " Y: " << dim(Y);
-
+   std::cout << timestamp() << " QR begin" << std::endl;
    ColPivHouseholderQR<MatrixXd> qr(Y);
    MatrixXd Q = MatrixXd::Identity(Y.rows(), Y.cols());
    Q = qr.householderQ() * Q;
-
    Q.conservativeResize(NoChange, Y.cols());
-   std::cout << " Q: " << dim(Q);
    MatrixXd B = Q.transpose() * M;
-   std::cout << " done" << std::endl;
+   std::cout << timestamp() << " QR done" << std::endl;
 
-   std::cout << "SVD ... " << "B:" << dim(B) << std::endl;
+   std::cout << timestamp() << " SVD begin" << std::endl;
+   std::cout << timestamp() << " dim(B): " << dim(B) << std::endl;
    JacobiSVD<MatrixXd> svd(B, ComputeThinU | ComputeThinV);
- 
+   std::cout << timestamp() << " SVD done" << std::endl;
+
+   U = Q * svd.matrixU();
+   V = svd.matrixV();
+   d = svd.singularValues();
+
+   std::cout << timestamp() << " dim(U): " << dim(U) << std::endl;
+   std::cout << timestamp() << " dim(V): " << dim(V) << std::endl;
+
    //// TODO: untested
    if(transpose)
-   {
-      return (svd.matrixU().leftCols(ndim).transpose() * M).transpose();
-   }
+      P = (U.leftCols(ndim).transpose() * M).transpose();
    else
-   {
-      return M * svd.matrixV().leftCols(ndim);
-   }
+      P = M * V.leftCols(ndim);
+
+   return P;
 }
 
+// ZCA
+MatrixXd RandomPCA::zca_whiten()
+{
+   std::cout << timestamp() << " Whitening begin" << std::endl;
+   VectorXd s = 1 / d.array();
+   MatrixXd D = s.asDiagonal();
+   W = U * D * U.transpose() * M;
+   std::cout << timestamp() << " Whitening done (" << dim(W) << ")" << std::endl;
+   return W;
+}
 

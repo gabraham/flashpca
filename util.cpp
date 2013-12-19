@@ -33,24 +33,6 @@ MatrixXd standardize(const MatrixXd& X, bool scale)
    return S;
 }
 
-MatrixXd subsample_snps(const MatrixXd& X, double prop)
-{
-   VectorXd r = (VectorXd::Random(X.cols()).array() + 1.0) / 2.0;
-   unsigned int ns = (r.array() < prop).count();
-   unsigned int p = X.cols();
-   MatrixXd S(X.rows(), ns);
-   unsigned int k = 0;
-   for(unsigned int j = 0 ; j < p ; j++)
-   {
-      if(r[j] < prop)
-      {
-	 S.col(k) = X.col(j);
-	 k++;
-      }
-   }
-   return S;
-}
-
 void usage()
 {
    std::cout << "Error: " << std::endl;

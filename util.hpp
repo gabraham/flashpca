@@ -10,6 +10,7 @@
 #include <fstream>
 #include <vector>
 #include <stdexcept>
+#include <iomanip>
 
 #include <time.h>
 #include <sys/time.h>
@@ -47,16 +48,18 @@ void load(const char *filename, MatrixBase<Derived>& m)
 }
 
 template <typename Derived>
-bool save_text(const char *filename, MatrixBase<Derived>& m)
+bool save_text(const char *filename, MatrixBase<Derived>& m,
+   unsigned int precision=6)
 {
    std::ofstream out(filename, std::ofstream::out);
+   out << std::setprecision(precision);
    if(!out)
    {
       std::cerr << "Error while saving to file " << filename 
 	 << ":" << strerror(errno) << std::endl;
       return false;
    }
-   out << m;
+   out << m << std::endl;
    out.close();
 }
 

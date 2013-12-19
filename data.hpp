@@ -46,6 +46,17 @@
 
 using namespace Eigen;
 
+typedef struct region {
+   unsigned int chr;
+   unsigned int begin_bp, end_bp;
+} region;
+
+typedef struct snp {
+   unsigned int chr, bp;
+   bool included;
+   std::string rsid;
+} snp;
+
 class Data {
    public:
       
@@ -56,10 +67,10 @@ class Data {
       unsigned int N, p, K;
       unsigned long long len;
       unsigned long long cachemem;
-      unsigned int np, nsnps, ncovar;
+      unsigned int np, nsnps, nsnps_post_removal, nsnps_sampling;
       unsigned int Ntrain, Ntest, Ncurr;
       ArrayXb mask_train, mask_test, mask_curr;;
-      char *geno_filename;
+      const char *geno_filename, *bim_filename;
       boost::iostreams::mapped_file_source geno_fin;
       //std::vector<unsigned int> covar_ignore_pred_idx;
       std::vector<unsigned int> covar_actions;
@@ -70,6 +81,11 @@ class Data {
       VectorXd ones, zeros;
       VectorXd geno;
       VectorXd *geno_ptr;
+      std::vector<region> regions;
+      std::vector<snp> snps;
+      bool verbose;
+      long seed;
+      const char *included_snps_filename;
       
       Data();
       ~Data();
@@ -88,6 +104,9 @@ class Data {
       VectorXd get_snp(unsigned int j);
       void split_data(unsigned int fold);
       void make_folds(unsigned int rep);
+      void map_regions();
+      void reset_regions();
+      void read_plink_bim();
 };
 
 
