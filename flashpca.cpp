@@ -73,24 +73,24 @@ int main(int argc, char * argv[])
    //bool transpose = data.X.rows() < data.X.cols();
    RandomPCA rpca;
    bool transpose = false;
-   MatrixXd P = rpca.pca(data.X, transpose, 50);
-
-   // TODO: we want to load ALL SNPs and whiten them, not just the sampled
-   // ones
-   std::cout << timestamp() << " Loading all SNPs" << std::endl;
-   data.reset_regions();
-   data.read_bed(geno_file.c_str());
-   std::cout << timestamp() << " Loading SNPs done" << std::endl;
-
-   MatrixXd W = rpca.zca_whiten();
-
+   rpca.pca(data.X, transpose, 50);
    std::cout << timestamp() << " Writing PCs" << std::endl;
-   save_text("pcs.txt", P);
+   save_text("pcs.txt", rpca.P);
 
-   std::cout << timestamp() << " Writing whitened data" << std::endl;
-   //save_text("whitened.txt", W, 3);
-   save("whitened.bin", W);
-   
+   bool whiten = false;
+   if(whiten)
+   {
+      rpca.zca_whiten();
+      // TODO: we want to load ALL SNPs and whiten them, not just the sampled
+      // ones
+      std::cout << timestamp() << " Loading all SNPs" << std::endl;
+      data.reset_regions();
+      data.read_bed(geno_file.c_str());
+      std::cout << timestamp() << " Loading SNPs done" << std::endl;
+      std::cout << timestamp() << " Writing whitened data" << std::endl;
+      save("whitened.bin", rpca.W);
+   }
+
    std::cout << timestamp() << " Goodbye!" << std::endl;
 
    return EXIT_SUCCESS;
