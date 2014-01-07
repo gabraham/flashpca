@@ -52,10 +52,10 @@ void normalize(MatrixXd& X)
    }
 }
 
-MatrixXd RandomPCA::pca(MatrixXd X, bool transpose,
+void RandomPCA::pca(MatrixXd X, bool transpose,
    unsigned int ndim, unsigned int nextra, unsigned int maxiter)
 {
-   M = standardize(X);
+   M = standardize(X, false);
    std::cout << timestamp() << " Transpose: " 
       << (transpose ? "yes" : "no") << std::endl;
    if(transpose)
@@ -107,21 +107,18 @@ MatrixXd RandomPCA::pca(MatrixXd X, bool transpose,
 
    //// TODO: untested
    if(transpose)
-      P = (U.leftCols(ndim).transpose() * M).transpose();
+      P.noalias() = (U.leftCols(ndim).transpose() * M).transpose();
    else
-      P = M * V.leftCols(ndim);
-
-   return P;
+      P.noalias() = M * V.leftCols(ndim);
 }
 
 // ZCA
-MatrixXd RandomPCA::zca_whiten()
+void RandomPCA::zca_whiten()
 {
    std::cout << timestamp() << " Whitening begin" << std::endl;
    VectorXd s = 1 / d.array();
    MatrixXd D = s.asDiagonal();
-   W = U * D * U.transpose() * M;
+   W.noalias() = U * D * U.transpose() * M;
    std::cout << timestamp() << " Whitening done (" << dim(W) << ")" << std::endl;
-   return W;
 }
 
