@@ -42,7 +42,7 @@ MatrixXd make_gaussian(unsigned int rows, unsigned int cols)
 }
 
 // normalize each column of X to unit l2 norm
-void normalize(MatrixXd& X)
+inline void normalize(MatrixXd& X)
 {
    unsigned int p = X.cols();
    for(unsigned int j = 0 ; j < p ; j++)
@@ -52,10 +52,10 @@ void normalize(MatrixXd& X)
    }
 }
 
-void RandomPCA::pca(MatrixXd X, bool transpose,
+void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
    unsigned int ndim, unsigned int nextra, unsigned int maxiter)
 {
-   M = standardize(X, false);
+   M = standardize(X, true, stand_method);
    std::cout << timestamp() << " Transpose: " 
       << (transpose ? "yes" : "no") << std::endl;
    if(transpose)
@@ -67,7 +67,6 @@ void RandomPCA::pca(MatrixXd X, bool transpose,
 
    unsigned int total_dim = ndim + nextra;
    MatrixXd R = make_gaussian(M.cols(), total_dim);
-   save_text("R.txt", R);
    MatrixXd Y = M * R;
    std::cout << timestamp() << " dim(Y): " << dim(Y) << std::endl;
    normalize(Y);
@@ -90,26 +89,54 @@ void RandomPCA::pca(MatrixXd X, bool transpose,
    MatrixXd Q = MatrixXd::Identity(Y.rows(), Y.cols());
    Q = qr.householderQ() * Q;
    Q.conservativeResize(NoChange, Y.cols());
-   MatrixXd B = Q.transpose() * M;
    std::cout << timestamp() << " QR done" << std::endl;
 
-   std::cout << timestamp() << " SVD begin" << std::endl;
+   MatrixXd B = Q.transpose() * M;
    std::cout << timestamp() << " dim(B): " << dim(B) << std::endl;
-   JacobiSVD<MatrixXd> svd(B, ComputeThinU | ComputeThinV);
-   std::cout << timestamp() << " SVD done" << std::endl;
 
-   U = Q * svd.matrixU();
-   V = svd.matrixV();
-   d = svd.singularValues();
+   if(method == METHOD_SVD)
+   {
+      std::cout << timestamp() << " SVD begin" << std::endl;
+      JacobiSVD<MatrixXd> svd(B, ComputeThinU | ComputeThinV);
+      U = Q * svd.matrixU();
+      V = svd.matrixV();
+      d = svd.singularValues() / sqrt(X.rows() - 1);
+   }
+   else if(method == METHOD_EIGEN)
+   {
+      std::cout << timestamp() << " Eigen-decomposition begin" << std::endl;
+      MatrixXd BBT = B * B.transpose();
+      std::cout << timestamp() << " dim(BBT): " << dim(BBT) << std::endl;
+      SelfAdjointEigenSolver<MatrixXd> eig(BBT);
 
-   std::cout << timestamp() << " dim(U): " << dim(U) << std::endl;
-   std::cout << timestamp() << " dim(V): " << dim(V) << std::endl;
+      // The eigenvalues are sorted in *increasing* order, we need decreasing
+      // order
+      VectorXd eval = eig.eigenvalues();
+      MatrixXd evec = eig.eigenvectors();
+      d.resize(eval.size());
+      U.resize(BBT.rows(), BBT.rows());
+
+      unsigned int k = 0;
+      for(unsigned int i = d.size() - 1 ; i != 0 ; --i)
+      {
+	 // we get eigenvalues, which are the squared singular values
+	 d(k) = sqrt(eval(i)) / sqrt(X.rows() - 1);
+	 U.col(k) = evec.col(i);
+	 k++;
+      }
+
+      U = Q * U;
+
+      std::cout << timestamp() << " Eigen-decomposition done" << std::endl;
+   }
 
    //// TODO: untested
-   if(transpose)
-      P.noalias() = (U.leftCols(ndim).transpose() * M).transpose();
-   else
-      P.noalias() = M * V.leftCols(ndim);
+   //if(transpose)
+    //  P.noalias() = (U.leftCols(ndim).transpose() * M).transpose();
+   //else
+      //P.noalias() = M * V.leftCols(ndim);
+
+   P.noalias() = U * d.asDiagonal();
 }
 
 // ZCA
@@ -117,8 +144,8 @@ void RandomPCA::zca_whiten()
 {
    std::cout << timestamp() << " Whitening begin" << std::endl;
    VectorXd s = 1 / d.array();
-   MatrixXd D = s.asDiagonal();
-   W.noalias() = U * D * U.transpose() * M;
+   MatrixXd Dinv = s.asDiagonal();
+   W.noalias() = U * Dinv * U.transpose() * M;
    std::cout << timestamp() << " Whitening done (" << dim(W) << ")" << std::endl;
 }
 

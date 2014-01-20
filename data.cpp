@@ -1,13 +1,14 @@
 
 #include "data.hpp"
 
-Data::Data()
+Data::Data(long seed)
 {
    N = 0;
    p = 0;
    K = 0;
    nsnps = 0;
    cache = NULL;
+   this->seed = seed;
    srand48(seed);
 }
 
@@ -281,6 +282,8 @@ void Data::set_mode(unsigned int mode)
 
 VectorXd Data::get_coordinate(unsigned int j)
 {
+   throw std::string("get_coordinate: unused code");
+   
    // intercept
    if(j == 0)
       return ones;
@@ -477,21 +480,24 @@ void Data::map_regions()
 
    std::ofstream out(included_snps_filename, std::ios::out);
    double prob = (double)nsnps_sampling / nsnps_post_removal;
-   std::cout << timestamp() << " Sampling SNPs (prob=" << prob << ")" << std::endl;
-   nsnps_post_removal = 0;
-   for(unsigned int i = 0 ; i < snps.size(); i++)
+   if(prob < 1)
    {
-      if(snps[i].included)
+      std::cout << timestamp() << " Sampling SNPs (prob=" << prob << ")" << std::endl;
+      nsnps_post_removal = 0;
+      for(unsigned int i = 0 ; i < snps.size(); i++)
       {
-	 if(drand48() > prob)
-	 {
-	    snps[i].included = false;
-	 }
-	 else
-	 {
-	    nsnps_post_removal++;
-	    out << snps[i].rsid << std::endl;
-	 }
+         if(snps[i].included)
+         {
+            if(drand48() > prob)
+            {
+               snps[i].included = false;
+            }
+            else
+            {
+               nsnps_post_removal++;
+               out << snps[i].rsid << std::endl;
+            }
+         }
       }
    }
 

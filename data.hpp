@@ -8,7 +8,6 @@
 #include <Eigen/Core>
 #include <Eigen/Dense>
 #include <Eigen/Eigen>
-#include <Eigen/SVD>
 #include <Eigen/Sparse>
 
 #include <boost/filesystem.hpp>
@@ -87,7 +86,7 @@ class Data {
       long seed;
       const char *included_snps_filename;
       
-      Data();
+      Data(long seed);
       ~Data();
       void read_bed(const char *filename);
       void read_pheno(const char *filename, unsigned int firstcol, int pheno);

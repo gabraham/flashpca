@@ -3,7 +3,6 @@
 #include <Eigen/Core>
 #include <Eigen/Dense>
 #include <Eigen/Eigen>
-#include <Eigen/SVD>
 #include <Eigen/Sparse>
 
 #include <iostream>
@@ -16,6 +15,8 @@
 #include <sys/time.h>
 
 #define VAR_TOL 1e-9
+#define STANDARDIZE_SD 1
+#define STANDARDIZE_BINOMIAL 2
 
 using namespace Eigen;
 
@@ -93,7 +94,8 @@ int sign(T x)
 double sign_scalar(double x);
 MatrixXd read_bed(const char *filename, const unsigned int nrows);
 MatrixXd read_pheno(const char *filename, unsigned int firstcol);
-MatrixXd standardize(const MatrixXd &X, bool scale=true);
+MatrixXd standardize(const MatrixXd &X, bool scale=true,
+   int method=STANDARDIZE_SD);
 VectorXd zapsmall(const VectorXd& X, const double tol);
 double maxabs(const SMd& B);
 MatrixXd subsample_snps(const MatrixXd& X, double prop);

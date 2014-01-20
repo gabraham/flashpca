@@ -7,7 +7,6 @@
 #include <Eigen/Core>
 #include <Eigen/Dense>
 #include <Eigen/Eigen>
-#include <Eigen/SVD>
 #include <Eigen/Sparse>
 
 #define CACHE_NOT_EXISTS -1

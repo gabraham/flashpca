@@ -5,7 +5,7 @@ using namespace Eigen;
 
 // Standardize matrix column-wise to zero mean and unit variance.
 // If a column is all zeros, it will remain zero.
-MatrixXd standardize(const MatrixXd& X, bool scale)
+MatrixXd standardize(const MatrixXd& X, bool scale, int method)
 {
    std::cout.setf(std::ios_base::unitbuf);
 
@@ -14,13 +14,37 @@ MatrixXd standardize(const MatrixXd& X, bool scale)
 
    if(scale)
    {
-      for(unsigned int j = 0 ; j < p ; j++)
+      if(method == STANDARDIZE_SD)
       {
-         double mean = X.col(j).sum() / n;
-         double sd = std::sqrt((X.col(j).array() - mean).square().sum() / (n - 1));
-         if(sd > VAR_TOL)
-            S.col(j) = (X.col(j).array() - mean) / sd;
+	 std::cout << timestamp() << " standardizing matrix (SD)" 
+	    << " p: " << p << std::endl;
+	 double mean, sd;
+	 for(unsigned int j = 0 ; j < p ; j++)
+      	 {
+	    std::cout << j << std::endl;
+      	    mean = X.col(j).sum() / n;
+      	    sd = std::sqrt((X.col(j).array() - mean).square().sum() / (n - 1));
+      	    if(sd > VAR_TOL)
+      	       S.col(j) = (X.col(j).array() - mean) / sd;
+      	 }
       }
+      // Same as Price 2006 eqn 3
+      else if(method == STANDARDIZE_BINOMIAL)
+      {
+	 std::cout << timestamp() << " standardizing matrix (BINOMIAL)" 
+	    << " p: " << p << std::endl;
+	 double mean, r, s;
+	 for(unsigned int j = 0 ; j < p ; j++)
+      	 {
+      	    mean = X.col(j).sum() / n;
+	    r = mean / 2.0;
+	    s = sqrt(r * (1 - r));
+      	    if(s > VAR_TOL)
+      	       S.col(j) = (X.col(j).array() - mean) / s;
+      	 }
+      }
+      else
+	 throw std::string("unknown standardization method");
    }
    else
    {

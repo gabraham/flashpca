@@ -1,14 +1,14 @@
 #pragma once
 
-#include <Eigen/Core>
-#include <Eigen/Dense>
-#include <Eigen/Eigen>
-#include <Eigen/SVD>
 #include <Eigen/QR>
+#include <Eigen/SVD>
 
 using namespace Eigen;
 
 const double tol = 1e-7;
+
+#define METHOD_EIGEN 1
+#define METHOD_SVD 2
 
 class RandomPCA {
    public:
@@ -16,9 +16,13 @@ class RandomPCA {
       MatrixXd U, V, W, P;
       VectorXd d;
 
-      void pca(MatrixXd X, bool transpose=false,
+      int stand_method;
+
+      void pca(MatrixXd &X,
+	    int method=METHOD_EIGEN,
+	    bool transpose=false,
 	    unsigned int ndim=10, unsigned int nextra=10,
-	    unsigned int maxiter=500);
+	    unsigned int maxiter=10);
       void zca_whiten();
 };
 
