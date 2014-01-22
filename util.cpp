@@ -21,7 +21,6 @@ MatrixXd standardize(const MatrixXd& X, bool scale, int method)
 	 double mean, sd;
 	 for(unsigned int j = 0 ; j < p ; j++)
       	 {
-	    std::cout << j << std::endl;
       	    mean = X.col(j).sum() / n;
       	    sd = std::sqrt((X.col(j).array() - mean).square().sum() / (n - 1));
       	    if(sd > VAR_TOL)

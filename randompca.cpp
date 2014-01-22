@@ -72,14 +72,18 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
    normalize(Y);
    MatrixXd Yn;
 
+   std::cout << timestamp() << " dim(M): " << dim(M) << std::endl;
+   MatrixXd MMT = M * M.transpose();
+   std::cout << timestamp() << " dim(MMT): " << dim(MMT) << std::endl;
+
    for(unsigned int iter = 0 ; iter < maxiter ; iter++)
    {
       std::cout << timestamp() << " iter " << iter << " ";
-      Yn = M * (M.transpose() * Y);
+      Yn.noalias() = MMT * Y;
       normalize(Yn);
       double diff =  (Y -  Yn).array().square().sum() / Y.size(); 
       std::cout << diff << std::endl;
-      Y = Yn;
+      Y.noalias() = Yn;
       if(diff < tol)
 	 break;
    }
