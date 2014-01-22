@@ -7,8 +7,7 @@ OBJ = \
    randompca.o \
    flashpca.o \
    data.o \
-   util.o \
-   cache.o
+   util.o
 
 CXXFLAGS = -Iboost -IEigen
 

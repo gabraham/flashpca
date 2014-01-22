@@ -28,9 +28,9 @@ MatrixXd standardize(const MatrixXd& X, bool scale, int method)
       	 }
       }
       // Same as Price 2006 eqn 3
-      else if(method == STANDARDIZE_BINOMIAL)
+      else if(method == STANDARDIZE_PRICE)
       {
-	 std::cout << timestamp() << " standardizing matrix (BINOMIAL)" 
+	 std::cout << timestamp() << " standardizing matrix (PRICE)" 
 	    << " p: " << p << std::endl;
 	 double mean, r, s;
 	 for(unsigned int j = 0 ; j < p ; j++)

@@ -14,7 +14,6 @@
 #include <boost/iostreams/device/mapped_file.hpp>
 
 #include "util.hpp"
-#include "cache.hpp"
 
 #define PACK_DENSITY 4
 #define PLINK_NA 3
@@ -45,67 +44,25 @@
 
 using namespace Eigen;
 
-typedef struct region {
-   unsigned int chr;
-   unsigned int begin_bp, end_bp;
-} region;
-
-typedef struct snp {
-   unsigned int chr, bp;
-   bool included;
-   std::string rsid;
-} snp;
-
 class Data {
    public:
       
       MatrixXd X, Y;
-      //MatrixXd Xtrain, Xtest; // only used if data is small enough
-      //MatrixXd X2train, X2test;
-      //MatrixXd Ytrain, Ytest;
       unsigned int N, p, K;
       unsigned long long len;
-      //unsigned long long cachemem;
-      unsigned int np, nsnps, nsnps_post_removal, nsnps_sampling;
-      //unsigned int Ntrain, Ntest, Ncurr;
-      //ArrayXb mask_train, mask_test, mask_curr;;
-      const char *geno_filename, *bim_filename;
+      unsigned int np, nsnps;
+      const char *geno_filename;
       boost::iostreams::mapped_file_source geno_fin;
-      //std::vector<unsigned int> covar_ignore_pred_idx;
-      //std::vector<unsigned int> covar_actions;
-      VectorXi folds;
-      unsigned int nfolds;
-      //Cache *cache;
-      unsigned int mode;
-      VectorXd ones, zeros;
-      VectorXd geno;
-      VectorXd *geno_ptr;
-      std::vector<region> regions;
-      std::vector<snp> snps;
       bool verbose;
       long seed;
-      //const char *included_snps_filename;
       
       Data(long seed);
       ~Data();
       void read_bed(const char *filename);
       void read_pheno(const char *filename, unsigned int firstcol, int pheno);
-      void read_covar(const char *filename, unsigned int firstcol);
       MatrixXd read_plink_pheno(const char *filename, unsigned int firstcol, int pheno);
-      //void set_mode(unsigned int mode);
-      //void load_snp_double(unsigned int j, double *geno);
-      //VectorXd load_snp(unsigned int j);
 
       std::string tolower(const std::string& v);
-      //void read_covar_actions(const char* filename);
-      //void mmap_bed(char *filename);
-      //VectorXd get_coordinate(unsigned int j);
-      //VectorXd get_snp(unsigned int j);
-      //void split_data(unsigned int fold);
-      //void make_folds(unsigned int rep);
-      //void map_regions();
-      //void reset_regions();
-      void read_plink_bim();
 };
 
 

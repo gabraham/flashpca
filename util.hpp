@@ -16,7 +16,7 @@
 
 #define VAR_TOL 1e-9
 #define STANDARDIZE_SD 1
-#define STANDARDIZE_BINOMIAL 2
+#define STANDARDIZE_PRICE 2
 
 using namespace Eigen;
 

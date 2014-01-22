@@ -21,7 +21,6 @@ namespace po = boost::program_options;
 
 int main(int argc, char * argv[])
 {
-
    ////////////////////////////////////////////////////////////////////////////////
    // Parse commandline arguments
    po::options_description desc("Options");
@@ -33,10 +32,19 @@ int main(int argc, char * argv[])
       ("bim", po::value<std::string>(), "PLINK bim file")
       ("fam", po::value<std::string>(), "PLINK fam file")
       ("bfile", po::value<std::string>(), "PLINK root name")
-      ("ndim", po::value<unsigned int>(), "number of PCs to output")
-      ("nextra", po::value<unsigned int>(),
+      ("ndim", po::value<int>(), "number of PCs to output")
+      ("nextra", po::value<int>(),
 	 "number of extra dimensions to use in randomized PCA")
       ("stand", po::value<std::string>(), "standardization method")
+      ("method", po::value<std::string>(), "PCA method (svd/eigen)")
+      ("outpc", po::value<std::string>(), "PC output file")
+      ("outvec", po::value<std::string>(), "Eigenvector output file")
+      ("outval", po::value<std::string>(), "Eigenvalue output file")
+      ("whiten", "whiten the data")
+      ("outwhite", po::value<std::string>(), "whitened data output file")
+      ("v", "verbose")
+      ("maxiter", po::value<int>(), "maximum number of randomized PCA iterations")
+      ("tol", po::value<double>(), "tolerance for randomized PCA iterations")
    ;
 
    po::variables_map vm;
@@ -52,7 +60,6 @@ int main(int argc, char * argv[])
    int num_threads = 1;
    if(vm.count("numthreads"))
       num_threads = vm["numthreads"].as<int>();
-
 
    long seed = 1L;
    if(vm.count("seed"))
@@ -92,30 +99,102 @@ int main(int argc, char * argv[])
       }
    }
 
-   unsigned int n_dim = 0;
+   int n_dim = 0;
    if(vm.count("ndim"))
-      n_dim = vm["ndim"].as<unsigned int>();
+   {
+      n_dim = vm["ndim"].as<int>();
+      if(n_dim <= 1)
+      {
+	 std::cerr << "Error: --ndim can't be less than 2" << std::endl;
+	 return EXIT_FAILURE;
+      }
+   }
 
-   unsigned int n_extra = 0;
+   int n_extra = 0;
    if(vm.count("nextra"))
-      n_extra = vm["nextra"].as<unsigned int>();
+   {
+      n_extra = vm["nextra"].as<int>();
+      if(n_extra < 1)
+      {
+	 std::cerr << "Error: --n_extra can't be less than 1" << std::endl;
+	 return EXIT_FAILURE;
+      }
+   }
    
-   int stand_method;
+   int stand_method = STANDARDIZE_PRICE;
    if(vm.count("stand"))
    {
       std::string m = vm["stand"].as<std::string>();
       if(m == "price")
-	 stand_method = STANDARDIZE_BINOMIAL;
+	 stand_method = STANDARDIZE_PRICE;
       else if(m == "sd")
 	 stand_method = STANDARDIZE_SD;
       else
       {
-	 std::cerr << "Error: unknown standardization method (-stand): "
+	 std::cerr << "Error: unknown standardization method (--stand): "
 	    << m << std::endl;
 	 return EXIT_FAILURE;
       }
    }
 
+   int method = METHOD_EIGEN;
+   if(vm.count("method"))
+   {
+      std::string m = vm["method"].as<std::string>();
+      if(m == "svd")
+	 method = METHOD_SVD;
+      else if(m == "eigen")
+	 method = METHOD_EIGEN;
+      else
+      {
+	 std::cerr << "Error: unknown PCA method (--method): "
+	    << m << std::endl;
+	 return EXIT_FAILURE;
+      }
+   }
+
+   std::string pcfile = "pcs.txt";
+   if(vm.count("outpc"))
+      pcfile = vm["outpc"].as<std::string>();
+
+   std::string eigvecfile = "eigenvectors.txt";
+   if(vm.count("outvec"))
+      eigvecfile = vm["outvec"].as<std::string>();
+
+   std::string eigvalfile = "eigenvalues.txt";
+   if(vm.count("outval"))
+      eigvalfile = vm["outval"].as<std::string>();
+
+   std::string whitefile = "whitened.bin";
+   if(vm.count("outwhite"))
+      whitefile = vm["outwhite"].as<std::string>();
+
+   bool whiten = vm.count("whiten");
+   bool verbose = vm.count("v");
+
+   int maxiter = 10;
+   if(vm.count("maxiter"))
+   {
+      maxiter = vm["maxiter"].as<int>();
+      if(maxiter <= 0)
+      {
+	 std::cerr << "Error: --maxiter can't be less than 1"
+	    << std::endl;
+	 return EXIT_FAILURE;
+      }
+   }
+
+   double tol = 1e-7;
+   if(vm.count("tol"))
+   {
+      tol = vm["tol"].as<double>();
+      if(tol <= 0)
+      {
+	 std::cerr << "Error: --tol can't be zero or negative"
+	    << std::endl;
+	 return EXIT_FAILURE;
+      }
+   }
 
    ////////////////////////////////////////////////////////////////////////////////
    // End command line parsing
@@ -126,49 +205,12 @@ int main(int argc, char * argv[])
       << " OpenMP threads" << std::endl;
 
    Data data(seed);
-   data.verbose = false;
-   std::cout << timestamp() << " seed: " << data.seed << std::endl;
-   data.included_snps_filename = "flashpca_include_snps.txt";
+   data.verbose = verbose;
+   std::cout << timestamp() << " seed: " << seed << " " << data.seed << std::endl;
 
-   //data.regions.reserve(4);
-   //region r;
-   //r.chr = 5;
-   //r.begin_bp = 44000000;
-   //r.end_bp = 51500000;
-   //data.regions.push_back(r);
-   //
-   //r.chr = 6;
-   //r.begin_bp = 25000000;
-   //r.end_bp = 33500000;
-   //data.regions.push_back(r);
-
-   //r.chr = 8;
-   //r.begin_bp = 8000000;
-   //r.end_bp = 12000000;
-   //data.regions.push_back(r);
-
-   //r.chr = 11;
-   //r.begin_bp = 45000000;
-   //r.end_bp = 57000000;
-   //data.regions.push_back(r);
-
-   data.bim_filename = bim_file.c_str();
-   data.read_plink_bim();
-   data.nsnps_sampling = data.snps.size();
-   //std::cout << timestamp() << " Sampling " << data.nsnps_sampling << " SNPs" << std::endl;
-   //data.map_regions();
-   //if(data.nsnps_post_removal == 0)
-   //{
-   //   std::cerr << "Error: no SNPs left for analysis" << std::endl;
-   //   return EXIT_FAILURE;
-   //}
-      
    data.read_pheno(pheno_file.c_str(), 6, PHENO_BINARY_12);
    data.read_bed(geno_file.c_str());
 
-   std::cout << timestamp() << " Begin PCA" << std::endl;
-
-   //bool transpose = data.X.rows() < data.X.cols();
    RandomPCA rpca;
    bool transpose = false;
    rpca.stand_method = stand_method;
@@ -179,26 +221,37 @@ int main(int argc, char * argv[])
 
    if(n_extra == 0)
       n_extra = fminl(max_dim - n_dim, 100);
-   int method = METHOD_EIGEN;
-   rpca.pca(data.X, method, transpose, n_dim, n_extra);
-   //std::cout << timestamp() << " Writing matrix V" << std::endl;
-  // save_text("V.txt", rpca.V);
-   std::cout << timestamp() << " Writing " << n_dim << " eigenvectors" << std::endl;
-   save_text("eigenvectors.txt", rpca.U);
-   std::cout << timestamp() << " Writing " << n_dim << " PCs" << std::endl;
-   save_text("pcs.txt", rpca.P);
-   save_text("eigenvalues.txt", rpca.d);
 
-   bool whiten = false;
+   ////////////////////////////////////////////////////////////////////////////////
+   // Do the PCA
+   std::cout << timestamp() << " PCA begin" << std::endl;
+   
+   rpca.pca(data.X, method, transpose, n_dim, n_extra, maxiter, tol);
+
+   std::cout << timestamp() << " PCA done" << std::endl;
+
+   ////////////////////////////////////////////////////////////////////////////////
+   // Write out results
+
+   std::cout << timestamp() << " Writing " << n_dim << 
+      " eigenvectors to file " << eigvecfile << std::endl;
+   save_text(eigvecfile.c_str(), rpca.U);
+
+   std::cout << timestamp() << " Writing " << n_dim << 
+      " eigenvalues to file " << eigvalfile << std::endl;
+   save_text(eigvalfile.c_str(), rpca.d);
+
+   std::cout << timestamp() << " Writing " << n_dim <<
+      " PCs to file " << pcfile << std::endl;
+   save_text(pcfile.c_str(), rpca.P);
+
    if(whiten)
    {
-      std::cout << timestamp() << " Loading all SNPs" << std::endl;
-      //data.reset_regions();
-      data.read_bed(geno_file.c_str());
+      std::cout << timestamp() << " ZCA whitening data" << std::endl;
       rpca.zca_whiten();
-      std::cout << timestamp() << " Loading SNPs done" << std::endl;
-      std::cout << timestamp() << " Writing whitened data" << std::endl;
-      save("whitened.bin", rpca.W);
+      std::cout << timestamp() << " Writing whitened data to file "
+	 << whitefile << std::endl;
+      save(whitefile.c_str(), rpca.W);
    }
 
    std::cout << timestamp() << " Goodbye!" << std::endl;

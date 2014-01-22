@@ -53,7 +53,7 @@ inline void normalize(MatrixXd& X)
 }
 
 void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
-   unsigned int ndim, unsigned int nextra, unsigned int maxiter)
+   unsigned int ndim, unsigned int nextra, unsigned int maxiter, double tol)
 {
    M = standardize(X, true, stand_method);
    std::cout << timestamp() << " Transpose: " 
@@ -105,6 +105,7 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
       U = Q * svd.matrixU();
       V = svd.matrixV();
       d = svd.singularValues() / sqrt(X.rows() - 1);
+      std::cout << timestamp() << " SVD done" << std::endl;
    }
    else if(method == METHOD_EIGEN)
    {
