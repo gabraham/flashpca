@@ -23,6 +23,7 @@ int main(int argc, char * argv[])
 {
    ////////////////////////////////////////////////////////////////////////////////
    // Parse commandline arguments
+
    po::options_description desc("Options");
    desc.add_options()
       ("help", "produce help message")
@@ -121,12 +122,12 @@ int main(int argc, char * argv[])
       }
    }
    
-   int stand_method = STANDARDIZE_PRICE;
+   int stand_method = STANDARDIZE_BINOM;
    if(vm.count("stand"))
    {
       std::string m = vm["stand"].as<std::string>();
-      if(m == "price")
-	 stand_method = STANDARDIZE_PRICE;
+      if(m == "binom")
+	 stand_method = STANDARDIZE_BINOM;
       else if(m == "sd")
 	 stand_method = STANDARDIZE_SD;
       else
@@ -206,7 +207,7 @@ int main(int argc, char * argv[])
 
    Data data(seed);
    data.verbose = verbose;
-   std::cout << timestamp() << " seed: " << seed << " " << data.seed << std::endl;
+   std::cout << timestamp() << " seed: " << data.seed << std::endl;
 
    data.read_pheno(pheno_file.c_str(), 6, PHENO_BINARY_12);
    data.read_bed(geno_file.c_str());
