@@ -10,6 +10,7 @@ PCA algorithm of Halko et al. 2011.
 Main features:
 
 * Fast: PCA of 15,000 individuals over 43,000 SNPs in &lt;10 min
+ (multi-threaded)
 * Natively reads PLINK bed/bim/fam files
 * Easy to use
 
@@ -71,8 +72,9 @@ To run on a PLINK fileset named data (data.bed/data.bim/data.fam):
 To run in multi-threaded mode with 8 threads:
    ```
    ./flashpca --bfile data --numthreads 8
+   ```
 
-For more options
+For more options:
    ```
    ./flashpca --help
    ```
