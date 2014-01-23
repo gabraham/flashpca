@@ -218,10 +218,10 @@ int main(int argc, char * argv[])
    unsigned int max_dim = fminl(data.X.rows(), data.X.cols());
    
    if(n_dim == 0)
-      n_dim = fminl(max_dim, 100);
+      n_dim = fminl(max_dim, 10);
 
    if(n_extra == 0)
-      n_extra = fminl(max_dim - n_dim, 100);
+      n_extra = fminl(max_dim - n_dim, 190);
 
    ////////////////////////////////////////////////////////////////////////////////
    // Do the PCA
