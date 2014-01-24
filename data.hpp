@@ -57,7 +57,8 @@ class Data {
       
       Data(long seed);
       ~Data();
-      void read_bed(const char *filename);
+      void read_bed(bool transpose);
+      void get_size();
       void read_pheno(const char *filename, unsigned int firstcol, int pheno);
       MatrixXd read_plink_pheno(const char *filename, unsigned int firstcol, int pheno);
 

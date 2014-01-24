@@ -69,7 +69,6 @@ std::string dim(MatrixBase<Derived>& m)
    return ss.str();
 }
 
-void usage();
 double myatof(char* c);
 std::string timestamp();
 
@@ -79,11 +78,8 @@ int sign(T x)
    return (T(0) < x) - (x < T(0));
 }
 
-double sign_scalar(double x);
 MatrixXd read_bed(const char *filename, const unsigned int nrows);
 MatrixXd read_pheno(const char *filename, unsigned int firstcol);
-MatrixXd standardize(const MatrixXd &X, bool scale=true,
-   int method=STANDARDIZE_SD);
-VectorXd zapsmall(const VectorXd& X, const double tol);
-MatrixXd subsample_snps(const MatrixXd& X, double prop);
+MatrixXd standardize(const MatrixXd &X, bool scale, int method);
+MatrixXd standardize_transpose(const MatrixXd &X, bool scale, int method);
 

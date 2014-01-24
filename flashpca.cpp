@@ -21,6 +21,11 @@ namespace po = boost::program_options;
 
 int main(int argc, char * argv[])
 {
+
+#ifndef NDEBUG
+   std::cout << "******* Running in Debug mode *******" << std::endl;
+#endif
+
    ////////////////////////////////////////////////////////////////////////////////
    // Parse commandline arguments
 
@@ -46,6 +51,7 @@ int main(int argc, char * argv[])
       ("v", "verbose")
       ("maxiter", po::value<int>(), "maximum number of randomized PCA iterations")
       ("tol", po::value<double>(), "tolerance for randomized PCA iterations")
+      ("transpose", "force a transpose of the data")
    ;
 
    po::variables_map vm;
@@ -172,7 +178,8 @@ int main(int argc, char * argv[])
 
    bool whiten = vm.count("whiten");
    bool verbose = vm.count("v");
-
+   bool transpose = vm.count("transpose");
+   
    int maxiter = 10;
    if(vm.count("maxiter"))
    {
@@ -210,10 +217,12 @@ int main(int argc, char * argv[])
    std::cout << timestamp() << " seed: " << data.seed << std::endl;
 
    data.read_pheno(pheno_file.c_str(), 6, PHENO_BINARY_12);
-   data.read_bed(geno_file.c_str());
+   data.geno_filename = geno_file.c_str();
+   data.get_size();
+   transpose = transpose || data.N > data.nsnps;
+   data.read_bed(transpose);
 
    RandomPCA rpca;
-   bool transpose = false;
    rpca.stand_method = stand_method;
    unsigned int max_dim = fminl(data.X.rows(), data.X.cols());
    
@@ -245,6 +254,9 @@ int main(int argc, char * argv[])
    std::cout << timestamp() << " Writing " << n_dim <<
       " PCs to file " << pcfile << std::endl;
    save_text(pcfile.c_str(), rpca.P);
+
+   ////////////////////////////////////////////////////////////////////////////////
+   // Whiten if required
 
    if(whiten)
    {

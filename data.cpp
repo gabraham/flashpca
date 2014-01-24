@@ -81,15 +81,16 @@ void decode_plink(unsigned char *out,
    }
 }
 
-// Expects PLINK BED in SNP-major format
-void Data::read_bed(const char *filename)
+void Data::get_size()
 {
-   std::cout << timestamp() << " Reading BED file '" << filename << "'" << std::endl;
-   std::ifstream in(filename, std::ios::in | std::ios::binary);
+   std::cout << timestamp() << " Analyzing BED file '" 
+      << geno_filename << "'";
+   std::ifstream in(geno_filename, std::ios::in | std::ios::binary);
 
    if(!in)
    {
-      std::cerr << "[Data::read_bed] Error reading file " << filename << std::endl;
+      std::cerr << "[Data::read_bed] Error reading file " 
+	 << geno_filename << std::endl;
       throw std::runtime_error("io error");
    }
 
@@ -102,31 +103,51 @@ void Data::read_bed(const char *filename)
    np = (unsigned int)ceil((double)N / PACK_DENSITY);
    nsnps = len / np;
    in.seekg(3, std::ifstream::beg);
+   in.close();
+
+   std::cout << ", found " << nsnps << " SNPs" << std::endl;
+}
+
+// Expects PLINK BED in SNP-major format
+void Data::read_bed(bool transpose)
+{
+   std::cout << timestamp() << " Reading BED file '" 
+      << geno_filename << "'" << std::endl;
+   std::ifstream in(geno_filename, std::ios::in | std::ios::binary);
+   in.seekg(3, std::ifstream::beg);
+
+   if(!in)
+   {
+      std::cerr << "[Data::read_bed] Error reading file " << geno_filename << std::endl;
+      throw std::runtime_error("io error");
+   }
+   
+   if(nsnps < 1)
+      throw std::string("Number of SNPs not known, can't read_bed");
 
    unsigned char* tmp = new unsigned char[np];
 
    // Allocate more than the sample size since data must take up whole bytes
    unsigned char* tmp2 = new unsigned char[np * PACK_DENSITY];
 
-   X = MatrixXd(N, nsnps);
+   if(transpose)
+      X = MatrixXd(nsnps, N);
+   else
+      X = MatrixXd(N, nsnps);
 
-   std::cout << timestamp() << " Detected BED file: " << filename <<
+   std::cout << timestamp() << " Detected BED file: " << geno_filename <<
       " with " << len << " bytes, " << N << " samples, " << nsnps 
       << " SNPs." << std::endl;
-   VectorXd tmp3(N);
 
    double* avg = new double[nsnps]; 
-
    unsigned int idx = 0;
+   VectorXd tmp3(N);
 
    // iterate over all SNPs, only decode those that are included in analysis
    for(unsigned int i = 0 ; i < nsnps; i++)
    {
       // read raw genotypes
       in.read((char*)tmp, sizeof(char) * np);
-
-      //if(!snps[i].included)
-	// continue;
 
       // decode the genotypes
       decode_plink(tmp2, tmp, np);
@@ -155,14 +176,20 @@ void Data::read_bed(const char *filename)
 	    tmp3(j) = avg[idx];
       }
 
-      X.col(idx) = tmp3;
+      if(transpose)
+	 X.row(idx) = tmp3;
+      else
+	 X.col(idx) = tmp3;
       idx++;
    }
 
-   p = X.cols();
+   if(transpose)
+      p = X.rows();
+   else
+      p = X.cols();
 
    std::cout << timestamp() << " Loaded genotypes: "
-      << X.rows() << " samples, " << X.cols() << " SNPs" << std::endl;
+      << N << " samples, " << p << " SNPs" << std::endl;
 
    delete[] tmp;
    delete[] tmp2;

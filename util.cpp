@@ -56,9 +56,57 @@ MatrixXd standardize(const MatrixXd& X, bool scale, int method)
    return S;
 }
 
-void usage()
+MatrixXd standardize_transpose(const MatrixXd& X, bool scale, int method)
 {
-   std::cout << "Error: " << std::endl;
+   std::cout.setf(std::ios_base::unitbuf);
+
+   unsigned int n = X.cols(), p = X.rows();
+   MatrixXd S = MatrixXd::Zero(X.rows(), X.cols());
+
+   if(scale)
+   {
+      if(method == STANDARDIZE_SD)
+      {
+	 std::cout << timestamp() 
+	    << " standardizing transposed matrix (SD)" 
+	    << " p: " << p << std::endl;
+	 double mean, sd;
+	 for(unsigned int j = 0 ; j < p ; j++)
+      	 {
+      	    mean = X.row(j).sum() / n;
+      	    sd = std::sqrt((X.row(j).array() - mean).square().sum() / (n - 1));
+      	    if(sd > VAR_TOL)
+      	       S.row(j) = (X.row(j).array() - mean) / sd;
+      	 }
+      }
+      // Same as Price 2006 eqn 3
+      else if(method == STANDARDIZE_BINOM)
+      {
+	 std::cout << timestamp() 
+	    << " standardizing transposed matrix (BINOM)" 
+	    << " p: " << p << std::endl;
+	 double mean, r, s;
+	 for(unsigned int j = 0 ; j < p ; j++)
+      	 {
+      	    mean = X.row(j).sum() / n;
+	    r = mean / 2.0;
+	    s = sqrt(r * (1 - r));
+      	    if(s > VAR_TOL)
+      	       S.row(j) = (X.row(j).array() - mean) / s;
+      	 }
+      }
+      else
+	 throw std::string("unknown standardization method");
+   }
+   else
+   {
+      for(unsigned int j = 0 ; j < p ; j++)
+      {
+         double mean = X.row(j).sum() / n;
+	 S.row(j) = X.row(j).array() - mean;
+      }
+   }
+   return S;
 }
 
 double myatof(char* c)
@@ -76,10 +124,5 @@ std::string timestamp()
    std::string str(s);
    str = std::string("[") + str + std::string("]");
    return str;
-}
-
-double sign_scalar(double x)
-{
-   return (0 < x) - (x < 0);
 }
 
