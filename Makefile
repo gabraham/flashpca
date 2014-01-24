@@ -3,7 +3,9 @@
 
 EIGEN=/usr/include/eigen3
 
-all: flashpca2
+all: flashpca
+
+GITVER := $(shell git describe --dirty --always)
 
 OBJ = \
    randompca.o \
@@ -26,15 +28,15 @@ BOOST = -lboost_system-mt \
    -lboost_program_options
  
 debug: LDFLAGS = $(BOOST)
-debug: CXXFLAGS += -O0 -ggdb3
+debug: CXXFLAGS += -O0 -ggdb3 -DGITVER=\"$(GITVER)\"
 debug: $(OBJ)
-	$(CXX) $(CXXFLAGS) -o flashpca2 $^ $(LDFLAGS)
+	$(CXX) $(CXXFLAGS) -o flashpca $^ $(LDFLAGS)
 
-flashpca2: LDFLAGS = $(BOOST)
-flashpca2: CXXFLAGS += -g -O3 -DNDEBUG \
+flashpca: LDFLAGS = $(BOOST)
+flashpca: CXXFLAGS += -g -O3 -DNDEBUG -DGITVER=\"$(GITVER)\" \
    -funroll-loops -ftree-vectorize -ffast-math -fopenmp
-flashpca2: $(OBJ)
-	$(CXX) $(CXXFLAGS) -o flashpca2 $^ $(LDFLAGS)
+flashpca: $(OBJ)
+	$(CXX) $(CXXFLAGS) -o flashpca $^ $(LDFLAGS)
 
 $(OBJ): %.o: %.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@

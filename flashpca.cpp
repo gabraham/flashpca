@@ -207,7 +207,8 @@ int main(int argc, char * argv[])
    ////////////////////////////////////////////////////////////////////////////////
    // End command line parsing
       
-   std::cout << timestamp() << " Start" << std::endl;
+   std::cout << timestamp() << " Start flashpca (Git Version " << GITVER 
+      << ")" << std::endl;
    setNbThreads(num_threads);
    std::cout << timestamp() << " Using " << num_threads 
       << " OpenMP threads" << std::endl;

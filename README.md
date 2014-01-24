@@ -79,6 +79,11 @@ To run in multi-threaded mode with 8 threads:
    ./flashpca --bfile data --numthreads 8
    ```
 
+To whiten the genotypes and write them out (caution: can be a large file):
+   ```
+   ./flashpca --bfile data --whiten
+   ```
+
 For more options:
    ```
    ./flashpca --help
