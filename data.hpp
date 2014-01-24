@@ -8,7 +8,6 @@
 #include <Eigen/Core>
 #include <Eigen/Dense>
 #include <Eigen/Eigen>
-#include <Eigen/Sparse>
 
 #include <boost/filesystem.hpp>
 #include <boost/iostreams/device/mapped_file.hpp>

@@ -43,7 +43,7 @@ Requirements
 
    * Linux OS (might work on Mac OSX), 64-bit
    * g++ compiler
-   * Eigen (http://eigen.tuxfamily.org)
+   * Eigen (http://eigen.tuxfamily.org), v3.2 or higher
    * Boost (http://www.boost.org), specifically boost_system-mt,
       boost_iostreams-mt, boost_filesystem-mt, boost_program_options
    * libgomp for openmp support
@@ -63,6 +63,11 @@ To install:
    cd flashpca
    make
    ```
+
+Note: the compiler will first look for a local directory named Eigen. It
+should contain the file signature_of_eigen3_matrix_library. Next, it will
+look for the directory /usr/include/eigen3 (Debian/Ubuntu location for Eigen),
+although those available through apt-get tend to be older versions.
 
 To run on a PLINK fileset named data (data.bed/data.bim/data.fam):
    ```

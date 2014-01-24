@@ -1,6 +1,8 @@
 
 .PHONY: all
 
+EIGEN=/usr/include/eigen3
+
 all: flashpca
 
 OBJ = \
@@ -9,7 +11,7 @@ OBJ = \
    data.o \
    util.o
 
-CXXFLAGS = -Iboost -IEigen
+CXXFLAGS = -Iboost -IEigen -I/usr/include/eigen3
 
 UNAME := $(shell uname)
 ifeq ($(UNAME), Darwin)

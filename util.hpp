@@ -3,7 +3,6 @@
 #include <Eigen/Core>
 #include <Eigen/Dense>
 #include <Eigen/Eigen>
-#include <Eigen/Sparse>
 
 #include <iostream>
 #include <fstream>
@@ -19,8 +18,6 @@
 #define STANDARDIZE_BINOM 2
 
 using namespace Eigen;
-
-typedef SparseMatrix<double> SMd;
 
 typedef Array<bool, Dynamic, Dynamic> ArrayXXb;
 typedef Array<bool, Dynamic, 1> ArrayXb;
@@ -72,15 +69,6 @@ std::string dim(MatrixBase<Derived>& m)
    return ss.str();
 }
 
-// saves a compressed column sparse matrix
-//
-// dim: <nrow, ncol> of type int
-// nonzero: of type int
-// values: of type double
-// inner indices: 
-void save_sparse(const char *filename, const SparseMatrix<double>& m,
-   bool beta_zerobased);
-
 void usage();
 double myatof(char* c);
 std::string timestamp();
@@ -97,6 +85,5 @@ MatrixXd read_pheno(const char *filename, unsigned int firstcol);
 MatrixXd standardize(const MatrixXd &X, bool scale=true,
    int method=STANDARDIZE_SD);
 VectorXd zapsmall(const VectorXd& X, const double tol);
-double maxabs(const SMd& B);
 MatrixXd subsample_snps(const MatrixXd& X, double prop);
 
