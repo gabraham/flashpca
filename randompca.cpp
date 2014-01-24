@@ -103,15 +103,11 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
    {
       M = standardize_transpose(X, true, stand_method);
       N = X.cols();
-      save_text("M_t.txt", M);
-      save_text("X_t.txt", X);
    }
    else
    {
       M = standardize(X, true, stand_method);
       N = X.rows();
-      save_text("M.txt", M);
-      save_text("X.txt", X);
    }
 
    unsigned int total_dim = ndim + nextra;
@@ -175,15 +171,17 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
    d.conservativeResize(ndim);
 }
 
-// ZCA
-void RandomPCA::zca_whiten()
+// ZCA of genotypes
+void RandomPCA::zca_whiten(bool transpose)
 {
-//   if(transpose)
-      throw std::string("whiten doesn't support transposed data yet");
    std::cout << timestamp() << " Whitening begin" << std::endl;
    VectorXd s = 1 / d.array();
    MatrixXd Dinv = s.asDiagonal();
-   W.noalias() = U * Dinv * U.transpose() * M;
+
+   if(transpose)
+      W.noalias() = U * Dinv * U.transpose() * M.transpose();
+   else
+      W.noalias() = U * Dinv * U.transpose() * M;
    std::cout << timestamp() << " Whitening done (" << dim(W) << ")" << std::endl;
 }
 

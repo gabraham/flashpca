@@ -20,6 +20,6 @@ class RandomPCA {
 	    int method, bool transpose,
 	    unsigned int ndim, unsigned int nextra,
 	    unsigned int maxiter, double tol);
-      void zca_whiten();
+      void zca_whiten(bool transpose);
 };
 

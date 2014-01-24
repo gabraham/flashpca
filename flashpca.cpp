@@ -172,7 +172,7 @@ int main(int argc, char * argv[])
    if(vm.count("outval"))
       eigvalfile = vm["outval"].as<std::string>();
 
-   std::string whitefile = "whitened.bin";
+   std::string whitefile = "whitened.txt";
    if(vm.count("outwhite"))
       whitefile = vm["outwhite"].as<std::string>();
 
@@ -261,10 +261,10 @@ int main(int argc, char * argv[])
    if(whiten)
    {
       std::cout << timestamp() << " ZCA whitening data" << std::endl;
-      rpca.zca_whiten();
+      rpca.zca_whiten(transpose);
       std::cout << timestamp() << " Writing whitened data to file "
 	 << whitefile << std::endl;
-      save(whitefile.c_str(), rpca.W);
+      save_text(whitefile.c_str(), rpca.W);
    }
 
    std::cout << timestamp() << " Goodbye!" << std::endl;
