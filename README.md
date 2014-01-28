@@ -64,16 +64,15 @@ To install:
    make
    ```
 
-Note: the compiler will first look for a local directory named Eigen. It
-should contain the file signature_of_eigen3_matrix_library. Next, it will
-look for the directory /usr/include/eigen3 (Debian/Ubuntu location for Eigen),
-although those available through apt-get tend to be older versions.
+Note: the compilation process will first look for a local directory named
+Eigen. It should contain the file signature_of_eigen3_matrix_library. Next,
+it will look for the directory /usr/include/eigen3 (Debian/Ubuntu location
+for Eigen), although those available through apt-get tend to be older versions.
 
 First thin the data by LD (highly recommend plink2 for this):
    ```
    plink --bfile data --indep-pairwise 1000 50 0.05
-   plink --bfile data --extract plink.prune.in --make-bed --out data_pruned
-   --exclude exclusion_regions.txt
+   plink --bfile data --extract plink.prune.in --make-bed --out data_pruned --exclude exclusion_regions.txt
    ```
 where exclusion_regions.txt contains:
    ```
