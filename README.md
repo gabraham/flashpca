@@ -5,7 +5,7 @@ flashpca performs fast principal component analysis (PCA) of single nucleotide
 polymorphism (SNP) data, similar to smartpca from EIGENSOFT
 (http://www.hsph.harvard.edu/alkes-price/software/) and shellfish
 (https://github.com/dandavison/shellfish). flashpca is based on the randomized
-PCA algorithm of Halko et al. 2011.
+PCA algorithm of Halko et al. 2011 (http://arxiv.org/abs/1007.5510).
 
 Main features:
 
