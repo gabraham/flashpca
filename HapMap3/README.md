@@ -19,3 +19,11 @@ The data was then LD-thinned with PLINK using
    --indep-pairwise 1000 10 0.02
    ```
 
+Scripts
+-------
+
+run.sh: runs flashpca, shellfish, and smartpca on the data
+
+plot.R: runs R prcomp on the data and plots the results for HapMap3 (requires
+ggplot2 and plink2R, https://github.com/gabraham/plink2R)
+
