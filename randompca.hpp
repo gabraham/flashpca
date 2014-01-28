@@ -3,6 +3,10 @@
 #include <Eigen/QR>
 #include <Eigen/SVD>
 
+#include <boost/random/mersenne_twister.hpp>
+#include <boost/random/normal_distribution.hpp>
+#include <boost/random/variate_generator.hpp>
+
 using namespace Eigen;
 
 #define METHOD_EIGEN 1
@@ -15,11 +19,12 @@ class RandomPCA {
       VectorXd d;
 
       int stand_method;
+      long seed;
 
       void pca(MatrixXd &X,
 	    int method, bool transpose,
 	    unsigned int ndim, unsigned int nextra,
-	    unsigned int maxiter, double tol);
+	    unsigned int maxiter, double tol, long seed);
       void zca_whiten(bool transpose);
 };
 

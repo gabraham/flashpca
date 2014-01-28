@@ -2,47 +2,18 @@
 #include "randompca.hpp"
 #include "util.hpp"
 
-// TODO: old redsvd code, replace
-void sampleTwoGaussian(double& f1, double& f2)
+MatrixXd make_gaussian(unsigned int rows, unsigned int cols, long seed)
 {
-   double v1 = (double)(rand() + 1.f) / ((double)RAND_MAX+2.f);
-   double v2 = (double)(rand() + 1.f) / ((double)RAND_MAX+2.f);
-   double len = sqrt(-2.f * log(v1));
-   f1 = len * cos(2.f * M_PI * v2);
-   f2 = len * sin(2.f * M_PI * v2);
-}
-
-// TODO: old redsvd code, replace
-void sampleGaussianMat(MatrixXd& mat)
-{
-   for(int i = 0; i < mat.rows(); ++i)
-   {
-      int j = 0;
-      for( ; j+1 < mat.cols(); j += 2)
-      {
-	 double f1, f2;
-	 sampleTwoGaussian(f1, f2);
-	 mat(i,j  ) = f1;
-	 mat(i,j+1) = f2;
-      }
-      for(; j < mat.cols(); j ++)
-      {
-	 double f1, f2;
-	 sampleTwoGaussian(f1, f2);
-	 mat(i, j)  = f1;
-      }
-   }
-} 
-
-MatrixXd make_gaussian(unsigned int rows, unsigned int cols)
-{
-   //boost::mt19937 rng;    // The uniform pseudo-random algorithm
-   //boost::normal_distribution<double> norm;  // The gaussian combinator
-   //boost::variate_generator<boost::mt19937&,boost::normal_distribution<double> >
-   //    randN; // The 0-mean unit-variance normal generator
+   boost::mt19937 rng;
+   rng.seed(seed);
+   boost::normal_distribution<double> nrm;
+   boost::variate_generator<boost::mt19937&,
+      boost::normal_distribution<double> > rand(rng, nrm);
 
    MatrixXd G(rows, cols);
-   sampleGaussianMat(G);
+   for(unsigned int i = 0 ; i < rows ; i++)
+      for(unsigned int j = 0 ; j < cols ; j++)
+	 G(i, j) = rand();
    return G;
 }
 
@@ -94,7 +65,8 @@ void pca_small(MatrixXd &B, int method, MatrixXd& U, VectorXd &d)
 }
 
 void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
-   unsigned int ndim, unsigned int nextra, unsigned int maxiter, double tol)
+   unsigned int ndim, unsigned int nextra, unsigned int maxiter, double tol,
+   long seed)
 {
    unsigned int N;
    std::cout << timestamp() << " Transpose: " 
@@ -111,7 +83,7 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
    }
 
    unsigned int total_dim = ndim + nextra;
-   MatrixXd R = make_gaussian(M.cols(), total_dim);
+   MatrixXd R = make_gaussian(M.cols(), total_dim, seed);
    MatrixXd Y = M * R;
    std::cout << timestamp() << " dim(Y): " << dim(Y) << std::endl;
    normalize(Y);

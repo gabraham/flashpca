@@ -3,10 +3,6 @@
 //#include <Eigen/Dense>
 //#include <Eigen/Eigen>
 
-#include <boost/random/mersenne_twister.hpp>
-#include <boost/random/normal_distribution.hpp>
-#include <boost/random/variate_generator.hpp>
-
 #include <boost/program_options.hpp>
 
 #include <string>
@@ -237,7 +233,7 @@ int main(int argc, char * argv[])
    // Do the PCA
    std::cout << timestamp() << " PCA begin" << std::endl;
    
-   rpca.pca(data.X, method, transpose, n_dim, n_extra, maxiter, tol);
+   rpca.pca(data.X, method, transpose, n_dim, n_extra, maxiter, tol, seed);
 
    std::cout << timestamp() << " PCA done" << std::endl;
 
