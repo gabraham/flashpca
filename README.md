@@ -69,19 +69,33 @@ should contain the file signature_of_eigen3_matrix_library. Next, it will
 look for the directory /usr/include/eigen3 (Debian/Ubuntu location for Eigen),
 although those available through apt-get tend to be older versions.
 
-To run on a PLINK fileset named data (data.bed/data.bim/data.fam):
+First thin the data by LD (highly recommend plink2 for this):
    ```
-   ./flashpca --bfile data
+   plink --bfile data --indep-pairwise 1000 50 0.05
+   plink --bfile data --extract plink.prune.in --make-bed --out data_pruned
+   --exclude exclusion_regions.txt
+   ```
+where exclusion_regions.txt contains:
+   ```
+   5 44000000 51500000 r1
+   6 25000000 33500000 r2
+   8 8000000 12000000 r3
+   11 45000000 57000000 r4
    ```
 
-To run in multi-threaded mode with 8 threads:
+To run on the pruned dataset:
    ```
-   ./flashpca --bfile data --numthreads 8
+   ./flashpca --bfile data_pruned
    ```
 
-To whiten the genotypes and write them out (caution: can be a large file):
+We highly recommend using multi-threading, to run in multi-threaded mode with 8 threads:
    ```
-   ./flashpca --bfile data --whiten
+   ./flashpca --bfile data_pruned --numthreads 8
+   ```
+
+To whiten the genotypes and write them out to whitened.txt (caution: can be a large file):
+   ```
+   ./flashpca --bfile data_pruned --whiten
    ```
 
 For more options:
