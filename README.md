@@ -21,7 +21,8 @@ Gad Abraham, gad.abraham@unimelb.edu.au
 
 Citation
 --------
-``Fast Principal Component Analysis of Large-Scale Genome-Wide Data''
+G. Abraham and M. Inouye, ``Fast Principal Component Analysis of Large-Scale
+Genome-Wide Data'', submitted (2014).
 
 License
 -------
