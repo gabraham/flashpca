@@ -106,6 +106,6 @@ For more options:
 LD-pruned HapMap3 example data
 ------------------------------
 
-See directory the [HapMap3](HapMap3/README.md) directory
+See the [HapMap3](HapMap3) directory
 
    
