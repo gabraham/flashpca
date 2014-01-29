@@ -2,7 +2,7 @@ HapMap3 data
 ============
 
 This dataset consists of 957 founders extracted from the HapMap3 phase iii data
-http://ftp.ncbi.nlm.nih.gov/hapmap/genotypes/2009-01_phaseIII/plink_format
+(http://ftp.ncbi.nlm.nih.gov/hapmap/genotypes/2009-01_phaseIII/plink_format)
 hapmap3_r2_b36_fwd.consensus.qc.poly.{bed,bim,fam}
 using PLINK options:
    ```
