@@ -54,14 +54,6 @@ x2 <- as.matrix(d2[, 1:10])
 x3 <- t(as.matrix(d3))[, 1:10]
 x4 <- pr$x[, 1:10]
 
-#u <- as.matrix(read.table("eigenvectors.txt", header=FALSE))
-#d <- scan("eigenvalues.txt")
-
-#ud <- u %*% diag(d)
-#mean((ud[,1:10] - x2)^2)
-
-#mean(((u[,1] - -x3[,1])^2))
-
 max(abs(x1))
 max(abs(x2))
 max(abs(x3))
@@ -94,7 +86,7 @@ dev.off()
 # Figure 1a
 pdf("hapmap3.pdf", width=5.5, height=5.5)
 plot(x2[, 1:2], col=pop, pch=as.integer(pop))
-legend(x=min(x2[,1]), y=-0.65,
+legend(x=min(x2[,1]), y=1.6,
    legend=levels(pop), col=1:length(levels(pop)),
    lwd=3, lty=1, pch=1:length(levels(pop)), ncol=2,
    box.lty=0)

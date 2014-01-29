@@ -103,4 +103,9 @@ For more options:
    ./flashpca --help
    ```
 
+LD-pruned HapMap3 example data
+------------------------------
 
+See directory the [HapMap3](HapMap3/README.md) directory
+
+   
