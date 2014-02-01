@@ -39,8 +39,12 @@ Portions of this code are based on SparSNP
 (https://github.com/gabraham/SparSNP), Copyright (C) 2011-2012 Gad Abraham
 and National ICT Australia (http://www.NICTA.com.au).
 
-Requirements
-------------
+Download statically linked version
+----------------------------------
+   [flashpca_x86-64](flashpca_x86-64) forr linux 2.6.15 and higher
+
+Requirements for building from source
+-------------------------------------
 
    * Linux OS (might work on Mac OSX), 64-bit
    * g++ compiler
