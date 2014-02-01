@@ -13,7 +13,7 @@ Data::Data(long seed)
 
 Data::~Data()
 {
-   geno_fin.close();
+   //geno_fin.close();
 }
 
 /* 

@@ -41,7 +41,8 @@ and National ICT Australia (http://www.NICTA.com.au).
 
 Download statically linked version
 ----------------------------------
-   [flashpca_x86-64](flashpca_x86-64) for linux 2.6.15 and higher
+   [flashpca_x86-64.gz](flashpca_x86-64.gz) for linux 2.6.15 and higher,
+   gunzip before use
 
 Requirements for building from source
 -------------------------------------
