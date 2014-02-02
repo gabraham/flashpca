@@ -53,8 +53,7 @@ System requirements
 -------------------
 * 64-bit linux.
 * For large datasets you'll need high amounts of RAM, e.g. for 15,000
-   individuals you'll need about 14Gb and for 150,000
-   individuals you'll need about 170Gb.
+   individuals you'll need about 14Gb RAM.
 
 Requirements for building from source
 -------------------------------------
