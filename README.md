@@ -42,8 +42,19 @@ and National ICT Australia (http://www.NICTA.com.au).
 
 Download statically linked version
 ----------------------------------
-   [flashpca_x86-64.gz](flashpca_x86-64.gz) for linux 2.6.15 and higher,
-   gunzip before use
+[flashpca_x86-64.gz](flashpca_x86-64.gz) for linux 2.6.15 and higher,
+   gunzip before use.
+   
+Note: currently OpenMP doesn't work correctly for statically linked version,
+so will run at single-thread speed. Compile from source to get the
+multiple-thread support.
+
+System requirements
+-------------------
+* 64-bit linux.
+* For large datasets you'll need high amounts of RAM, e.g. for 15,000
+   individuals you'll need about 14Gb and for 150,000
+   individuals you'll need about 170Gb.
 
 Requirements for building from source
 -------------------------------------
