@@ -98,6 +98,8 @@ where exclusion_regions.txt contains:
    8 8000000 12000000 r3
    11 45000000 57000000 r4
    ```
+(You may need to change the --indep-pairwise parameters to get a suitable
+number of SNPs for you dataset, 10,000-50,000 is usually enough.)
 
 To run on the pruned dataset:
    ```
