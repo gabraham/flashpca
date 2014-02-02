@@ -45,9 +45,10 @@ Download statically linked version
 [flashpca_x86-64.gz](flashpca_x86-64.gz) for linux 2.6.15 and higher,
    gunzip before use.
    
-Note: currently OpenMP doesn't work correctly for statically linked version,
+~~Note: currently OpenMP doesn't work correctly for statically linked version,
 so will run at single-thread speed. Compile from source to get the
-multiple-thread support.
+multiple-thread support.~~ (update: solution at
+http://stackoverflow.com/questions/11165338/segfault-when-using-static-and-fopenmp-in-gfortran)
 
 System requirements
 -------------------
