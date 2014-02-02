@@ -27,7 +27,7 @@ EOF
 
 time /software/EIG4.2/src/smartpca -p ${DAT}.par > eigen.log
 
-time ~/Software/shellfish/shellfish_gad.py \
+time /software/shellfish/shellfish.py \
    --file ${DAT} --pca --numpcs 10 -v > shellfish.log
 
 Rscript plot.R
