@@ -64,6 +64,28 @@ void pca_small(MatrixXd &B, int method, MatrixXd& U, VectorXd &d)
    }
 }
 
+MatrixXd rbf_kernel(MatrixXd& X, double sigma)
+{
+   MatrixXd K = MatrixXd::Zero(X.rows(), X.rows());
+   unsigned int n = X.rows();
+   for(unsigned int i = 0 ; i < n ; i++)
+   {
+      K(i, i) = 1;
+      for(unsigned int j = 1 ; j < i ; j++)
+      {
+	 double z = (X.row(i).array() - X.row(j).array()).sum();
+	 K(i, j) = K(j, i) = exp(-z / sigma);
+      }
+   }
+
+   VectorXd m = VectorXd::Ones(n);
+   MatrixXd M = m * m.transpose();
+   M = M.array() / n;
+   MatrixXd I = m.asDiagonal();
+   K = (I - M) * K * (I - M);
+   return K;
+}
+
 void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
    unsigned int ndim, unsigned int nextra, unsigned int maxiter, double tol,
    long seed)
@@ -90,13 +112,15 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
    MatrixXd Yn;
 
    std::cout << timestamp() << " dim(M): " << dim(M) << std::endl;
-   MatrixXd MMT = M * M.transpose();
-   std::cout << timestamp() << " dim(MMT): " << dim(MMT) << std::endl;
+   //MatrixXd K = M * M.transpose();
+   // Can only work if data is not transposed!
+   MatrixXd K = rbf_kernel(M, 0.001);
+   std::cout << timestamp() << " dim(K): " << dim(K) << std::endl;
 
    for(unsigned int iter = 0 ; iter < maxiter ; iter++)
    {
       std::cout << timestamp() << " iter " << iter << " ";
-      Yn.noalias() = MMT * Y;
+      Yn.noalias() = K * Y;
       normalize(Yn);
       double diff =  (Y -  Yn).array().square().sum() / Y.size(); 
       std::cout << diff << std::endl;
