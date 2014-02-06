@@ -42,19 +42,25 @@ and National ICT Australia (http://www.NICTA.com.au).
 
 Download statically linked version
 ----------------------------------
+
+Note: we recommend compiling from source for best performance.
+
 [flashpca_x86-64.gz](flashpca_x86-64.gz) for linux 2.6.15 and higher,
    gunzip before use.
    
 ~~Note: currently OpenMP doesn't work correctly for statically linked version,
 so will run at single-thread speed. Compile from source to get the
-multiple-thread support.~~ (update: solution at
+multiple-thread support.~~ (update: fixed, solution at
 http://stackoverflow.com/questions/11165338/segfault-when-using-static-and-fopenmp-in-gfortran)
 
 System requirements
 -------------------
 * 64-bit linux.
 * For large datasets you'll need high amounts of RAM, e.g. for 15,000
-   individuals you'll need about 14Gb RAM.
+   individuals (43K SNPs) you'll need about 14Gb RAM, for 150,00 individuals
+   (43K SNPs) you'll need about 145Gb RAM (estimated using
+   https://github.com/jhclark/memusg)
+   (we are working on a version which will use less RAM).
 
 Requirements for building from source
 -------------------------------------
