@@ -56,7 +56,7 @@ http://stackoverflow.com/questions/11165338/segfault-when-using-static-and-fopen
 System requirements
 -------------------
 * 64-bit linux.
-* For large datasets you'll need high amounts of RAM, e.g. for 15,000
+* For large datasets you'll need large amounts of RAM, e.g. for 15,000
    individuals (43K SNPs) you'll need about 14Gb RAM, for 150,00 individuals
    (43K SNPs) you'll need about 145Gb RAM (estimated using
    https://github.com/jhclark/memusg)
