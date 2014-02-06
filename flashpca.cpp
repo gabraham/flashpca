@@ -48,6 +48,7 @@ int main(int argc, char * argv[])
       ("maxiter", po::value<int>(), "maximum number of randomized PCA iterations")
       ("tol", po::value<double>(), "tolerance for randomized PCA iterations")
       ("transpose", "force a transpose of the data")
+      ("sigma", po::value<double>(), "sigma for RBF kernel")
    ;
 
    po::variables_map vm;
@@ -200,6 +201,18 @@ int main(int argc, char * argv[])
       }
    }
 
+   double sigma = 1;
+   if(vm.count("sigma"))
+   {
+      sigma = vm["sigma"].as<double>();
+      if(sigma <= 0)
+      {
+	 std::cerr << "Error: --sigma can't be zero or negative"
+	    << std::endl;
+	 return EXIT_FAILURE;
+      }
+   }
+
    ////////////////////////////////////////////////////////////////////////////////
    // End command line parsing
       
@@ -233,7 +246,8 @@ int main(int argc, char * argv[])
    // Do the PCA
    std::cout << timestamp() << " PCA begin" << std::endl;
    
-   rpca.pca(data.X, method, transpose, n_dim, n_extra, maxiter, tol, seed);
+   rpca.pca(data.X, method, transpose, n_dim, n_extra, maxiter, tol, seed,
+	 sigma);
 
    std::cout << timestamp() << " PCA done" << std::endl;
 

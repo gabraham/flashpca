@@ -68,27 +68,50 @@ MatrixXd rbf_kernel(MatrixXd& X, double sigma)
 {
    MatrixXd K = MatrixXd::Zero(X.rows(), X.rows());
    unsigned int n = X.rows();
+
    for(unsigned int i = 0 ; i < n ; i++)
    {
-      K(i, i) = 1;
+      K(i, i) = 1; // exp(0)
       for(unsigned int j = 1 ; j < i ; j++)
       {
-	 double z = (X.row(i).array() - X.row(j).array()).sum();
+	 double z = (X.row(i).array() - X.row(j).array()).square().sum();
 	 K(i, j) = K(j, i) = exp(-z / sigma);
       }
    }
 
    VectorXd m = VectorXd::Ones(n);
-   MatrixXd M = m * m.transpose();
-   M = M.array() / n;
+   MatrixXd M = m * m.transpose() / n;
    MatrixXd I = m.asDiagonal();
    K = (I - M) * K * (I - M);
    return K;
 }
 
+//MatrixXd rbf_kernel(MatrixXd& X)
+//{
+//   MatrixXd K = MatrixXd::Zero(X.rows(), X.rows());
+//   unsigned int n = X.rows();
+//   for(unsigned int i = 0 ; i < n ; i++)
+//   {
+//      K(i, i) = 1; // exp(0)
+//      for(unsigned int j = 1 ; j < i ; j++)
+//      {
+//	 double z = (X.row(i).array() - X.row(j).array()).square().sum();
+//	 K(i, j) = K(j, i) = z;
+//      }
+//   }
+//
+//   K.triangularView(Upper).data();
+//
+//   VectorXd m = VectorXd::Ones(n);
+//   MatrixXd M = m * m.transpose() / n;
+//   MatrixXd I = m.asDiagonal();
+//   K = (I - M) * K * (I - M);
+//   return K;
+//}
+
 void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
    unsigned int ndim, unsigned int nextra, unsigned int maxiter, double tol,
-   long seed)
+   long seed, double sigma)
 {
    unsigned int N;
    std::cout << timestamp() << " Transpose: " 
@@ -114,7 +137,8 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
    std::cout << timestamp() << " dim(M): " << dim(M) << std::endl;
    //MatrixXd K = M * M.transpose();
    // Can only work if data is not transposed!
-   MatrixXd K = rbf_kernel(M, 0.001);
+   MatrixXd K = rbf_kernel(M, sigma);
+   save_text("K.txt", K);
    std::cout << timestamp() << " dim(K): " << dim(K) << std::endl;
 
    for(unsigned int iter = 0 ; iter < maxiter ; iter++)

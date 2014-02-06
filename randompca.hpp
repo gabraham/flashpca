@@ -24,7 +24,7 @@ class RandomPCA {
       void pca(MatrixXd &X,
 	    int method, bool transpose,
 	    unsigned int ndim, unsigned int nextra,
-	    unsigned int maxiter, double tol, long seed);
+	    unsigned int maxiter, double tol, long seed, double sigma);
       void zca_whiten(bool transpose);
 };
 
