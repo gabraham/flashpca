@@ -12,6 +12,9 @@ using namespace Eigen;
 #define METHOD_EIGEN 1
 #define METHOD_SVD 2
 
+#define KERNEL_LINEAR 1
+#define KERNEL_RBF 2
+
 class RandomPCA {
    public:
       MatrixXd M;
@@ -24,7 +27,8 @@ class RandomPCA {
       void pca(MatrixXd &X,
 	    int method, bool transpose,
 	    unsigned int ndim, unsigned int nextra,
-	    unsigned int maxiter, double tol, long seed, double sigma);
+	    unsigned int maxiter, double tol, long seed,
+	    int kernel, double sigma);
       void zca_whiten(bool transpose);
 };
 

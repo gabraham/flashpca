@@ -64,11 +64,25 @@ void pca_small(MatrixXd &B, int method, MatrixXd& U, VectorXd &d)
    }
 }
 
-MatrixXd rbf_kernel(MatrixXd& X, double sigma)
+// Compute median of pairwise distances on sample of size n from the matrix X
+double median_dist(MatrixXd& X, unsigned int n, long seed)
+{
+   boost::mt19937 rng;
+   rng.seed(seed);
+   boost::uniform_int_distribution<> randi(1, X.rows()); 
+
+   return 0;
+}
+
+MatrixXd rbf_kernel(MatrixXd& X, const double sigma)
 {
    MatrixXd K = MatrixXd::Zero(X.rows(), X.rows());
    unsigned int n = X.rows();
+   int nt = nbThreads();
 
+   setNbThreads(0);
+
+   #pragma omp parallel for shared(K, X)
    for(unsigned int i = 0 ; i < n ; i++)
    {
       K(i, i) = 1; // exp(0)
@@ -78,6 +92,8 @@ MatrixXd rbf_kernel(MatrixXd& X, double sigma)
 	 K(i, j) = K(j, i) = exp(-z / sigma);
       }
    }
+
+   setNbThreads(nt);
 
    VectorXd m = VectorXd::Ones(n);
    MatrixXd M = m * m.transpose() / n;
@@ -111,11 +127,20 @@ MatrixXd rbf_kernel(MatrixXd& X, double sigma)
 
 void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
    unsigned int ndim, unsigned int nextra, unsigned int maxiter, double tol,
-   long seed, double sigma)
+   long seed, int kernel, double sigma)
 {
    unsigned int N;
+
+   if(kernel != KERNEL_LINEAR)
+   {
+      transpose = false;
+      std::cout << timestamp()
+	 << " Kernel not linear, can't transpose" << std::endl;
+   }
+
    std::cout << timestamp() << " Transpose: " 
       << (transpose ? "yes" : "no") << std::endl;
+
    if(transpose)
    {
       M = standardize_transpose(X, true, stand_method);
@@ -135,10 +160,20 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
    MatrixXd Yn;
 
    std::cout << timestamp() << " dim(M): " << dim(M) << std::endl;
-   //MatrixXd K = M * M.transpose();
-   // Can only work if data is not transposed!
-   MatrixXd K = rbf_kernel(M, sigma);
-   save_text("K.txt", K);
+   MatrixXd K; 
+   if(kernel == KERNEL_RBF)
+   {
+      std::cout << timestamp() << " Using RBF kernel with sigma="
+	 << sigma << std::endl;
+      K.noalias() = rbf_kernel(M, sigma);
+   }
+   else
+   {
+      std::cout << timestamp() << " Using linear kernel" << std::endl;
+      K.noalias() = M * M.transpose();
+   }
+
+   //save_text("K.txt", K);
    std::cout << timestamp() << " dim(K): " << dim(K) << std::endl;
 
    for(unsigned int iter = 0 ; iter < maxiter ; iter++)

@@ -48,6 +48,7 @@ int main(int argc, char * argv[])
       ("maxiter", po::value<int>(), "maximum number of randomized PCA iterations")
       ("tol", po::value<double>(), "tolerance for randomized PCA iterations")
       ("transpose", "force a transpose of the data")
+      ("kernel", po::value<std::string>(), "kernel type (rbf/linear)")
       ("sigma", po::value<double>(), "sigma for RBF kernel")
    ;
 
@@ -201,6 +202,21 @@ int main(int argc, char * argv[])
       }
    }
 
+   int kernel = KERNEL_LINEAR;
+   if(vm.count("kernel"))
+   {
+      std::string s = vm["kernel"].as<std::string>();
+      if(s == "rbf")
+	 kernel = KERNEL_RBF;
+      else if(s == "linear")
+	 kernel = KERNEL_LINEAR;
+      else
+      {
+	 std::cerr << "Error: unknown kernel " << s << std::endl;
+	 return EXIT_FAILURE;
+      }
+   }
+
    double sigma = 1;
    if(vm.count("sigma"))
    {
@@ -218,7 +234,8 @@ int main(int argc, char * argv[])
       
    std::cout << timestamp() << " Start flashpca (git version " << GITVER 
       << ")" << std::endl;
-   setNbThreads(num_threads);
+   //setNbThreads(num_threads);
+   omp_set_num_threads(num_threads);
    std::cout << timestamp() << " Using " << num_threads 
       << " OpenMP threads" << std::endl;
 
@@ -246,8 +263,8 @@ int main(int argc, char * argv[])
    // Do the PCA
    std::cout << timestamp() << " PCA begin" << std::endl;
    
-   rpca.pca(data.X, method, transpose, n_dim, n_extra, maxiter, tol, seed,
-	 sigma);
+   rpca.pca(data.X, method, transpose, n_dim, n_extra, maxiter,
+      tol, seed, kernel, sigma);
 
    std::cout << timestamp() << " PCA done" << std::endl;
 
