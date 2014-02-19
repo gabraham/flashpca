@@ -4,11 +4,11 @@
 
 MatrixXd make_gaussian(unsigned int rows, unsigned int cols, long seed)
 {
-   boost::mt19937 rng;
+   boost::random::mt19937 rng;
    rng.seed(seed);
-   boost::normal_distribution<double> nrm;
-   boost::variate_generator<boost::mt19937&,
-      boost::normal_distribution<double> > rand(rng, nrm);
+   boost::random::normal_distribution<double> nrm;
+   boost::random::variate_generator<boost::random::mt19937&,
+      boost::random::normal_distribution<double> > rand(rng, nrm);
 
    MatrixXd G(rows, cols);
    for(unsigned int i = 0 ; i < rows ; i++)
@@ -65,13 +65,40 @@ void pca_small(MatrixXd &B, int method, MatrixXd& U, VectorXd &d)
 }
 
 // Compute median of pairwise distances on sample of size n from the matrix X
+// We're sampling with replacement
+// Based on http://www.machinedlearnings.com/2013/08/cosplay.html
 double median_dist(MatrixXd& X, unsigned int n, long seed)
 {
-   boost::mt19937 rng;
+   boost::random::mt19937 rng;
    rng.seed(seed);
-   boost::uniform_int_distribution<> randi(1, X.rows()); 
+   boost::random::uniform_int_distribution<> dist(0, X.rows() - 1);
 
-   return 0;
+   std::cout << timestamp() << 
+      " Computing median Euclidean distance (" << n << " samples)" <<
+      std::endl;
+
+   MatrixXd X2(n, X.cols());
+   for(unsigned int i = 0 ; i < n ; i++)
+      X2.row(i) = X.row(dist(rng));
+
+   VectorXd norms = X2.array().square().rowwise().sum();
+   VectorXd ones = VectorXd::Ones(n);
+   MatrixXd M = norms * ones.transpose();
+   MatrixXd D = M + M.transpose() - 2 * X2 * X2.transpose();
+
+   unsigned int m = D.size();
+   double *d = D.data();
+   std::sort(d, d + m); 
+   double med;
+   if(m % 2 == 0)
+      med = (d[m / 2 - 1] + d[m / 2]) / 2;
+   else
+      med = d[m / 2];
+
+   std::cout << timestamp() << " Median Euclidean distance: "
+      << med << std::endl;
+
+   return med;
 }
 
 MatrixXd rbf_kernel(MatrixXd& X, const double sigma)
@@ -79,51 +106,28 @@ MatrixXd rbf_kernel(MatrixXd& X, const double sigma)
    MatrixXd K = MatrixXd::Zero(X.rows(), X.rows());
    unsigned int n = X.rows();
    int nt = nbThreads();
-
    setNbThreads(0);
 
-   #pragma omp parallel for shared(K, X)
+   // # pragma omp parallel for shared(K, X)
    for(unsigned int i = 0 ; i < n ; i++)
    {
       K(i, i) = 1; // exp(0)
-      for(unsigned int j = 1 ; j < i ; j++)
+      for(unsigned int j = 0 ; j < i ; j++)
       {
 	 double z = (X.row(i).array() - X.row(j).array()).square().sum();
-	 K(i, j) = K(j, i) = exp(-z / sigma);
+	 K(i, j) = K(j, i) = exp(-z * sigma);
       }
    }
 
    setNbThreads(nt);
 
-   VectorXd m = VectorXd::Ones(n);
-   MatrixXd M = m * m.transpose() / n;
-   MatrixXd I = m.asDiagonal();
-   K = (I - M) * K * (I - M);
+   //VectorXd m = VectorXd::Ones(n);
+   //MatrixXd M = m * m.transpose() / n;
+   //MatrixXd I = m.asDiagonal();
+   //std::cout << timestamp() << " Centering kernel" << std::endl;
+   //K = (I - M) * K * (I - M);
    return K;
 }
-
-//MatrixXd rbf_kernel(MatrixXd& X)
-//{
-//   MatrixXd K = MatrixXd::Zero(X.rows(), X.rows());
-//   unsigned int n = X.rows();
-//   for(unsigned int i = 0 ; i < n ; i++)
-//   {
-//      K(i, i) = 1; // exp(0)
-//      for(unsigned int j = 1 ; j < i ; j++)
-//      {
-//	 double z = (X.row(i).array() - X.row(j).array()).square().sum();
-//	 K(i, j) = K(j, i) = z;
-//      }
-//   }
-//
-//   K.triangularView(Upper).data();
-//
-//   VectorXd m = VectorXd::Ones(n);
-//   MatrixXd M = m * m.transpose() / n;
-//   MatrixXd I = m.asDiagonal();
-//   K = (I - M) * K * (I - M);
-//   return K;
-//}
 
 void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
    unsigned int ndim, unsigned int nextra, unsigned int maxiter, double tol,
@@ -163,6 +167,12 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
    MatrixXd K; 
    if(kernel == KERNEL_RBF)
    {
+      if(sigma == 0)
+      {
+	 unsigned int med_samples = fminl(2000, N);
+      	 double med = median_dist(M, med_samples, seed);
+      	 sigma = 1.0 / sqrt(med);
+      }
       std::cout << timestamp() << " Using RBF kernel with sigma="
 	 << sigma << std::endl;
       K.noalias() = rbf_kernel(M, sigma);
@@ -173,8 +183,9 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
       K.noalias() = M * M.transpose();
    }
 
-   //save_text("K.txt", K);
    std::cout << timestamp() << " dim(K): " << dim(K) << std::endl;
+   std::cout << timestamp() << " saving K" << std::endl;
+   save_text("K.txt", K);
 
    for(unsigned int iter = 0 ; iter < maxiter ; iter++)
    {

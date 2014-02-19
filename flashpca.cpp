@@ -217,7 +217,7 @@ int main(int argc, char * argv[])
       }
    }
 
-   double sigma = 1;
+   double sigma = 0;
    if(vm.count("sigma"))
    {
       sigma = vm["sigma"].as<double>();

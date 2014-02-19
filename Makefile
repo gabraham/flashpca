@@ -28,7 +28,7 @@ BOOST = -lboost_system-mt \
    -lboost_program_options
  
 debug: LDFLAGS = $(BOOST)
-debug: CXXFLAGS += -O0 -ggdb3 -DGITVER=\"$(GITVER)\"
+debug: CXXFLAGS += -O0 -ggdb3 -DGITVER=\"$(GITVER)\" -fopenmp
 debug: $(OBJ)
 	$(CXX) $(CXXFLAGS) -o flashpca $^ $(LDFLAGS)
 
