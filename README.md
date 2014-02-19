@@ -68,8 +68,9 @@ Requirements for building from source
    * Linux OS (might work on Mac OSX), 64-bit
    * g++ compiler
    * Eigen (http://eigen.tuxfamily.org), v3.2 or higher
-   * Boost (http://www.boost.org), specifically boost_system-mt,
-      boost_iostreams-mt, boost_filesystem-mt, boost_program_options
+   * Boost 1.48 (http://www.boost.org), specifically boost_system-mt,
+      boost_iostreams-mt, boost_filesystem-mt, boost_program_options. Note:
+      version 1.55 is *not* compatible currently.
    * libgomp for openmp support
    * Recommended: plink2 (https://www.cog-genomics.org/plink2) for SNP
       thinning
