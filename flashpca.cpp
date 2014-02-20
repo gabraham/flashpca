@@ -37,7 +37,7 @@ int main(int argc, char * argv[])
       ("ndim", po::value<int>(), "number of PCs to output")
       ("nextra", po::value<int>(),
 	 "number of extra dimensions to use in randomized PCA")
-      ("stand", po::value<std::string>(), "standardization method")
+      ("stand", po::value<std::string>(), "standardization method (none/binom/sd/center")
       ("method", po::value<std::string>(), "PCA method (svd/eigen)")
       ("outpc", po::value<std::string>(), "PC output file")
       ("outvec", po::value<std::string>(), "Eigenvector output file")
@@ -50,6 +50,9 @@ int main(int argc, char * argv[])
       ("transpose", "force a transpose of the data")
       ("kernel", po::value<std::string>(), "kernel type (rbf/linear)")
       ("sigma", po::value<double>(), "sigma for RBF kernel")
+      ("rbfcenter", po::value<std::string>(), "center the RBF kernel (yes/no)")
+      ("rbfsample", po::value<int>(), "sample size for estimating RBF kernel width")
+      ("savekernel", "save the kernel as text file")
    ;
 
    po::variables_map vm;
@@ -134,6 +137,10 @@ int main(int argc, char * argv[])
 	 stand_method = STANDARDIZE_BINOM;
       else if(m == "sd")
 	 stand_method = STANDARDIZE_SD;
+      else if(m == "center")
+	 stand_method = STANDARDIZE_CENTER;
+      else if(m == "none")
+	 stand_method = STANDARDIZE_NONE;
       else
       {
 	 std::cerr << "Error: unknown standardization method (--stand): "
@@ -229,6 +236,35 @@ int main(int argc, char * argv[])
       }
    }
 
+   bool rbf_center = true;
+   if(vm.count("rbfcenter"))
+   {
+      std::string rc = vm["rbfcenter"].as<std::string>();
+      if(rc == "yes")
+	 rbf_center = true;
+      else if(rc == "no")
+	 rbf_center = false;
+      else
+      {
+	 std::cerr << "Error: --rbfcenter must be either 'yes' or 'no'" <<
+	    std::endl;
+	 return EXIT_FAILURE;
+      }
+   }
+
+   unsigned int rbf_sample = 1000;
+   if(vm.count("rbfsample"))
+   {
+      rbf_sample = vm["rbfsample"].as<int>();
+      if(rbf_sample <= 1)
+      {
+	 std::cerr << "Error: --rbfsample too small, must be >1" << std::endl;
+	 return EXIT_FAILURE;
+      }
+   }
+
+   bool save_kernel = vm.count("savekernel");
+
    ////////////////////////////////////////////////////////////////////////////////
    // End command line parsing
       
@@ -264,7 +300,7 @@ int main(int argc, char * argv[])
    std::cout << timestamp() << " PCA begin" << std::endl;
    
    rpca.pca(data.X, method, transpose, n_dim, n_extra, maxiter,
-      tol, seed, kernel, sigma);
+      tol, seed, kernel, sigma, rbf_center, rbf_sample, save_kernel);
 
    std::cout << timestamp() << " PCA done" << std::endl;
 

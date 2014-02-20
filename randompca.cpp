@@ -71,15 +71,30 @@ double median_dist(MatrixXd& X, unsigned int n, long seed)
 {
    boost::random::mt19937 rng;
    rng.seed(seed);
-   boost::random::uniform_int_distribution<> dist(0, X.rows() - 1);
+   boost::random::uniform_real_distribution<> dist(0, 1);
+   double prop = (double)X.rows() / n;
 
    std::cout << timestamp() << 
       " Computing median Euclidean distance (" << n << " samples)" <<
       std::endl;
 
    MatrixXd X2(n, X.cols());
-   for(unsigned int i = 0 ; i < n ; i++)
-      X2.row(i) = X.row(dist(rng));
+   if(n < X.rows()) 
+   {
+      std::cout << timestamp() << " Sampling" << std::endl;
+      // Sample n rows from X
+      for(unsigned int i = 0, k = 0 ; i < X.rows() ; i++)
+      {
+         if(dist(rng) < prop)
+         {
+            X2.row(k++) = X.row(i);
+            if(k == n)
+               break;
+         }
+      }
+   }
+   else
+      X2.noalias() = X;
 
    VectorXd norms = X2.array().square().rowwise().sum();
    VectorXd ones = VectorXd::Ones(n);
@@ -90,6 +105,7 @@ double median_dist(MatrixXd& X, unsigned int n, long seed)
    double *d = D.data();
    std::sort(d, d + m); 
    double med;
+
    if(m % 2 == 0)
       med = (d[m / 2 - 1] + d[m / 2]) / 2;
    else
@@ -101,37 +117,30 @@ double median_dist(MatrixXd& X, unsigned int n, long seed)
    return med;
 }
 
-MatrixXd rbf_kernel(MatrixXd& X, const double sigma)
+MatrixXd rbf_kernel(MatrixXd& X, const double sigma, bool rbf_center)
 {
-   MatrixXd K = MatrixXd::Zero(X.rows(), X.rows());
    unsigned int n = X.rows();
-   int nt = nbThreads();
-   setNbThreads(0);
+   VectorXd norms = X.array().square().rowwise().sum();
+   VectorXd ones = VectorXd::Ones(n);
+   MatrixXd R = norms * ones.transpose();
+   MatrixXd D = R + R.transpose() - 2 * X * X.transpose();
+   D = D.array() * -sigma;
+   MatrixXd K = D.array().exp();
 
-   // # pragma omp parallel for shared(K, X)
-   for(unsigned int i = 0 ; i < n ; i++)
+   if(rbf_center)
    {
-      K(i, i) = 1; // exp(0)
-      for(unsigned int j = 0 ; j < i ; j++)
-      {
-	 double z = (X.row(i).array() - X.row(j).array()).square().sum();
-	 K(i, j) = K(j, i) = exp(-z * sigma);
-      }
+      std::cout << timestamp() << " Centering RBF kernel" << std::endl;
+      MatrixXd M = ones * ones.transpose() / n;
+      MatrixXd I = ones.asDiagonal();
+      K = (I - M) * K * (I - M);
    }
-
-   setNbThreads(nt);
-
-   //VectorXd m = VectorXd::Ones(n);
-   //MatrixXd M = m * m.transpose() / n;
-   //MatrixXd I = m.asDiagonal();
-   //std::cout << timestamp() << " Centering kernel" << std::endl;
-   //K = (I - M) * K * (I - M);
    return K;
 }
 
 void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
    unsigned int ndim, unsigned int nextra, unsigned int maxiter, double tol,
-   long seed, int kernel, double sigma)
+   long seed, int kernel, double sigma, bool rbf_center,
+   unsigned int rbf_sample, bool save_kernel)
 {
    unsigned int N;
 
@@ -147,12 +156,14 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
 
    if(transpose)
    {
-      M = standardize_transpose(X, true, stand_method);
+      if(stand_method != STANDARDIZE_NONE)
+	 M = standardize_transpose(X, stand_method);
       N = X.cols();
    }
    else
    {
-      M = standardize(X, true, stand_method);
+      if(stand_method != STANDARDIZE_NONE)
+	 M = standardize(X, stand_method);
       N = X.rows();
    }
 
@@ -169,13 +180,13 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
    {
       if(sigma == 0)
       {
-	 unsigned int med_samples = fminl(2000, N);
+	 unsigned int med_samples = fminl(rbf_sample, N);
       	 double med = median_dist(M, med_samples, seed);
-      	 sigma = 1.0 / sqrt(med);
+      	 sigma = 1.0 / med; // note we don't take sqrt unlike others
       }
       std::cout << timestamp() << " Using RBF kernel with sigma="
 	 << sigma << std::endl;
-      K.noalias() = rbf_kernel(M, sigma);
+      K.noalias() = rbf_kernel(M, sigma, rbf_center);
    }
    else
    {
@@ -184,8 +195,11 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
    }
 
    std::cout << timestamp() << " dim(K): " << dim(K) << std::endl;
-   std::cout << timestamp() << " saving K" << std::endl;
-   save_text("K.txt", K);
+   if(save_kernel)
+   {
+      std::cout << timestamp() << " saving K" << std::endl;
+      save_text("kernel.txt", K);
+   }
 
    for(unsigned int iter = 0 ; iter < maxiter ; iter++)
    {

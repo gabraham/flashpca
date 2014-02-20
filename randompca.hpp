@@ -5,7 +5,7 @@
 
 #include <boost/random/mersenne_twister.hpp>
 #include <boost/random/normal_distribution.hpp>
-#include <boost/random/uniform_int_distribution.hpp>
+#include <boost/random/uniform_real_distribution.hpp>
 #include <boost/random/variate_generator.hpp>
 
 using namespace Eigen;
@@ -29,7 +29,8 @@ class RandomPCA {
 	    int method, bool transpose,
 	    unsigned int ndim, unsigned int nextra,
 	    unsigned int maxiter, double tol, long seed,
-	    int kernel, double sigma);
+	    int kernel, double sigma, bool rbf_center,
+	    unsigned int rbf_sample, bool save_kernel);
       void zca_whiten(bool transpose);
 };
 
