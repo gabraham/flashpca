@@ -37,7 +37,7 @@ int main(int argc, char * argv[])
       ("ndim", po::value<int>(), "number of PCs to output")
       ("nextra", po::value<int>(),
 	 "number of extra dimensions to use in randomized PCA")
-      ("stand", po::value<std::string>(), "standardization method")
+      ("stand", po::value<std::string>(), "standardization method (none/binom/sd/center")
       ("method", po::value<std::string>(), "PCA method (svd/eigen)")
       ("outpc", po::value<std::string>(), "PC output file")
       ("outvec", po::value<std::string>(), "Eigenvector output file")
@@ -48,6 +48,11 @@ int main(int argc, char * argv[])
       ("maxiter", po::value<int>(), "maximum number of randomized PCA iterations")
       ("tol", po::value<double>(), "tolerance for randomized PCA iterations")
       ("transpose", "force a transpose of the data")
+      ("kernel", po::value<std::string>(), "kernel type (rbf/linear)")
+      ("sigma", po::value<double>(), "sigma for RBF kernel")
+      ("rbfcenter", po::value<std::string>(), "center the RBF kernel (yes/no)")
+      ("rbfsample", po::value<int>(), "sample size for estimating RBF kernel width")
+      ("savekernel", "save the kernel as text file")
    ;
 
    po::variables_map vm;
@@ -132,6 +137,10 @@ int main(int argc, char * argv[])
 	 stand_method = STANDARDIZE_BINOM;
       else if(m == "sd")
 	 stand_method = STANDARDIZE_SD;
+      else if(m == "center")
+	 stand_method = STANDARDIZE_CENTER;
+      else if(m == "none")
+	 stand_method = STANDARDIZE_NONE;
       else
       {
 	 std::cerr << "Error: unknown standardization method (--stand): "
@@ -200,12 +209,69 @@ int main(int argc, char * argv[])
       }
    }
 
+   int kernel = KERNEL_LINEAR;
+   if(vm.count("kernel"))
+   {
+      std::string s = vm["kernel"].as<std::string>();
+      if(s == "rbf")
+	 kernel = KERNEL_RBF;
+      else if(s == "linear")
+	 kernel = KERNEL_LINEAR;
+      else
+      {
+	 std::cerr << "Error: unknown kernel " << s << std::endl;
+	 return EXIT_FAILURE;
+      }
+   }
+
+   double sigma = 0;
+   if(vm.count("sigma"))
+   {
+      sigma = vm["sigma"].as<double>();
+      if(sigma <= 0)
+      {
+	 std::cerr << "Error: --sigma can't be zero or negative"
+	    << std::endl;
+	 return EXIT_FAILURE;
+      }
+   }
+
+   bool rbf_center = true;
+   if(vm.count("rbfcenter"))
+   {
+      std::string rc = vm["rbfcenter"].as<std::string>();
+      if(rc == "yes")
+	 rbf_center = true;
+      else if(rc == "no")
+	 rbf_center = false;
+      else
+      {
+	 std::cerr << "Error: --rbfcenter must be either 'yes' or 'no'" <<
+	    std::endl;
+	 return EXIT_FAILURE;
+      }
+   }
+
+   unsigned int rbf_sample = 1000;
+   if(vm.count("rbfsample"))
+   {
+      rbf_sample = vm["rbfsample"].as<int>();
+      if(rbf_sample <= 1)
+      {
+	 std::cerr << "Error: --rbfsample too small, must be >1" << std::endl;
+	 return EXIT_FAILURE;
+      }
+   }
+
+   bool save_kernel = vm.count("savekernel");
+
    ////////////////////////////////////////////////////////////////////////////////
    // End command line parsing
       
    std::cout << timestamp() << " Start flashpca (git version " << GITVER 
       << ")" << std::endl;
-   setNbThreads(num_threads);
+   //setNbThreads(num_threads);
+   omp_set_num_threads(num_threads);
    std::cout << timestamp() << " Using " << num_threads 
       << " OpenMP threads" << std::endl;
 
@@ -233,7 +299,8 @@ int main(int argc, char * argv[])
    // Do the PCA
    std::cout << timestamp() << " PCA begin" << std::endl;
    
-   rpca.pca(data.X, method, transpose, n_dim, n_extra, maxiter, tol, seed);
+   rpca.pca(data.X, method, transpose, n_dim, n_extra, maxiter,
+      tol, seed, kernel, sigma, rbf_center, rbf_sample, save_kernel);
 
    std::cout << timestamp() << " PCA done" << std::endl;
 

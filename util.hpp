@@ -14,8 +14,10 @@
 #include <sys/time.h>
 
 #define VAR_TOL 1e-9
+#define STANDARDIZE_NONE 0
 #define STANDARDIZE_SD 1
 #define STANDARDIZE_BINOM 2
+#define STANDARDIZE_CENTER 3
 
 using namespace Eigen;
 
@@ -80,6 +82,6 @@ int sign(T x)
 
 MatrixXd read_bed(const char *filename, const unsigned int nrows);
 MatrixXd read_pheno(const char *filename, unsigned int firstcol);
-MatrixXd standardize(const MatrixXd &X, bool scale, int method);
-MatrixXd standardize_transpose(const MatrixXd &X, bool scale, int method);
+MatrixXd standardize(const MatrixXd &X, int method);
+MatrixXd standardize_transpose(const MatrixXd &X, int method);
 
