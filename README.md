@@ -57,7 +57,7 @@ System requirements
 -------------------
 * 64-bit linux.
 * For large datasets you'll need large amounts of RAM, e.g. for 15,000
-   individuals (43K SNPs) you'll need about 14Gb RAM, for 150,00 individuals
+   individuals (43K SNPs) you'll need about 14Gb RAM, for 150,000 individuals
    (43K SNPs) you'll need about 145Gb RAM (estimated using
    https://github.com/jhclark/memusg)
    (we are working on a version which will use less RAM).
