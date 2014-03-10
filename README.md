@@ -119,11 +119,6 @@ We highly recommend using multi-threading, to run in multi-threaded mode with 8 
    ./flashpca --bfile data_pruned --numthreads 8
    ```
 
-To whiten the genotypes and write them out to whitened.txt (caution: can be a large file):
-   ```
-   ./flashpca --bfile data_pruned --whiten
-   ```
-
 For more options:
    ```
    ./flashpca --help
