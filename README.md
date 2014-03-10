@@ -139,11 +139,6 @@ To use genotype centering (compatible with R prcomp):
    ./flashpca --stand center ...
    ```
 
-For more options:
-   ```
-   ./flashpca --help
-   ```
-
 ## Output
 
 flashpca produces the following files:
