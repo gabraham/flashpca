@@ -1,0 +1,46 @@
+
+.PHONY: all
+
+EIGEN=/usr/include/eigen3
+
+all: flashpca_x86-64
+
+GITVER := $(shell git describe --dirty --always)
+
+OBJ = \
+   randompca.o \
+   flashpca.o \
+   data.o \
+   util.o
+
+CXXFLAGS = -static -Iboost -IEigen -I/usr/include/eigen3
+
+UNAME := $(shell uname)
+ifeq ($(UNAME), Darwin)
+   CXXFLAGS += -msse2
+else
+   CXXFLAGS += -mtune=generic
+endif
+
+BOOST = -lboost_system-mt \
+   -lboost_iostreams-mt \
+   -lboost_filesystem-mt \
+   -lboost_program_options
+ 
+debug: LDFLAGS = $(BOOST)
+debug: CXXFLAGS += -O0 -ggdb3 -DGITVER=\"$(GITVER)\"
+debug: $(OBJ)
+	$(CXX) $(CXXFLAGS) -o flashpca $^ $(LDFLAGS)
+
+flashpca_x86-64: LDFLAGS = $(BOOST) -Wl,--whole-archive -lpthread -Wl,--no-whole-archive
+flashpca_x86-64: CXXFLAGS += -g -O3 -DNDEBUG -DGITVER=\"$(GITVER)\" \
+   -funroll-loops -ftree-vectorize -ffast-math -fopenmp
+flashpca_x86-64: $(OBJ)
+	$(CXX) $(CXXFLAGS) -o flashpca_x86-64 $^ $(LDFLAGS)
+
+$(OBJ): %.o: %.cpp
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+clean:
+	rm -f $(OBJ) flashpca_x86-64
+
