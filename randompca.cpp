@@ -4,11 +4,11 @@
 
 MatrixXd make_gaussian(unsigned int rows, unsigned int cols, long seed)
 {
-   boost::mt19937 rng;
+   boost::random::mt19937 rng;
    rng.seed(seed);
-   boost::normal_distribution<double> nrm;
-   boost::variate_generator<boost::mt19937&,
-      boost::normal_distribution<double> > rand(rng, nrm);
+   boost::random::normal_distribution<double> nrm;
+   boost::random::variate_generator<boost::random::mt19937&,
+      boost::random::normal_distribution<double> > rand(rng, nrm);
 
    MatrixXd G(rows, cols);
    for(unsigned int i = 0 ; i < rows ; i++)
@@ -64,21 +64,106 @@ void pca_small(MatrixXd &B, int method, MatrixXd& U, VectorXd &d)
    }
 }
 
+// Compute median of pairwise distances on sample of size n from the matrix X
+// We're sampling with replacement
+// Based on http://www.machinedlearnings.com/2013/08/cosplay.html
+double median_dist(MatrixXd& X, unsigned int n, long seed)
+{
+   boost::random::mt19937 rng;
+   rng.seed(seed);
+   boost::random::uniform_real_distribution<> dist(0, 1);
+   double prop = (double)X.rows() / n;
+
+   std::cout << timestamp() << 
+      " Computing median Euclidean distance (" << n << " samples)" <<
+      std::endl;
+
+   MatrixXd X2(n, X.cols());
+   if(n < X.rows()) 
+   {
+      std::cout << timestamp() << " Sampling" << std::endl;
+      // Sample n rows from X
+      for(unsigned int i = 0, k = 0 ; i < X.rows() ; i++)
+      {
+         if(dist(rng) < prop)
+         {
+            X2.row(k++) = X.row(i);
+            if(k == n)
+               break;
+         }
+      }
+   }
+   else
+      X2.noalias() = X;
+
+   VectorXd norms = X2.array().square().rowwise().sum();
+   VectorXd ones = VectorXd::Ones(n);
+   MatrixXd M = norms * ones.transpose();
+   MatrixXd D = M + M.transpose() - 2 * X2 * X2.transpose();
+
+   unsigned int m = D.size();
+   double *d = D.data();
+   std::sort(d, d + m); 
+   double med;
+
+   if(m % 2 == 0)
+      med = (d[m / 2 - 1] + d[m / 2]) / 2;
+   else
+      med = d[m / 2];
+
+   std::cout << timestamp() << " Median Euclidean distance: "
+      << med << std::endl;
+
+   return med;
+}
+
+MatrixXd rbf_kernel(MatrixXd& X, const double sigma, bool rbf_center)
+{
+   unsigned int n = X.rows();
+   VectorXd norms = X.array().square().rowwise().sum();
+   VectorXd ones = VectorXd::Ones(n);
+   MatrixXd R = norms * ones.transpose();
+   MatrixXd D = R + R.transpose() - 2 * X * X.transpose();
+   D = D.array() * -sigma;
+   MatrixXd K = D.array().exp();
+
+   if(rbf_center)
+   {
+      std::cout << timestamp() << " Centering RBF kernel" << std::endl;
+      MatrixXd M = ones * ones.transpose() / n;
+      MatrixXd I = ones.asDiagonal();
+      K = (I - M) * K * (I - M);
+   }
+   return K;
+}
+
 void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
    unsigned int ndim, unsigned int nextra, unsigned int maxiter, double tol,
-   long seed)
+   long seed, int kernel, double sigma, bool rbf_center,
+   unsigned int rbf_sample, bool save_kernel)
 {
    unsigned int N;
+
+   if(kernel != KERNEL_LINEAR)
+   {
+      transpose = false;
+      std::cout << timestamp()
+	 << " Kernel not linear, can't transpose" << std::endl;
+   }
+
    std::cout << timestamp() << " Transpose: " 
       << (transpose ? "yes" : "no") << std::endl;
+
    if(transpose)
    {
-      M = standardize_transpose(X, true, stand_method);
+      if(stand_method != STANDARDIZE_NONE)
+	 M = standardize_transpose(X, stand_method);
       N = X.cols();
    }
    else
    {
-      M = standardize(X, true, stand_method);
+      if(stand_method != STANDARDIZE_NONE)
+	 M = standardize(X, stand_method);
       N = X.rows();
    }
 
@@ -90,13 +175,36 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
    MatrixXd Yn;
 
    std::cout << timestamp() << " dim(M): " << dim(M) << std::endl;
-   MatrixXd MMT = M * M.transpose();
-   std::cout << timestamp() << " dim(MMT): " << dim(MMT) << std::endl;
+   MatrixXd K; 
+   if(kernel == KERNEL_RBF)
+   {
+      if(sigma == 0)
+      {
+	 unsigned int med_samples = fminl(rbf_sample, N);
+      	 double med = median_dist(M, med_samples, seed);
+      	 sigma = 1.0 / med; // note we don't take sqrt unlike others
+      }
+      std::cout << timestamp() << " Using RBF kernel with sigma="
+	 << sigma << std::endl;
+      K.noalias() = rbf_kernel(M, sigma, rbf_center);
+   }
+   else
+   {
+      std::cout << timestamp() << " Using linear kernel" << std::endl;
+      K.noalias() = M * M.transpose();
+   }
+
+   std::cout << timestamp() << " dim(K): " << dim(K) << std::endl;
+   if(save_kernel)
+   {
+      std::cout << timestamp() << " saving K" << std::endl;
+      save_text("kernel.txt", K);
+   }
 
    for(unsigned int iter = 0 ; iter < maxiter ; iter++)
    {
       std::cout << timestamp() << " iter " << iter << " ";
-      Yn.noalias() = MMT * Y;
+      Yn.noalias() = K * Y;
       normalize(Yn);
       double diff =  (Y -  Yn).array().square().sum() / Y.size(); 
       std::cout << diff << std::endl;
