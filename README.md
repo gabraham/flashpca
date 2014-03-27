@@ -21,8 +21,8 @@ Gad Abraham, gad.abraham@unimelb.edu.au
 
 Citation
 --------
-G. Abraham and M. Inouye, ``Fast Principal Component Analysis of Large-Scale
-Genome-Wide Data'', submitted (2014)
+G. Abraham and M. Inouye, Fast Principal Component Analysis of Large-Scale
+Genome-Wide Data, submitted (2014)
 (http://biorxiv.org/content/early/2014/01/30/002238)
 
 License
@@ -68,6 +68,7 @@ Requirements for building from source
    * Linux OS (might work on Mac OSX), 64-bit
    * g++ compiler
    * Eigen (http://eigen.tuxfamily.org), v3.2 or higher
+      (if you get a compile error ``error: no match for ‘operator/’ in ‘1 / ((Eigen::MatrixBase...`` you'll need a more recent Eigen)
    * Boost 1.48 (http://www.boost.org), specifically boost_system-mt,
       boost_iostreams-mt, boost_filesystem-mt, boost_program_options. Note:
       version 1.55 is *not* compatible currently.
