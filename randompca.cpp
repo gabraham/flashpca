@@ -67,6 +67,9 @@ void pca_small(MatrixXd &B, int method, MatrixXd& U, VectorXd &d)
 // Compute median of pairwise distances on sample of size n from the matrix X
 // We're sampling with replacement
 // Based on http://www.machinedlearnings.com/2013/08/cosplay.html
+// 
+// Todo: use Boost accummulators for quantiles
+// http://boost-sandbox.sourceforge.net/libs/accumulators/doc/html/accumulators/user_s_guide/the_statistical_accumulators_library.html#accumulators.user_s_guide.the_statistical_accumulators_library.p_square_quantile
 double median_dist(MatrixXd& X, unsigned int n, long seed)
 {
    boost::random::mt19937 rng;
@@ -245,6 +248,10 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
    U.noalias() = Q * Ut;
    std::cout << timestamp() << " dim(U): " << dim(U) << std::endl;
 
+
+   // TODO: unlike Scholkopf, when we do kernel PCA we don't divide the
+   // eigenvectors by the sqrt of each eigenvalue
+
    if(transpose)
    {
       // P = X V
@@ -281,4 +288,20 @@ void RandomPCA::zca_whiten(bool transpose)
       W.noalias() = U * Dinv * U.transpose() * M;
    std::cout << timestamp() << " Whitening done (" << dim(W) << ")" << std::endl;
 }
+
+//MatrixXd matrixsqrt(MatrixXd& S)
+//{
+//   
+//}
+
+//void RandomPCA::cca(MatrixXd &X, MatrixXd &Y), int method, bool transpose,
+//   //unsigned int ndim, unsigned int nextra, unsigned int maxiter, double tol,
+//   //%long seed, int kernel, double sigma, bool rbf_center,
+//   //unsigned int rbf_sample, bool save_kernel)
+//{
+//   MatrixXd Sx = X.transpose() * X / X.rows();    
+//   MatrixXd Sy = Y.transpose() * Y / X.rows();    
+//   MatrixXd Sxy = X.transpose() * Y / X.rows();    
+//
+//}
 
