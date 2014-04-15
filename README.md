@@ -33,8 +33,7 @@ it under the terms of the GNU General Public License as published by
 the Free Software Foundation; either version 3 of the License, or
 (at your option) any later version.
 
-Copyright (C) 2014 Gad Abraham and National ICT Australia
-All rights reserved.
+Copyright (C) 2014 Gad Abraham. All rights reserved.
 
 Portions of this code are based on SparSNP
 (https://github.com/gabraham/SparSNP), Copyright (C) 2011-2012 Gad Abraham
@@ -57,7 +56,7 @@ System requirements
 -------------------
 * 64-bit linux.
 * For large datasets you'll need large amounts of RAM, e.g. for 15,000
-   individuals (43K SNPs) you'll need about 14Gb RAM, for 150,00 individuals
+   individuals (43K SNPs) you'll need about 14Gb RAM, for 150,000 individuals
    (43K SNPs) you'll need about 145Gb RAM (estimated using
    https://github.com/jhclark/memusg)
    (we are working on a version which will use less RAM).
@@ -65,16 +64,24 @@ System requirements
 Requirements for building from source
 -------------------------------------
 
-   * Linux OS (might work on Mac OSX), 64-bit
+   On Linux:
+   * 64-bit OS
    * g++ compiler
    * Eigen (http://eigen.tuxfamily.org), v3.2 or higher
       (if you get a compile error ``error: no match for ‘operator/’ in ‘1 / ((Eigen::MatrixBase...`` you'll need a more recent Eigen)
-   * Boost 1.48 (http://www.boost.org), specifically boost_system-mt,
-      boost_iostreams-mt, boost_filesystem-mt, boost_program_options. Note:
-      version 1.55 is *not* compatible currently.
+   * Boost (http://www.boost.org/), specifically boost_system-mt,
+      boost_iostreams-mt, boost_filesystem-mt, boost_program_options.
    * libgomp for openmp support
    * Recommended: plink2 (https://www.cog-genomics.org/plink2) for SNP
       thinning
+
+   On Mac:
+   * Homebrew (http://brew.sh) to install gcc/g++ and boost
+   * Eigen, as above
+   * Set CXX to whatever g++ version you're using before calling make:
+   ```
+   CXX=/usr/local/bin/g++-4.7 make all
+   ```
 
 Quick start
 -----------
@@ -100,7 +107,7 @@ First thin the data by LD (highly recommend plink2 for this):
    plink --bfile data --indep-pairwise 1000 50 0.05
    plink --bfile data --extract plink.prune.in --make-bed --out data_pruned --exclude exclusion_regions.txt
    ```
-where exclusion_regions.txt contains:
+where [exclusion_regions.txt](exclusion_regions.txt) contains:
    ```
    5 44000000 51500000 r1
    6 25000000 33500000 r2
@@ -118,11 +125,6 @@ To run on the pruned dataset:
 We highly recommend using multi-threading, to run in multi-threaded mode with 8 threads:
    ```
    ./flashpca --bfile data_pruned --numthreads 8
-   ```
-
-To whiten the genotypes and write them out to whitened.txt (caution: can be a large file):
-   ```
-   ./flashpca --bfile data_pruned --whiten
    ```
 
 For more options:
