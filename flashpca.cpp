@@ -334,7 +334,7 @@ int main(int argc, char * argv[])
    else
    {
       std::cout << timestamp() << " CCA begin" << std::endl;
-      rpca.cca(data.X, data.Y);
+      rpca.cca(data.X, data.Y, seed);
       std::cout << timestamp() << " CCA done" << std::endl;
    }
 
