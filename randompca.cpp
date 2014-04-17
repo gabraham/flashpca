@@ -172,7 +172,7 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
 
    unsigned int total_dim = ndim + nextra;
    MatrixXd R = make_gaussian(M.cols(), total_dim, seed);
-   MatrixXd Y = M * R;
+   MatrixXd Y = M * R; // TODO: is this right for kernel PCA?
    std::cout << timestamp() << " dim(Y): " << dim(Y) << std::endl;
    normalize(Y);
    MatrixXd Yn;
@@ -289,19 +289,76 @@ void RandomPCA::zca_whiten(bool transpose)
    std::cout << timestamp() << " Whitening done (" << dim(W) << ")" << std::endl;
 }
 
-//MatrixXd matrixsqrt(MatrixXd& S)
-//{
-//   
-//}
+void RandomPCA::cca(MatrixXd &X, MatrixXd &Y)//, int method, bool transpose,
+//   unsigned int ndim, unsigned int nextra, unsigned int maxiter, double tol,
+//   long seed, int kernel, double sigma, bool rbf_center,
+//   unsigned int rbf_sample, bool save_kernel)
+{
+   MatrixXd Sx = X.transpose() * X;
+   MatrixXd Sy = Y.transpose() * Y;
+   MatrixXd Sxy = X.transpose() * Y;
 
-//void RandomPCA::cca(MatrixXd &X, MatrixXd &Y), int method, bool transpose,
-//   //unsigned int ndim, unsigned int nextra, unsigned int maxiter, double tol,
-//   //%long seed, int kernel, double sigma, bool rbf_center,
-//   //unsigned int rbf_sample, bool save_kernel)
-//{
-//   MatrixXd Sx = X.transpose() * X / X.rows();    
-//   MatrixXd Sy = Y.transpose() * Y / X.rows();    
-//   MatrixXd Sxy = X.transpose() * Y / X.rows();    
-//
-//}
+   // Add ridge regulariser
+   
+   LLT<MatrixXd> lltX(Sx);
+   LLT<MatrixXd> lltY(Sy);
+   MatrixXd W1(lltX.solve(Sxy));
+   MatrixXd M(lltY.solve(W1.transpose()));
+
+   unsigned int maxiter = 10;
+   double tol = 1e-6;
+   unsigned int ndim = 10, nextra = 10;
+   unsigned int N = X.rows();
+
+   int method = METHOD_SVD;
+
+   unsigned int total_dim = ndim + nextra;
+   MatrixXd R = make_gaussian(M.cols(), total_dim, seed);
+   MatrixXd Z = M * R;
+   std::cout << timestamp() << " dim(Z): " << dim(Z) << std::endl;
+   normalize(Z);
+   MatrixXd Zn;
+   MatrixXd K = M * M.transpose();
+
+   for(unsigned int iter = 0 ; iter < maxiter ; iter++)
+   {
+      std::cout << timestamp() << " iter " << iter << " ";
+      Zn.noalias() = K * Z;
+      normalize(Zn);
+      double diff =  (Z -  Zn).array().square().sum() / Z.size(); 
+      std::cout << diff << std::endl;
+      Z.noalias() = Zn;
+      if(diff < tol)
+	 break;
+   }
+
+   std::cout << timestamp() << " QR begin" << std::endl;
+   ColPivHouseholderQR<MatrixXd> qr(Y);
+   MatrixXd Q = MatrixXd::Identity(Y.rows(), Y.cols());
+   Q = qr.householderQ() * Q;
+   Q.conservativeResize(NoChange, Y.cols());
+   std::cout << timestamp() << " dim(Q): " << dim(Q) << std::endl;
+   std::cout << timestamp() << " QR done" << std::endl;
+
+   MatrixXd B = Q.transpose() * M;
+   B = B.array() / sqrt(N - 1);
+   std::cout << timestamp() << " dim(B): " << dim(B) << std::endl;
+
+   MatrixXd Ut;
+   pca_small(B, method, Ut, d);
+   std::cout << timestamp() << " dim(Ut): " << dim(Ut) << std::endl;
+   U.noalias() = Q * Ut;
+   std::cout << timestamp() << " dim(U): " << dim(U) << std::endl;
+
+   // U and V are switched relative to standard formulation of CCA
+   // so V is now for X and U is for Y
+   
+   MatrixXd Xcoef = lltX.matrixL().adjoint().solve(V);
+   MatrixXd Ycoef = lltY.matrixL().adjoint().solve(U);
+
+   MatrixXd Xproj = X * Xcoef;
+   MatrixXd Yproj = Y * Ycoef;
+
+
+}
 
