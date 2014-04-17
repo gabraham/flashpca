@@ -283,6 +283,7 @@ void RandomPCA::cca(MatrixXd &X, MatrixXd &Y, long seed)//, int method, bool tra
 //   long seed, int kernel, double sigma, bool rbf_center,
 //   unsigned int rbf_sample, bool save_kernel)
 {
+   Y = standardize(Y, STANDARDIZE_CENTER);
    std::cout << timestamp() << " Begin computing covariance matrices" << std::endl;
    MatrixXd Sx = X.transpose() * X;
    MatrixXd Sy = Y.transpose() * Y;
@@ -297,10 +298,15 @@ void RandomPCA::cca(MatrixXd &X, MatrixXd &Y, long seed)//, int method, bool tra
    Sx.diagonal() = dx.array() + lambda;
    Sy.diagonal() = dy.array() + lambda;
    
+   std::cout << timestamp() << " Begin Cholesky" << std::endl;
    LLT<MatrixXd> lltX(Sx);
    LLT<MatrixXd> lltY(Sy);
+   std::cout << timestamp() << " End Cholesky" << std::endl;
+
+   std::cout << timestamp() << " Begin Cholesky inversion" << std::endl;
    MatrixXd W1 = lltX.solve(Sxy);
    MatrixXd M = lltY.solve(W1.transpose());
+   std::cout << timestamp() << " End Cholesky inversion" << std::endl;
    std::cout << timestamp() << " dim(M): " << dim(M) << std::endl;
 
    unsigned int maxiter = 10;
