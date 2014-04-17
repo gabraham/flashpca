@@ -289,7 +289,7 @@ void RandomPCA::zca_whiten(bool transpose)
    std::cout << timestamp() << " Whitening done (" << dim(W) << ")" << std::endl;
 }
 
-void RandomPCA::cca(MatrixXd &X, MatrixXd &Y)//, int method, bool transpose,
+void RandomPCA::cca(MatrixXd &X, MatrixXd &Y, long seed)//, int method, bool transpose,
 //   unsigned int ndim, unsigned int nextra, unsigned int maxiter, double tol,
 //   long seed, int kernel, double sigma, bool rbf_center,
 //   unsigned int rbf_sample, bool save_kernel)
