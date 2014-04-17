@@ -28,11 +28,13 @@ int main(int argc, char * argv[])
    po::options_description desc("Options");
    desc.add_options()
       ("help", "produce help message")
+      ("cca", "perform canonical correlation analysis (CCA)")
       ("numthreads", po::value<int>(), "set number of OpenMP threads")
       ("seed", po::value<long>(), "set random seed")
       ("bed", po::value<std::string>(), "PLINK bed file")
       ("bim", po::value<std::string>(), "PLINK bim file")
       ("fam", po::value<std::string>(), "PLINK fam file")
+      ("pheno", po::value<std::string>(), "PLINK phenotype file")
       ("bfile", po::value<std::string>(), "PLINK root name")
       ("ndim", po::value<int>(), "number of PCs to output")
       ("nextra", po::value<int>(),
@@ -66,6 +68,10 @@ int main(int argc, char * argv[])
       return EXIT_FAILURE;
    }
 
+   int mode = MODE_PCA;
+   if(vm.count("cca"))
+      mode = MODE_CCA;
+
    int num_threads = 1;
    if(vm.count("numthreads"))
       num_threads = vm["numthreads"].as<int>();
@@ -74,13 +80,13 @@ int main(int argc, char * argv[])
    if(vm.count("seed"))
       seed = vm["seed"].as<long>();
 
-   std::string pheno_file, geno_file, bim_file;
+   std::string fam_file, geno_file, bim_file, pheno_file;
 
    if(vm.count("bfile"))
    {
       geno_file = vm["bfile"].as<std::string>() + std::string(".bed");
       bim_file = vm["bfile"].as<std::string>() + std::string(".bim");
-      pheno_file = vm["bfile"].as<std::string>() + std::string(".fam");
+      fam_file = vm["bfile"].as<std::string>() + std::string(".fam");
    }
    else
    {
@@ -96,7 +102,7 @@ int main(int argc, char * argv[])
 	 good = false;
 
       if(good && vm.count("fam"))
-	 pheno_file = vm["fam"].as<std::string>();
+	 fam_file = vm["fam"].as<std::string>();
       else
 	 good = false;
       
@@ -106,6 +112,15 @@ int main(int argc, char * argv[])
 	    << "or --bed / --fam / --bim" << std::endl;
 	 return EXIT_FAILURE;
       }
+   }
+
+   if(vm.count("pheno"))
+      pheno_file = vm["pheno"].as<std::string>();
+   else if(mode == MODE_CCA) 
+   {
+      std::cerr << "Error: you must specify a phenotype file "
+	 "in CCA mode using --pheno" << std::endl;
+      return EXIT_FAILURE;
    }
 
    int n_dim = 0;
@@ -169,6 +184,9 @@ int main(int argc, char * argv[])
    std::string pcfile = "pcs.txt";
    if(vm.count("outpc"))
       pcfile = vm["outpc"].as<std::string>();
+
+   std::string pcxfile = "pcsX.txt";
+   std::string pcyfile = "pcsY.txt";
 
    std::string eigvecfile = "eigenvectors.txt";
    if(vm.count("outvec"))
@@ -284,7 +302,11 @@ int main(int argc, char * argv[])
    data.verbose = verbose;
    std::cout << timestamp() << " seed: " << data.seed << std::endl;
 
-   data.read_pheno(pheno_file.c_str(), 6, PHENO_BINARY_12);
+   if(mode == MODE_CCA)
+      data.read_pheno(pheno_file.c_str(), 3, PHENO_BINARY_12);
+   else
+      data.read_pheno(fam_file.c_str(), 6, PHENO_BINARY_12);
+      
    data.geno_filename = geno_file.c_str();
    data.get_size();
    transpose = transpose || data.N > data.nsnps;
@@ -301,13 +323,20 @@ int main(int argc, char * argv[])
       n_extra = fminl(max_dim - n_dim, 190);
 
    ////////////////////////////////////////////////////////////////////////////////
-   // Do the PCA
-   std::cout << timestamp() << " PCA begin" << std::endl;
-   
-   rpca.pca(data.X, method, transpose, n_dim, n_extra, maxiter,
-      tol, seed, kernel, sigma, rbf_center, rbf_sample, save_kernel);
-
-   std::cout << timestamp() << " PCA done" << std::endl;
+   // The main analyis
+   if(mode == MODE_PCA)
+   {
+      std::cout << timestamp() << " PCA begin" << std::endl;
+      rpca.pca(data.X, method, transpose, n_dim, n_extra, maxiter,
+         tol, seed, kernel, sigma, rbf_center, rbf_sample, save_kernel);
+      std::cout << timestamp() << " PCA done" << std::endl;
+   }
+   else
+   {
+      std::cout << timestamp() << " CCA begin" << std::endl;
+      rpca.cca(data.X, data.Y);
+      std::cout << timestamp() << " CCA done" << std::endl;
+   }
 
    ////////////////////////////////////////////////////////////////////////////////
    // Write out results
@@ -320,13 +349,28 @@ int main(int argc, char * argv[])
       " eigenvalues to file " << eigvalfile << std::endl;
    save_text(eigvalfile.c_str(), rpca.d);
 
-   std::cout << timestamp() << " Writing " << n_dim << 
-      " proportion variance explained to file " << eigpvefile << std::endl;
-   save_text(eigpvefile.c_str(), rpca.pve);
+   if(mode == MODE_PCA)
+   {
+      std::cout << timestamp() << " Writing " << n_dim <<
+	 " PCs to file " << pcfile << std::endl;
+      save_text(pcfile.c_str(), rpca.Px);
+      std::cout << timestamp() << " Writing " << n_dim << 
+	 " proportion variance explained to file " << eigpvefile << std::endl;
+      save_text(eigpvefile.c_str(), rpca.pve);
 
-   std::cout << timestamp() << " Writing " << n_dim <<
-      " PCs to file " << pcfile << std::endl;
-   save_text(pcfile.c_str(), rpca.P);
+      std::cout << timestamp() << " Writing " << n_dim <<
+	 " PCs to file " << pcfile << std::endl;
+      save_text(pcfile.c_str(), rpca.P);
+   }
+   else
+   {
+      std::cout << timestamp() << " Writing " << n_dim <<
+	 " PCs to file " << pcxfile << std::endl;
+      save_text(pcxfile.c_str(), rpca.Px);
+      std::cout << timestamp() << " Writing " << n_dim <<
+	 " PCs to file " << pcyfile << std::endl;
+      save_text(pcyfile.c_str(), rpca.Py);
+   }
 
    ////////////////////////////////////////////////////////////////////////////////
    // Whiten if required

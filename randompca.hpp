@@ -16,10 +16,13 @@ using namespace Eigen;
 #define KERNEL_LINEAR 1
 #define KERNEL_RBF 2
 
+#define MODE_PCA 1
+#define MODE_CCA 2
+
 class RandomPCA {
    public:
       MatrixXd M;
-      MatrixXd U, V, W, P;
+      MatrixXd U, V, W, Px, Py;
       VectorXd d;
       double trace;
       VectorXd pve;

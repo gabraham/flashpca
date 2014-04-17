@@ -28,7 +28,7 @@ inline void normalize(MatrixXd& X)
    }
 }
 
-void pca_small(MatrixXd &B, int method, MatrixXd& U, VectorXd &d)
+void pca_small(MatrixXd &B, int method, MatrixXd& U, MatrixXd& V, VectorXd &d)
 {
    if(method == METHOD_SVD)
    {
@@ -233,7 +233,7 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
    std::cout << timestamp() << " dim(B): " << dim(B) << std::endl;
 
    MatrixXd Ut;
-   pca_small(B, method, Ut, d);
+   pca_small(B, method, Ut, V, d);
    std::cout << timestamp() << " dim(Ut): " << dim(Ut) << std::endl;
    U.noalias() = Q * Ut;
    std::cout << timestamp() << " dim(U): " << dim(U) << std::endl;
@@ -248,17 +248,17 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
       // since U is actually V (eigenvectors of X^T X), since data is transposed.
       // We divide by sqrt(N - 1) since X has not been divided by it (but B
       // has)
-      P.noalias() = M.transpose() * U;
+      Px.noalias() = M.transpose() * U;
       double z = 1.0 / sqrt(N - 1);
-      P = P.array() * z;
+      Px = Px.array() * z;
    }
    else
    {
       // P = U D
-      P.noalias() = U * d.asDiagonal();
+      Px.noalias() = U * d.asDiagonal();
    }
 
-   P.conservativeResize(NoChange, ndim);
+   Px.conservativeResize(NoChange, ndim);
    d.conservativeResize(ndim);
    pve = d.array() / trace;
 
@@ -283,25 +283,40 @@ void RandomPCA::cca(MatrixXd &X, MatrixXd &Y)//, int method, bool transpose,
 //   long seed, int kernel, double sigma, bool rbf_center,
 //   unsigned int rbf_sample, bool save_kernel)
 {
+   std::cout << timestamp() << " Begin computing covariance matrices" << std::endl;
    MatrixXd Sx = X.transpose() * X;
    MatrixXd Sy = Y.transpose() * Y;
    MatrixXd Sxy = X.transpose() * Y;
 
-   // Add ridge regulariser
+   std::cout << timestamp() << " Covariance done" << std::endl;
+
+   double lambda = 1e-3;
+
+   // TODO: Add ridge regularisation to Sx and Sy
+   VectorXd dx = Sx.diagonal();
+   VectorXd dy = Sy.diagonal();
+   Sx.diagonal() = dx.array() + lambda;
+   Sy.diagonal() = dy.array() + lambda;
    
    LLT<MatrixXd> lltX(Sx);
    LLT<MatrixXd> lltY(Sy);
-   MatrixXd W1(lltX.solve(Sxy));
-   MatrixXd M(lltY.solve(W1.transpose()));
+   MatrixXd W1 = lltX.solve(Sxy);
+   MatrixXd M = lltY.solve(W1.transpose());
+   std::cout << timestamp() << " dim(M): " << dim(M) << std::endl;
 
    unsigned int maxiter = 10;
    double tol = 1e-6;
    unsigned int ndim = 10, nextra = 10;
    unsigned int N = X.rows();
 
+   // Necessary for getting V. Also, the correlations are the sqrt of the
+   // eigenvalues of the cross-covariance matrix
    int method = METHOD_SVD;
 
    unsigned int total_dim = ndim + nextra;
+   unsigned int m = fminl(X.cols(), Y.cols());
+   if(total_dim > m)
+      total_dim = m;
    MatrixXd R = make_gaussian(M.cols(), total_dim, seed);
    MatrixXd Z = M * R;
    std::cout << timestamp() << " dim(Z): " << dim(Z) << std::endl;
@@ -322,10 +337,10 @@ void RandomPCA::cca(MatrixXd &X, MatrixXd &Y)//, int method, bool transpose,
    }
 
    std::cout << timestamp() << " QR begin" << std::endl;
-   ColPivHouseholderQR<MatrixXd> qr(Y);
-   MatrixXd Q = MatrixXd::Identity(Y.rows(), Y.cols());
+   ColPivHouseholderQR<MatrixXd> qr(Z);
+   MatrixXd Q = MatrixXd::Identity(Z.rows(), Z.cols());
    Q = qr.householderQ() * Q;
-   Q.conservativeResize(NoChange, Y.cols());
+   Q.conservativeResize(NoChange, Z.cols());
    std::cout << timestamp() << " dim(Q): " << dim(Q) << std::endl;
    std::cout << timestamp() << " QR done" << std::endl;
 
@@ -334,20 +349,26 @@ void RandomPCA::cca(MatrixXd &X, MatrixXd &Y)//, int method, bool transpose,
    std::cout << timestamp() << " dim(B): " << dim(B) << std::endl;
 
    MatrixXd Ut;
-   pca_small(B, method, Ut, d);
+   pca_small(B, method, Ut, V, d);
    std::cout << timestamp() << " dim(Ut): " << dim(Ut) << std::endl;
    U.noalias() = Q * Ut;
    std::cout << timestamp() << " dim(U): " << dim(U) << std::endl;
+   std::cout << timestamp() << " dim(V): " << dim(V) << std::endl;
 
    // U and V are switched relative to standard formulation of CCA
    // so V is now for X and U is for Y
-   
-   MatrixXd Xcoef = lltX.matrixL().adjoint().solve(V);
-   MatrixXd Ycoef = lltY.matrixL().adjoint().solve(U);
 
-   MatrixXd Xproj = X * Xcoef;
-   MatrixXd Yproj = Y * Ycoef;
+   std::cout << timestamp() << " Begin computing Xcoef/Ycoef" << std::endl;
+   MatrixXd Xcoef = lltX.matrixL().transpose().solve(V);
+   MatrixXd Ycoef = lltY.matrixL().transpose().solve(U);
+   std::cout << timestamp() << " End computing Xcoef/Ycoef" << std::endl;
 
+   std::cout << timestamp() << " Begin computing Xproj/Yproj" << std::endl;
+   Px = X * Xcoef;
+   Py = Y * Ycoef;
+   std::cout << timestamp() << " dim(Px): " << dim(Px) << " dim(Py): " <<
+      dim(Py) << std::endl;
+   std::cout << timestamp() << " End computing Xproj/Yproj" << std::endl;
 
 }
 
