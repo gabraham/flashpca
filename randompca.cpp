@@ -292,7 +292,6 @@ void RandomPCA::cca(MatrixXd &X, MatrixXd &Y, long seed)//, int method, bool tra
 
    double lambda = 1e-3;
 
-   // TODO: Add ridge regularisation to Sx and Sy
    VectorXd dx = Sx.diagonal();
    VectorXd dy = Sy.diagonal();
    Sx.diagonal() = dx.array() + lambda;
