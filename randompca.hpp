@@ -33,6 +33,7 @@ class RandomPCA {
 	    unsigned int maxiter, double tol, long seed,
 	    int kernel, double sigma, bool rbf_center,
 	    unsigned int rbf_sample, bool save_kernel);
+      void cca(MatrixXd &X, MatrixXd &Y);
       void zca_whiten(bool transpose);
 };
 
