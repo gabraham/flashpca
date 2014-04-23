@@ -22,6 +22,11 @@ int main(int argc, char * argv[])
    std::cout << "******* Running in Debug mode *******" << std::endl;
 #endif
 
+   std::cout << timestamp() << " arguments: flashpca ";
+   for(int i = 0 ; i < argc ; i++)
+      std::cout << argv[i] << " ";
+   std::cout << std::endl;
+
    ////////////////////////////////////////////////////////////////////////////////
    // Parse commandline arguments
 
@@ -57,6 +62,8 @@ int main(int argc, char * argv[])
       ("rbfcenter", po::value<std::string>(), "center the RBF kernel (yes/no)")
       ("rbfsample", po::value<int>(), "sample size for estimating RBF kernel width")
       ("savekernel", "save the kernel as text file")
+      ("lambda", po::value<double>(), "L2 penalty for CCA")
+      ("debug", "debug, dumps all intermdiate data (WARNING: slow, call only on small data")
    ;
 
    po::variables_map vm;
@@ -209,7 +216,6 @@ int main(int argc, char * argv[])
    bool verbose = vm.count("v");
    bool transpose = vm.count("transpose");
 
-
    bool do_orth = true;
    if(vm.count("orth"))
    {
@@ -226,6 +232,8 @@ int main(int argc, char * argv[])
    }
   
    int maxiter = 50;
+   bool debug = vm.count("debug");
+   
    if(vm.count("maxiter"))
    {
       maxiter = vm["maxiter"].as<int>();
@@ -305,6 +313,18 @@ int main(int argc, char * argv[])
 
    bool save_kernel = vm.count("savekernel");
 
+   double lambda = 0;
+   if(vm.count("lambda"))
+   {
+      lambda = vm["lambda"].as<double>();
+      if(lambda < 0)
+      {
+	 std::cerr << "Error: --lambda can't be negative"
+	    << std::endl;
+	 return EXIT_FAILURE;
+      }
+   }
+
    ////////////////////////////////////////////////////////////////////////////////
    // End command line parsing
       
@@ -326,10 +346,11 @@ int main(int argc, char * argv[])
       
    data.geno_filename = geno_file.c_str();
    data.get_size();
-   transpose = transpose || data.N > data.nsnps;
+   transpose = mode == MODE_PCA && (transpose || data.N > data.nsnps);
    data.read_bed(transpose);
 
    RandomPCA rpca;
+   rpca.debug = debug;
    rpca.stand_method = stand_method;
    unsigned int max_dim = fminl(data.X.rows(), data.X.cols());
    
@@ -352,7 +373,7 @@ int main(int argc, char * argv[])
    else
    {
       std::cout << timestamp() << " CCA begin" << std::endl;
-      rpca.cca(data.X, data.Y, seed);
+      rpca.cca(data.X, data.Y, lambda, seed);
       std::cout << timestamp() << " CCA done" << std::endl;
    }
 

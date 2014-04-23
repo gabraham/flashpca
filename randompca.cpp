@@ -289,20 +289,21 @@ void RandomPCA::zca_whiten(bool transpose)
    std::cout << timestamp() << " Whitening done (" << dim(W) << ")" << std::endl;
 }
 
-void RandomPCA::cca(MatrixXd &X, MatrixXd &Y, long seed)//, int method, bool transpose,
+void RandomPCA::cca(MatrixXd &X, MatrixXd &Y, double lambda, long seed)//, int method, bool transpose,
 //   unsigned int ndim, unsigned int nextra, unsigned int maxiter, double tol,
 //   long seed, int kernel, double sigma, bool rbf_center,
 //   unsigned int rbf_sample, bool save_kernel)
 {
+   X = standardize(X, STANDARDIZE_CENTER);
    Y = standardize(Y, STANDARDIZE_CENTER);
    std::cout << timestamp() << " Begin computing covariance matrices" << std::endl;
    MatrixXd Sx = X.transpose() * X;
    MatrixXd Sy = Y.transpose() * Y;
+
+   std::cout << timestamp() << " dim(X): " << dim(X) << " dim(Y): " << dim(Y) << std::endl;
    MatrixXd Sxy = X.transpose() * Y;
 
    std::cout << timestamp() << " Covariance done" << std::endl;
-
-   double lambda = 1e-3;
 
    VectorXd dx = Sx.diagonal();
    VectorXd dy = Sy.diagonal();
@@ -315,13 +316,26 @@ void RandomPCA::cca(MatrixXd &X, MatrixXd &Y, long seed)//, int method, bool tra
    std::cout << timestamp() << " End Cholesky" << std::endl;
 
    std::cout << timestamp() << " Begin Cholesky inversion" << std::endl;
-   MatrixXd W1 = lltX.solve(Sxy);
-   MatrixXd M = lltY.solve(W1.transpose());
+   MatrixXd W1 = lltX.matrixL().solve(Sxy);
+   MatrixXd M = lltY.matrixL().solve(W1.transpose());
    std::cout << timestamp() << " End Cholesky inversion" << std::endl;
    std::cout << timestamp() << " dim(M): " << dim(M) << std::endl;
 
+   if(debug)
+   {
+      MatrixXd L = lltX.matrixL();
+      save_text("Lx.txt", L);
+      L = lltY.matrixL();
+      save_text("Ly.txt", L);
+      save_text("X.txt", X);
+      save_text("Y.txt", Y);
+      save_text("Sxy.txt", Sxy);
+      save_text("W1.txt", W1);
+      save_text("M.txt", M);
+   }
+
    unsigned int maxiter = 10;
-   double tol = 1e-6;
+   double tol = 1e-9;
    unsigned int ndim = 10, nextra = 10;
    unsigned int N = X.rows();
 
@@ -361,7 +375,7 @@ void RandomPCA::cca(MatrixXd &X, MatrixXd &Y, long seed)//, int method, bool tra
    std::cout << timestamp() << " QR done" << std::endl;
 
    MatrixXd B = Q.transpose() * M;
-   B = B.array() / sqrt(N - 1);
+   //B = B.array() / sqrt(N - 1); // CCA doesn't scale eigenvalues
    std::cout << timestamp() << " dim(B): " << dim(B) << std::endl;
 
    MatrixXd Ut;
@@ -374,6 +388,124 @@ void RandomPCA::cca(MatrixXd &X, MatrixXd &Y, long seed)//, int method, bool tra
    // U and V are switched relative to standard formulation of CCA
    // so V is now for X and U is for Y
 
+   // TODO: is this right?
+   std::cout << timestamp() << " Begin computing Xcoef/Ycoef" << std::endl;
+   MatrixXd Xcoef = lltX.matrixL().transpose().solve(V);
+   MatrixXd Ycoef = lltY.matrixL().transpose().solve(U);
+   std::cout << timestamp() << " End computing Xcoef/Ycoef" << std::endl;
+
+   std::cout << timestamp() << " Begin computing Xproj/Yproj" << std::endl;
+   Px = X * Xcoef;
+   Py = Y * Ycoef;
+   std::cout << timestamp() << " dim(Px): " << dim(Px) << " dim(Py): " <<
+      dim(Py) << std::endl;
+   std::cout << timestamp() << " End computing Xproj/Yproj" << std::endl;
+
+}
+
+void RandomPCA::cca_qr(MatrixXd &X, MatrixXd &Y, double lambda, long seed)//, int method, bool transpose,
+//   unsigned int ndim, unsigned int nextra, unsigned int maxiter, double tol,
+//   long seed, int kernel, double sigma, bool rbf_center,
+//   unsigned int rbf_sample, bool save_kernel)
+{
+   X = standardize(X, STANDARDIZE_CENTER);
+   Y = standardize(Y, STANDARDIZE_CENTER);
+   //std::cout << timestamp() << " Begin computing covariance matrices" << std::endl;
+   //MatrixXd Sx = X.transpose() * X;
+   //MatrixXd Sy = Y.transpose() * Y;
+
+   //std::cout << timestamp() << " dim(X): " << dim(X) << " dim(Y): " << dim(Y) << std::endl;
+   //MatrixXd Sxy = X.transpose() * Y;
+
+   //std::cout << timestamp() << " Covariance done" << std::endl;
+
+   //VectorXd dx = Sx.diagonal();
+   //VectorXd dy = Sy.diagonal();
+   //Sx.diagonal() = dx.array() + lambda;
+   //Sy.diagonal() = dy.array() + lambda;
+   
+   std::cout << timestamp() << " Begin QR" << std::endl;
+
+   HouseholderQR<MatrixXd> qr(X);
+
+   LLT<MatrixXd> lltX(Sx);
+   LLT<MatrixXd> lltY(Sy);
+   std::cout << timestamp() << " End QR" << std::endl;
+
+   std::cout << timestamp() << " Begin Cholesky inversion" << std::endl;
+   MatrixXd W1 = lltX.matrixL().solve(Sxy);
+   MatrixXd M = lltY.matrixL().solve(W1.transpose());
+   std::cout << timestamp() << " End Cholesky inversion" << std::endl;
+   std::cout << timestamp() << " dim(M): " << dim(M) << std::endl;
+
+   if(debug)
+   {
+      MatrixXd L = lltX.matrixL();
+      save_text("Lx.txt", L);
+      L = lltY.matrixL();
+      save_text("Ly.txt", L);
+      save_text("X.txt", X);
+      save_text("Y.txt", Y);
+      save_text("Sxy.txt", Sxy);
+      save_text("W1.txt", W1);
+      save_text("M.txt", M);
+   }
+
+   unsigned int maxiter = 10;
+   double tol = 1e-9;
+   unsigned int ndim = 10, nextra = 10;
+   unsigned int N = X.rows();
+
+   // Necessary for getting V. Also, the correlations are the sqrt of the
+   // eigenvalues of the cross-covariance matrix
+   int method = METHOD_SVD;
+
+   unsigned int total_dim = ndim + nextra;
+   unsigned int m = fminl(X.cols(), Y.cols());
+   if(total_dim > m)
+      total_dim = m;
+   MatrixXd R = make_gaussian(M.cols(), total_dim, seed);
+   MatrixXd Z = M * R;
+   std::cout << timestamp() << " dim(Z): " << dim(Z) << std::endl;
+   normalize(Z);
+   MatrixXd Zn;
+   MatrixXd K = M * M.transpose();
+
+   for(unsigned int iter = 0 ; iter < maxiter ; iter++)
+   {
+      std::cout << timestamp() << " iter " << iter << " ";
+      Zn.noalias() = K * Z;
+      normalize(Zn);
+      double diff =  (Z -  Zn).array().square().sum() / Z.size(); 
+      std::cout << diff << std::endl;
+      Z.noalias() = Zn;
+      if(diff < tol)
+	 break;
+   }
+
+   std::cout << timestamp() << " QR begin" << std::endl;
+   ColPivHouseholderQR<MatrixXd> qr(Z);
+   MatrixXd Q = MatrixXd::Identity(Z.rows(), Z.cols());
+   Q = qr.householderQ() * Q;
+   Q.conservativeResize(NoChange, Z.cols());
+   std::cout << timestamp() << " dim(Q): " << dim(Q) << std::endl;
+   std::cout << timestamp() << " QR done" << std::endl;
+
+   MatrixXd B = Q.transpose() * M;
+   //B = B.array() / sqrt(N - 1); // CCA doesn't scale eigenvalues
+   std::cout << timestamp() << " dim(B): " << dim(B) << std::endl;
+
+   MatrixXd Ut;
+   pca_small(B, method, Ut, V, d);
+   std::cout << timestamp() << " dim(Ut): " << dim(Ut) << std::endl;
+   U.noalias() = Q * Ut;
+   std::cout << timestamp() << " dim(U): " << dim(U) << std::endl;
+   std::cout << timestamp() << " dim(V): " << dim(V) << std::endl;
+
+   // U and V are switched relative to standard formulation of CCA
+   // so V is now for X and U is for Y
+
+   // TODO: is this right?
    std::cout << timestamp() << " Begin computing Xcoef/Ycoef" << std::endl;
    MatrixXd Xcoef = lltX.matrixL().transpose().solve(V);
    MatrixXd Ycoef = lltY.matrixL().transpose().solve(U);
