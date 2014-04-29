@@ -34,6 +34,7 @@ int main(int argc, char * argv[])
    desc.add_options()
       ("help", "produce help message")
       ("cca", "perform canonical correlation analysis (CCA)")
+      ("scca", "perform sparse canonical correlation analysis (SCCA)")
       ("numthreads", po::value<int>(), "set number of OpenMP threads")
       ("seed", po::value<long>(), "set random seed")
       ("bed", po::value<std::string>(), "PLINK bed file")
@@ -62,6 +63,8 @@ int main(int argc, char * argv[])
       ("rbfsample", po::value<int>(), "sample size for estimating RBF kernel width")
       ("savekernel", "save the kernel as text file")
       ("lambda", po::value<double>(), "L2 penalty for CCA")
+      ("lambda1", po::value<double>(), "1st L1 penalty for SCCA")
+      ("lambda2", po::value<double>(), "2nd L2 penalty for SCCA")
       ("debug", "debug, dumps all intermdiate data (WARNING: slow, call only on small data")
    ;
 
@@ -78,6 +81,8 @@ int main(int argc, char * argv[])
    int mode = MODE_PCA;
    if(vm.count("cca"))
       mode = MODE_CCA;
+   else if(vm.count("scca"))
+      mode = MODE_SCCA;
 
    int num_threads = 1;
    if(vm.count("numthreads"))
@@ -199,6 +204,10 @@ int main(int argc, char * argv[])
    if(vm.count("outvec"))
       eigvecfile = vm["outvec"].as<std::string>();
 
+   std::string eigvecrfile = "eigenvectors_right.txt";
+   if(vm.count("outvecr"))
+      eigvecfile = vm["outvecr"].as<std::string>();
+
    std::string eigvalfile = "eigenvalues.txt";
    if(vm.count("outval"))
       eigvalfile = vm["outval"].as<std::string>();
@@ -308,6 +317,30 @@ int main(int argc, char * argv[])
       }
    }
 
+   double lambda1 = 0;
+   if(vm.count("lambda1"))
+   {
+      lambda1 = vm["lambda1"].as<double>();
+      if(lambda1 < 0)
+      {
+	 std::cerr << "Error: --lambda1 can't be negative"
+	    << std::endl;
+	 return EXIT_FAILURE;
+      }
+   }
+
+   double lambda2 = 0;
+   if(vm.count("lambda2"))
+   {
+      lambda2 = vm["lambda2"].as<double>();
+      if(lambda2 < 0)
+      {
+	 std::cerr << "Error: --lambda2 can't be negative"
+	    << std::endl;
+	 return EXIT_FAILURE;
+      }
+   }
+
    ////////////////////////////////////////////////////////////////////////////////
    // End command line parsing
       
@@ -322,7 +355,7 @@ int main(int argc, char * argv[])
    data.verbose = verbose;
    std::cout << timestamp() << " seed: " << data.seed << std::endl;
 
-   if(mode == MODE_CCA)
+   if(mode == MODE_CCA || mode == MODE_SCCA)
       data.read_pheno(pheno_file.c_str(), 3, PHENO_BINARY_12);
    else
       data.read_pheno(fam_file.c_str(), 6, PHENO_BINARY_12);
@@ -344,7 +377,7 @@ int main(int argc, char * argv[])
       n_extra = fminl(max_dim - n_dim, 190);
 
    ////////////////////////////////////////////////////////////////////////////////
-   // The main analyis
+   // The main analysis
    if(mode == MODE_PCA)
    {
       std::cout << timestamp() << " PCA begin" << std::endl;
@@ -352,11 +385,17 @@ int main(int argc, char * argv[])
          tol, seed, kernel, sigma, rbf_center, rbf_sample, save_kernel);
       std::cout << timestamp() << " PCA done" << std::endl;
    }
-   else
+   else if(mode == MODE_CCA)
    {
       std::cout << timestamp() << " CCA begin" << std::endl;
       rpca.cca(data.X, data.Y, lambda, seed);
       std::cout << timestamp() << " CCA done" << std::endl;
+   }
+   else if(mode == MODE_SCCA)
+   {
+      std::cout << timestamp() << " SCCA begin" << std::endl;
+      rpca.scca(data.X, data.Y, lambda1, lambda2, seed, n_dim);
+      std::cout << timestamp() << " SCCA done" << std::endl;
    }
 
    ////////////////////////////////////////////////////////////////////////////////
@@ -383,8 +422,21 @@ int main(int argc, char * argv[])
 	 " PCs to file " << pcfile << std::endl;
       save_text(pcfile.c_str(), rpca.P);
    }
-   else
+   else if(mode == MODE_CCA)
    {
+      std::cout << timestamp() << " Writing " << n_dim <<
+	 " PCs to file " << pcxfile << std::endl;
+      save_text(pcxfile.c_str(), rpca.Px);
+      std::cout << timestamp() << " Writing " << n_dim <<
+	 " PCs to file " << pcyfile << std::endl;
+      save_text(pcyfile.c_str(), rpca.Py);
+   }
+   else if(mode == MODE_SCCA)
+   {
+      std::cout << timestamp() << " Writing " << n_dim << 
+	 " right eigenvectors to file " << eigvecfile << std::endl;
+      save_text(eigvecrfile.c_str(), rpca.V);
+
       std::cout << timestamp() << " Writing " << n_dim <<
 	 " PCs to file " << pcxfile << std::endl;
       save_text(pcxfile.c_str(), rpca.Px);
