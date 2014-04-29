@@ -18,6 +18,7 @@ using namespace Eigen;
 
 #define MODE_PCA 1
 #define MODE_CCA 2
+#define MODE_SCCA 3
 
 class RandomPCA {
    public:
@@ -39,6 +40,9 @@ class RandomPCA {
 	    unsigned int rbf_sample, bool save_kernel,
 	    bool do_orth);
       void cca(MatrixXd &X, MatrixXd &Y, double lambda, long seed);
+//      void cca_qr(MatrixXd &X, MatrixXd &Y, double lambda, long seed);
+      void scca(MatrixXd &X, MatrixXd &Y, double lambda1, double lambda2,
+	    long seed, unsigned int dim);
       void zca_whiten(bool transpose);
 };
 
