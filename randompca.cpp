@@ -535,7 +535,7 @@ void RandomPCA::scca(MatrixXd &X, MatrixXd &Y, double lambda1, double lambda2,
    long seed, unsigned int ndim)
 {
    unsigned int maxiter = 1e3L;
-   double tol = 1e-6;
+   double tol = 1e-9;
 
    X = standardize(X, STANDARDIZE_CENTER);
    Y = standardize(Y, STANDARDIZE_CENTER);
@@ -546,7 +546,9 @@ void RandomPCA::scca(MatrixXd &X, MatrixXd &Y, double lambda1, double lambda2,
    std::cout << "lambda1: " << lambda1 << " lambda2: " << lambda2 <<
    std::endl;
 
+   std::cout << timestamp() << " Begin computing X^T Y" << std::endl;
    MatrixXd XY = X.transpose() * Y;
+   std::cout << timestamp() << " End computing X^T Y" << std::endl;
 
    unsigned int n = X.rows(), p = X.cols(), k = Y.cols();
 
