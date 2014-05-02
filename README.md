@@ -69,8 +69,10 @@ Requirements for building from source
    * g++ compiler
    * Eigen (http://eigen.tuxfamily.org), v3.2 or higher
       (if you get a compile error ``error: no match for ‘operator/’ in ‘1 / ((Eigen::MatrixBase...`` you'll need a more recent Eigen)
-   * Boost (http://www.boost.org/), specifically boost_system-mt,
-      boost_iostreams-mt, boost_filesystem-mt, boost_program_options.
+   * Boost (http://www.boost.org/), specifically boost_system/boost_system-mt,
+      boost_iostreams/boost_iostreams-mt,
+      boost_filesystem/boost_filesystem-mt,
+      boost_program_options/boost_program_options-mt.
    * libgomp for openmp support
    * Recommended: plink2 (https://www.cog-genomics.org/plink2) for SNP
       thinning
