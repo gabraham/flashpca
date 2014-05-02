@@ -21,6 +21,8 @@ class RandomPCA {
       MatrixXd M;
       MatrixXd U, V, W, P;
       VectorXd d;
+      double trace;
+      VectorXd pve;
 
       int stand_method;
       long seed;

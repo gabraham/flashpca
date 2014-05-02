@@ -37,17 +37,18 @@ int main(int argc, char * argv[])
       ("ndim", po::value<int>(), "number of PCs to output")
       ("nextra", po::value<int>(),
 	 "number of extra dimensions to use in randomized PCA")
-      ("stand", po::value<std::string>(), "standardization method (none/binom/sd/center")
+      ("stand", po::value<std::string>(), "standardization method (none/binom/sd/center)")
       ("method", po::value<std::string>(), "PCA method (svd/eigen)")
       ("outpc", po::value<std::string>(), "PC output file")
       ("outvec", po::value<std::string>(), "Eigenvector output file")
       ("outval", po::value<std::string>(), "Eigenvalue output file")
+      ("outpve", po::value<std::string>(), "Proportion of variance explained output file")
       ("whiten", "whiten the data")
       ("outwhite", po::value<std::string>(), "whitened data output file")
       ("v", "verbose")
       ("maxiter", po::value<int>(), "maximum number of randomized PCA iterations")
       ("tol", po::value<double>(), "tolerance for randomized PCA iterations")
-      ("transpose", "force a transpose of the data")
+      ("transpose", "force a transpose of the data, if possible")
       ("kernel", po::value<std::string>(), "kernel type (rbf/linear)")
       ("sigma", po::value<double>(), "sigma for RBF kernel")
       ("rbfcenter", po::value<std::string>(), "center the RBF kernel (yes/no)")
@@ -176,6 +177,10 @@ int main(int argc, char * argv[])
    std::string eigvalfile = "eigenvalues.txt";
    if(vm.count("outval"))
       eigvalfile = vm["outval"].as<std::string>();
+
+   std::string eigpvefile = "pve.txt";
+   if(vm.count("outpve"))
+      eigpvefile = vm["outpve"].as<std::string>();
 
    std::string whitefile = "whitened.txt";
    if(vm.count("outwhite"))
@@ -314,6 +319,10 @@ int main(int argc, char * argv[])
    std::cout << timestamp() << " Writing " << n_dim << 
       " eigenvalues to file " << eigvalfile << std::endl;
    save_text(eigvalfile.c_str(), rpca.d);
+
+   std::cout << timestamp() << " Writing " << n_dim << 
+      " proportion variance explained to file " << eigpvefile << std::endl;
+   save_text(eigpvefile.c_str(), rpca.pve);
 
    std::cout << timestamp() << " Writing " << n_dim <<
       " PCs to file " << pcfile << std::endl;
