@@ -22,10 +22,11 @@ else
    CXXFLAGS += -mtune=generic
 endif
 
-BOOST = -lboost_system-mt \
-   -lboost_iostreams-mt \
-   -lboost_filesystem-mt \
-   -lboost_program_options
+BOOST = -L/usr/local/lib \
+   -lboost_system-mt -lboost_system \
+   -lboost_iostreams-mt -lboost_iostreams \
+   -lboost_filesystem-mt -lboost_system \
+   -lboost_program_options -lboost_system
  
 debug: LDFLAGS = $(BOOST)
 debug: CXXFLAGS += -O0 -ggdb3 -DGITVER=\"$(GITVER)\"
