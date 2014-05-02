@@ -126,7 +126,7 @@ MatrixXd rbf_kernel(MatrixXd& X, const double sigma, bool rbf_center)
    VectorXd ones = VectorXd::Ones(n);
    MatrixXd R = norms * ones.transpose();
    MatrixXd D = R + R.transpose() - 2 * X * X.transpose();
-   D = D.array() * -sigma;
+   D = D.array() / (-1 * sigma * sigma);
    MatrixXd K = D.array().exp();
 
    if(rbf_center)
@@ -184,7 +184,7 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
       {
 	 unsigned int med_samples = fminl(rbf_sample, N);
       	 double med = median_dist(M, med_samples, seed);
-      	 sigma = 1.0 / med; // note we don't take sqrt unlike others
+      	 sigma = sqrt(med);
       }
       std::cout << timestamp() << " Using RBF kernel with sigma="
 	 << sigma << std::endl;
