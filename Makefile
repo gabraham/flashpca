@@ -1,7 +1,9 @@
 
 .PHONY: all
 
-EIGEN=/usr/include/eigen3
+EIGEN_INC=/usr/local/include/eigen
+BOOST_INC=/usr/local/include/boost
+BOOST_LIB=/usr/local/lib
 
 all: flashpca
 

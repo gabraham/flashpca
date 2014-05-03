@@ -25,7 +25,7 @@ Genome-Wide Data, PLos ONE 9(4): e93766. doi:10.1371/journal.pone.0093766
 
 (preprint: http://biorxiv.org/content/early/2014/03/11/002238)
 
-## Licence
+## License
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation; either version 3 of the License, or
@@ -70,8 +70,10 @@ On Linux:
 * g++ compiler
 * Eigen (http://eigen.tuxfamily.org), v3.2 or higher
    (if you get a compile error ``error: no match for 'operator/' in '1 / ((Eigen::MatrixBase...`` you'll need a more recent Eigen)
-* Boost (http://www.boost.org/), specifically boost_system-mt,
-   boost_iostreams-mt, boost_filesystem-mt, boost_program_options.
+* Boost (http://www.boost.org/), specifically boost_system/boost_system-mt,
+   boost_iostreams/boost_iostreams-mt,
+   boost_filesystem/boost_filesystem-mt,
+   boost_program_options/boost_program_options-mt.
 * libgomp for openmp support
 * Recommended: plink2 (https://www.cog-genomics.org/plink2) for SNP
    thinning
