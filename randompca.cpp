@@ -36,7 +36,6 @@ void pca_small(MatrixXd &B, int method, MatrixXd& U, VectorXd &d)
       JacobiSVD<MatrixXd> svd(B, ComputeThinU | ComputeThinV);
       U = svd.matrixU();
       MatrixXd V = svd.matrixV();
-      //d = svd.singularValues();
       d = svd.singularValues().array().pow(2);
       std::cout << timestamp() << " SVD done" << std::endl;
    }
@@ -58,7 +57,6 @@ void pca_small(MatrixXd &B, int method, MatrixXd& U, VectorXd &d)
       for(unsigned int i = d.size() - 1 ; i != -1 ; --i)
       {
 	 // we get eigenvalues, which are the squared singular values
-	 //d(k) = sqrt(eval(i));
 	 d(k) = eval(i);
 	 U.col(k) = evec.col(i);
 	 k++;
@@ -229,7 +227,6 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
 
    MatrixXd B = Q.transpose() * M;
    B = B.array() / sqrt(N - 1);
-   //B = B.array() / (N - 1);
    std::cout << timestamp() << " dim(B): " << dim(B) << std::endl;
 
    MatrixXd Ut;
@@ -245,8 +242,7 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
       // We divide by sqrt(N - 1) since X has not been divided by it (but B
       // has)
       P.noalias() = M.transpose() * U;
-     double z = 1.0 / sqrt(N - 1);
-      //double z = 1.0 / (N - 1);
+      double z = 1.0 / sqrt(N - 1);
       P = P.array() * z;
    }
    else

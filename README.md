@@ -20,8 +20,7 @@ Gad Abraham, gad.abraham@unimelb.edu.au
 
 ## Citation
 G. Abraham and M. Inouye, Fast Principal Component Analysis of Large-Scale
-Genome-Wide Data, PLos ONE 9(4): e93766. doi:10.1371/journal.pone.0093766
-(http://www.plosone.org/article/info:doi/10.1371/journal.pone.0093766)
+Genome-Wide Data, PLos ONE 9(4): e93766. [doi:10.1371/journal.pone.0093766](http://www.plosone.org/article/info:doi/10.1371/journal.pone.0093766)
 
 (preprint: http://biorxiv.org/content/early/2014/03/11/002238)
 
@@ -41,28 +40,24 @@ and National ICT Australia (http://www.NICTA.com.au).
 
 Note: we recommend compiling from source for best performance.
 
-[flashpca_x86-64.gz](flashpca_x86-64.gz) for Intel x86-64 linux 2.6.15 and higher,
-   gunzip before use.
-   
-~~Note: currently OpenMP doesn't work correctly for statically linked version,
-so will run at single-thread speed. Compile from source to get the
-multiple-thread support.~~ (update: fixed, solution at
-http://stackoverflow.com/questions/11165338/segfault-when-using-static-and-fopenmp-in-gfortran)
+[flashpca_x86-64.gz](flashpca_x86-64.gz) for Intel x86-64 linux 2.6.15 and higher
 
 ### System requirements
 * 64-bit linux
 * For large datasets you'll need large amounts of RAM, e.g. for 15,000
-   individuals (43K SNPs) you'll need about 14Gb RAM, for 150,000 individuals
-   (43K SNPs) you'll need about 145Gb RAM (estimated using
+   individuals (43K SNPs) you'll need about 14GB RAM, for 150,000 individuals
+   (43K SNPs) you'll need about 145GB RAM (estimated using
    https://github.com/jhclark/memusg)
    (we are working on a version which will use less RAM).
 
-## Requirements for building from source
+## Building from source
 
 To get the latest version:
    ```
    git clone git://github.com/gabraham/flashpca
    ```
+
+### Requirements
 
 On Linux:
 
@@ -84,10 +79,19 @@ On Mac:
 * Eigen, as above
 * Set CXX to whatever g++ version you're using before calling make, e.g.:
 ```
-CXX=/usr/local/bin/g++-4.7 make all
+export CXX=/usr/local/bin/g++-4.7
 ```
 
-To install:
+### To install
+
+Edit the [Makefile](Makefile) to reflect where you have installed the Eigen
+headers and Boost headers and libraries:
+   ```
+   EIGEN_INC=/usr/local/include/eigen
+   BOOST_INC=/usr/local/include/boost
+   BOOST_LIB=/usr/local/lib
+   ```
+Run make:
    ```
    cd flashpca
    make all
@@ -165,10 +169,14 @@ PCA**](http://en.wikipedia.org/wiki/Kernel_principal_component_analysis) using a
 rbf`). The kernel is double-centred.  The default kernel parameter sigma is
 the median of the pairwise Euclidean distances of a random subset
 of samples (controlled by `--rbfsample`, default=min(1000, n)), and can also
-be specified using `--sigma`. The rest of the options are the same.
+be specified using `--sigma`. The rest of the options are the same as for
+standard PCA.
 
 ## LD-pruned HapMap3 example data
 
 See the [HapMap3](HapMap3) directory
 
-   
+## Changelog
+
+See [CHANGELOG.txt](CHANGELOG.txt)
+

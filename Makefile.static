@@ -1,7 +1,9 @@
 
 .PHONY: all
 
-EIGEN=/usr/include/eigen3
+EIGEN_INC=/usr/local/include/eigen
+BOOST_INC=/usr/local/include/boost
+BOOST_LIB=/usr/local/lib
 
 all: flashpca_x86-64
 
@@ -13,7 +15,7 @@ OBJ = \
    data.o \
    util.o
 
-CXXFLAGS = -static -Iboost -IEigen -I/usr/include/eigen3
+CXXFLAGS = -static -I${BOOST_INC} -I${EIGEN_INC}
 
 UNAME := $(shell uname)
 ifeq ($(UNAME), Darwin)
@@ -22,11 +24,11 @@ else
    CXXFLAGS += -mtune=generic
 endif
 
-BOOST = -L/usr/local/lib \
-   -lboost_system-mt -lboost_system \
-   -lboost_iostreams-mt -lboost_iostreams \
-   -lboost_filesystem-mt -lboost_system \
-   -lboost_program_options -lboost_system
+BOOST = -L${BOOST_LIB} \
+   -lboost_system \
+   -lboost_iostreams \
+   -lboost_system \
+   -lboost_program_options
  
 debug: LDFLAGS = $(BOOST)
 debug: CXXFLAGS += -O0 -ggdb3 -DGITVER=\"$(GITVER)\"

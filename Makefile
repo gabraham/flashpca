@@ -15,7 +15,7 @@ OBJ = \
    data.o \
    util.o
 
-CXXFLAGS = -Iboost -IEigen -I/usr/include/eigen3
+CXXFLAGS = -I${BOOST_INC} -I${EIGEN_INC}
 
 UNAME := $(shell uname)
 ifeq ($(UNAME), Darwin)
@@ -24,11 +24,11 @@ else
    CXXFLAGS += -march=native
 endif
 
-# On Debian/Ubuntu there's -mt and non-mt variants
-BOOST = -lboost_system-mt -lboost_system \
-   -lboost_iostreams-mt -lboost_iostreams \
-   -lboost_filesystem-mt -lboost_filesystem \
-   -lboost_program_options -lboost_program_options
+BOOST = -L${BOOST_LIB} \
+   -lboost_system \
+   -lboost_iostreams \
+   -lboost_filesystem \
+   -lboost_program_options
  
 debug: LDFLAGS = $(BOOST)
 debug: CXXFLAGS += -O0 -ggdb3 -DGITVER=\"$(GITVER)\" -fopenmp
