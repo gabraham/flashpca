@@ -278,7 +278,8 @@ void RandomPCA::zca_whiten(bool transpose)
    std::cout << timestamp() << " Whitening done (" << dim(W) << ")" << std::endl;
 }
 
-void RandomPCA::cca(MatrixXd &X, MatrixXd &Y, double lambda, long seed)//, int method, bool transpose,
+void RandomPCA::cca(MatrixXd &X, MatrixXd &Y, double lambda1, double lambda2,
+   long seed)//, int method, bool transpose,
 //   unsigned int ndim, unsigned int nextra, unsigned int maxiter, double tol,
 //   long seed, int kernel, double sigma, bool rbf_center,
 //   unsigned int rbf_sample, bool save_kernel)
@@ -296,8 +297,8 @@ void RandomPCA::cca(MatrixXd &X, MatrixXd &Y, double lambda, long seed)//, int m
 
    VectorXd dx = Sx.diagonal();
    VectorXd dy = Sy.diagonal();
-   Sx.diagonal() = dx.array() + lambda;
-   Sy.diagonal() = dy.array() + lambda;
+   Sx.diagonal() = dx.array() + lambda1;
+   Sy.diagonal() = dy.array() + lambda2;
    
    std::cout << timestamp() << " Begin Cholesky" << std::endl;
    LLT<MatrixXd> lltX(Sx);

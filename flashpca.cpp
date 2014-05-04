@@ -62,9 +62,8 @@ int main(int argc, char * argv[])
       ("rbfcenter", po::value<std::string>(), "center the RBF kernel (yes/no)")
       ("rbfsample", po::value<int>(), "sample size for estimating RBF kernel width")
       ("savekernel", "save the kernel as text file")
-      ("lambda", po::value<double>(), "L2 penalty for CCA")
-      ("lambda1", po::value<double>(), "1st L1 penalty for SCCA")
-      ("lambda2", po::value<double>(), "2nd L2 penalty for SCCA")
+      ("lambda1", po::value<double>(), "1st penalty for CCA/SCCA")
+      ("lambda2", po::value<double>(), "2nd penalty for CCA/SCCA")
       ("debug", "debug, dumps all intermdiate data (WARNING: slow, call only on small data")
    ;
 
@@ -305,18 +304,6 @@ int main(int argc, char * argv[])
 
    bool save_kernel = vm.count("savekernel");
 
-   double lambda = 0;
-   if(vm.count("lambda"))
-   {
-      lambda = vm["lambda"].as<double>();
-      if(lambda < 0)
-      {
-	 std::cerr << "Error: --lambda can't be negative"
-	    << std::endl;
-	 return EXIT_FAILURE;
-      }
-   }
-
    double lambda1 = 0;
    if(vm.count("lambda1"))
    {
@@ -388,7 +375,7 @@ int main(int argc, char * argv[])
    else if(mode == MODE_CCA)
    {
       std::cout << timestamp() << " CCA begin" << std::endl;
-      rpca.cca(data.X, data.Y, lambda, seed);
+      rpca.cca(data.X, data.Y, lambda1, lambda2, seed);
       std::cout << timestamp() << " CCA done" << std::endl;
    }
    else if(mode == MODE_SCCA)
