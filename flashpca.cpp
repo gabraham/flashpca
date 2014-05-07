@@ -407,7 +407,7 @@ int main(int argc, char * argv[])
 
       std::cout << timestamp() << " Writing " << n_dim <<
 	 " PCs to file " << pcfile << std::endl;
-      save_text(pcfile.c_str(), rpca.P);
+      save_text(pcfile.c_str(), rpca.Px);
    }
    else if(mode == MODE_CCA)
    {
