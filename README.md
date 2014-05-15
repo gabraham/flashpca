@@ -144,6 +144,14 @@ For more options:
    ./flashpca --help
    ```
 
+To get very high precision (correlation of 0.999 with exact
+eigen-decomposition for all eigen-values/eigen-vectors)
+for a large number of principal components, you'll need
+to increase the parameters `ndim`, `nextra`, `maxiter`, and `tol`, e.g.:
+   ```
+   ./flashpca --bfile data_pruned --ndim 100 --nextra 1000 --tol 1e-16 --maxiter 50
+   ```
+
 ## Output
 
 flashpca produces the following files:

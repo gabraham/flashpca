@@ -39,6 +39,7 @@ int main(int argc, char * argv[])
 	 "number of extra dimensions to use in randomized PCA")
       ("stand", po::value<std::string>(), "standardization method (none/binom/sd/center)")
       ("method", po::value<std::string>(), "PCA method (svd/eigen)")
+      ("orth", "use orthornormalization")
       ("outpc", po::value<std::string>(), "PC output file")
       ("outvec", po::value<std::string>(), "Eigenvector output file")
       ("outval", po::value<std::string>(), "Eigenvalue output file")
@@ -189,8 +190,9 @@ int main(int argc, char * argv[])
    bool whiten = vm.count("whiten");
    bool verbose = vm.count("v");
    bool transpose = vm.count("transpose");
+   bool do_orth = vm.count("orth");
    
-   int maxiter = 10;
+   int maxiter = 20;
    if(vm.count("maxiter"))
    {
       maxiter = vm["maxiter"].as<int>();
@@ -305,7 +307,7 @@ int main(int argc, char * argv[])
    std::cout << timestamp() << " PCA begin" << std::endl;
    
    rpca.pca(data.X, method, transpose, n_dim, n_extra, maxiter,
-      tol, seed, kernel, sigma, rbf_center, rbf_sample, save_kernel);
+      tol, seed, kernel, sigma, rbf_center, rbf_sample, save_kernel, do_orth);
 
    std::cout << timestamp() << " PCA done" << std::endl;
 

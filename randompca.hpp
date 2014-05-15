@@ -32,7 +32,8 @@ class RandomPCA {
 	    unsigned int ndim, unsigned int nextra,
 	    unsigned int maxiter, double tol, long seed,
 	    int kernel, double sigma, bool rbf_center,
-	    unsigned int rbf_sample, bool save_kernel);
+	    unsigned int rbf_sample, bool save_kernel,
+	    bool do_orth);
       void zca_whiten(bool transpose);
 };
 

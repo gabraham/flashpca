@@ -140,7 +140,7 @@ MatrixXd rbf_kernel(MatrixXd& X, const double sigma, bool rbf_center)
 void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
    unsigned int ndim, unsigned int nextra, unsigned int maxiter, double tol,
    long seed, int kernel, double sigma, bool rbf_center,
-   unsigned int rbf_sample, bool save_kernel)
+   unsigned int rbf_sample, bool save_kernel, bool do_orth)
 {
    unsigned int N;
 
@@ -209,7 +209,16 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
    {
       std::cout << timestamp() << " iter " << iter << " ";
       Yn.noalias() = K * Y;
-      normalize(Yn);
+      if(do_orth)
+      {
+	 ColPivHouseholderQR<MatrixXd> qr(Yn);
+	 MatrixXd I = MatrixXd::Identity(Yn.rows(), Yn.cols());
+	 Yn = qr.householderQ() * I;
+	 Yn.conservativeResize(NoChange, Yn.cols());
+      }
+      else
+	 normalize(Yn);
+
       double diff =  (Y -  Yn).array().square().sum() / Y.size(); 
       std::cout << diff << std::endl;
       Y.noalias() = Yn;
