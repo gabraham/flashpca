@@ -42,7 +42,7 @@ flashpca: CXXFLAGS += -g -O3 -DNDEBUG -DGITVER=\"$(GITVER)\" \
 flashpca: $(OBJ)
 	$(CXX) $(CXXFLAGS) -o flashpca $^ $(LDFLAGS)
 
-flashpca_x86-64: LDFLAGS = $(BOOST)
+flashpca_x86-64: LDFLAGS = $(BOOST) -Wl,--whole-archive -lpthread -Wl,--no-whole-archive
 flashpca_x86-64: CXXFLAGS += -g -O3 -DNDEBUG -DGITVER=\"$(GITVER)\" \
    -funroll-loops -ftree-vectorize -ffast-math -fopenmp -static
 flashpca_x86-64: $(OBJ)
