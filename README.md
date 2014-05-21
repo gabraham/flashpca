@@ -144,41 +144,36 @@ For more options:
    ./flashpca --help
    ```
 
-To get very high precision (correlation of 0.999 with exact
-eigen-decomposition for all eigen-values/eigen-vectors)
-for a large number of principal components, you'll need
-to increase the parameters `ndim`, `nextra`, `maxiter`, and `tol`, e.g.:
-   ```
-   ./flashpca --bfile data_pruned --ndim 100 --nextra 1000 --tol 1e-16 --maxiter 50
-   ```
-
 ## Output
 
 flashpca produces the following files:
 
 * `eigenvectors.txt`: the top k eigenvectors of the covariance
-   X^T X / (n - 1), same as matrix U from the SVD of the genotype matrix
+   X X^T / (n - 1), same as matrix U from the SVD of the genotype matrix
    X=UDV^T.
 * `pcs.txt`: the top k principal components (the projection of the data on the
 eigenvectors, scaled by the eigenvalues,  same as XV (or UD). This is the file
 you will want to plot the PCA plot from.
-* `eigenvalues.txt`: the top k eigenvalues of X^T X / (n - 1). These are the
-    square of the singular values D.
+* `eigenvalues.txt`: the top k eigenvalues of X X^T / (n - 1). These are the
+    square of the singular values D (square of sdev from prcomp).
 * `pve.txt`: the proportion of total variance explained by *each of the top k*
-   eigenvectors (the total variance is given by the trace of the covariance).
+   eigenvectors (the total variance is given by the trace of the covariance
+   matrix X X^T / (n - 1), which is the same as the sum of all eigenvalues).
    To get the cumulative variance explained, simply
    do the cumulative sum of the variances (`cumsum` in R).
 
 ## Experimental features
 
-flashpca now experimentally supports [**low-rank kernel
+* flashpca now experimentally supports low-rank [**kernel
 PCA**](http://en.wikipedia.org/wiki/Kernel_principal_component_analysis) using an RBF
 (Gaussian) kernel K(x, x') = exp(-||x - x'||_2^2 / sigma^2) (specify using `--kernel
-rbf`). The kernel is double-centred.  The default kernel parameter sigma is
-the median of the pairwise Euclidean distances of a random subset
-of samples (controlled by `--rbfsample`, default=min(1000, n)), and can also
-be specified using `--sigma`. The rest of the options are the same as for
-standard PCA.
+rbf`).
+* The kernel is double-centred.
+* The default kernel parameter sigma is the median of the pairwise Euclidean distances of a random subset
+   of samples (controlled by `--rbfsample`, default=min(1000, n)), and can also
+   be specified using `--sigma`.
+* The rest of the options are the same as for standard PCA.
+* Currently, the proportion of variation explained is not computed for kPCA.
 
 ## LD-pruned HapMap3 example data
 

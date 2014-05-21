@@ -39,7 +39,7 @@ int main(int argc, char * argv[])
 	 "number of extra dimensions to use in randomized PCA")
       ("stand", po::value<std::string>(), "standardization method (none/binom/sd/center)")
       ("method", po::value<std::string>(), "PCA method (svd/eigen)")
-      ("orth", "use orthornormalization")
+      ("orth", po::value<std::string>(), "use orthornormalization (yes/no)")
       ("outpc", po::value<std::string>(), "PC output file")
       ("outvec", po::value<std::string>(), "Eigenvector output file")
       ("outval", po::value<std::string>(), "Eigenvalue output file")
@@ -190,9 +190,24 @@ int main(int argc, char * argv[])
    bool whiten = vm.count("whiten");
    bool verbose = vm.count("v");
    bool transpose = vm.count("transpose");
-   bool do_orth = vm.count("orth");
-   
-   int maxiter = 20;
+
+
+   bool do_orth = true;
+   if(vm.count("orth"))
+   {
+      std::string s = vm["orth"].as<std::string>();
+      if(s == "yes")
+	 do_orth = true;
+      else if(s == "no")
+	 do_orth = false;
+      else
+      {
+	 std::cerr << "Error: unknown option for orth " << s << std::endl;
+	 return EXIT_FAILURE;
+      }
+   }
+  
+   int maxiter = 50;
    if(vm.count("maxiter"))
    {
       maxiter = vm["maxiter"].as<int>();
@@ -204,7 +219,7 @@ int main(int argc, char * argv[])
       }
    }
 
-   double tol = 1e-7;
+   double tol = 1e-6;
    if(vm.count("tol"))
    {
       tol = vm["tol"].as<double>();
@@ -322,9 +337,12 @@ int main(int argc, char * argv[])
       " eigenvalues to file " << eigvalfile << std::endl;
    save_text(eigvalfile.c_str(), rpca.d);
 
-   std::cout << timestamp() << " Writing " << n_dim << 
-      " proportion variance explained to file " << eigpvefile << std::endl;
-   save_text(eigpvefile.c_str(), rpca.pve);
+   if(kernel == KERNEL_LINEAR)
+   {
+      std::cout << timestamp() << " Writing " << n_dim << 
+	 " proportion variance explained to file " << eigpvefile << std::endl;
+      save_text(eigpvefile.c_str(), rpca.pve);
+   }
 
    std::cout << timestamp() << " Writing " << n_dim <<
       " PCs to file " << pcfile << std::endl;

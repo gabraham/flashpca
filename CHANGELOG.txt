@@ -1,6 +1,7 @@
 Version 1.0.0
-03-May-2014
+21-May-2014
 * Makefile now looks for Eigen and Boost in /usr/local, by default
 * flashpca now computes proportion of variance explained by each eigenvector
 * Experimental support for kernel PCA
 * flashpca_x86-64 built with Boost 1.55.0, Eigen 3.2.1
+* By default, do orthogonalisation; a bit slower but increases accuracy

@@ -207,10 +207,11 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
 
    for(unsigned int iter = 0 ; iter < maxiter ; iter++)
    {
-      std::cout << timestamp() << " iter " << iter << " ";
+      std::cout << timestamp() << " iter " << iter;
       Yn.noalias() = K * Y;
       if(do_orth)
       {
+	 std::cout << " (orthogonalising)";
 	 ColPivHouseholderQR<MatrixXd> qr(Yn);
 	 MatrixXd I = MatrixXd::Identity(Yn.rows(), Yn.cols());
 	 Yn = qr.householderQ() * I;
@@ -220,7 +221,7 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
 	 normalize(Yn);
 
       double diff =  (Y -  Yn).array().square().sum() / Y.size(); 
-      std::cout << diff << std::endl;
+      std::cout << " " << diff << std::endl;
       Y.noalias() = Yn;
       if(diff < tol)
 	 break;
@@ -261,6 +262,7 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
    }
 
    P.conservativeResize(NoChange, ndim);
+   U.conservativeResize(NoChange, ndim);
    d.conservativeResize(ndim);
    pve = d.array() / trace;
 
