@@ -36,7 +36,7 @@ void pca_small(MatrixXd &B, int method, MatrixXd& U, VectorXd &d)
       JacobiSVD<MatrixXd> svd(B, ComputeThinU | ComputeThinV);
       U = svd.matrixU();
       MatrixXd V = svd.matrixV();
-      d = svd.singularValues();
+      d = svd.singularValues().array().pow(2);
       std::cout << timestamp() << " SVD done" << std::endl;
    }
    else if(method == METHOD_EIGEN)
@@ -53,11 +53,11 @@ void pca_small(MatrixXd &B, int method, MatrixXd& U, VectorXd &d)
       d.resize(eval.size());
       U.resize(BBT.rows(), BBT.rows());
 
-      unsigned int k = 0;
+      unsigned int k = 0, s = d.size();
       for(unsigned int i = d.size() - 1 ; i != -1 ; --i)
       {
 	 // we get eigenvalues, which are the squared singular values
-	 d(k) = sqrt(eval(i));
+	 d(k) = eval(i);
 	 U.col(k) = evec.col(i);
 	 k++;
       }
@@ -124,7 +124,7 @@ MatrixXd rbf_kernel(MatrixXd& X, const double sigma, bool rbf_center)
    VectorXd ones = VectorXd::Ones(n);
    MatrixXd R = norms * ones.transpose();
    MatrixXd D = R + R.transpose() - 2 * X * X.transpose();
-   D = D.array() * -sigma;
+   D = D.array() / (-1 * sigma * sigma);
    MatrixXd K = D.array().exp();
 
    if(rbf_center)
@@ -140,7 +140,7 @@ MatrixXd rbf_kernel(MatrixXd& X, const double sigma, bool rbf_center)
 void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
    unsigned int ndim, unsigned int nextra, unsigned int maxiter, double tol,
    long seed, int kernel, double sigma, bool rbf_center,
-   unsigned int rbf_sample, bool save_kernel)
+   unsigned int rbf_sample, bool save_kernel, bool do_orth)
 {
    unsigned int N;
 
@@ -182,7 +182,7 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
       {
 	 unsigned int med_samples = fminl(rbf_sample, N);
       	 double med = median_dist(M, med_samples, seed);
-      	 sigma = 1.0 / med; // note we don't take sqrt unlike others
+      	 sigma = sqrt(med);
       }
       std::cout << timestamp() << " Using RBF kernel with sigma="
 	 << sigma << std::endl;
@@ -194,6 +194,10 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
       K.noalias() = M * M.transpose();
    }
 
+   trace = K.diagonal().array().sum() / (N - 1);
+   std::cout << timestamp() << " Trace(K): " << trace 
+      << " (N: " << N << ")" << std::endl;
+
    std::cout << timestamp() << " dim(K): " << dim(K) << std::endl;
    if(save_kernel)
    {
@@ -203,11 +207,21 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
 
    for(unsigned int iter = 0 ; iter < maxiter ; iter++)
    {
-      std::cout << timestamp() << " iter " << iter << " ";
+      std::cout << timestamp() << " iter " << iter;
       Yn.noalias() = K * Y;
-      normalize(Yn);
+      if(do_orth)
+      {
+	 std::cout << " (orthogonalising)";
+	 ColPivHouseholderQR<MatrixXd> qr(Yn);
+	 MatrixXd I = MatrixXd::Identity(Yn.rows(), Yn.cols());
+	 Yn = qr.householderQ() * I;
+	 Yn.conservativeResize(NoChange, Yn.cols());
+      }
+      else
+	 normalize(Yn);
+
       double diff =  (Y -  Yn).array().square().sum() / Y.size(); 
-      std::cout << diff << std::endl;
+      std::cout << " " << diff << std::endl;
       Y.noalias() = Yn;
       if(diff < tol)
 	 break;
@@ -248,7 +262,10 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
    }
 
    P.conservativeResize(NoChange, ndim);
+   U.conservativeResize(NoChange, ndim);
    d.conservativeResize(ndim);
+   pve = d.array() / trace;
+
 }
 
 // ZCA of genotypes
