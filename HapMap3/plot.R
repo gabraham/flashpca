@@ -39,6 +39,9 @@ m <- read.table("relationships_w_pops_121708.txt", header=TRUE, sep="",
 rownames(m) <- m[,2]
 pop <- factor(m[fam[,2], 7])
 
+################################################################################
+# Compare the eigenvectors / principal components
+
 # smartpca
 d1 <- read.table("data.pca.evec",
    header=FALSE, sep="", stringsAsFactors=FALSE, skip=1, row.names=1)
@@ -49,10 +52,11 @@ d2 <- read.table("pcs.txt", header=FALSE, sep="")
 # shellfish
 d3 <- read.table("shellfish.evecs", header=FALSE, sep="")
    
-x1 <- as.matrix(d1[, 1:10])
-x2 <- as.matrix(d2[, 1:10])
-x3 <- t(as.matrix(d3))[, 1:10]
-x4 <- pr$x[, 1:10]
+k <- 100
+x1 <- as.matrix(d1[, 1:k])
+x2 <- as.matrix(d2[, 1:k])
+x3 <- t(as.matrix(d3))[, 1:k]
+x4 <- pr$x[, 1:k]
 
 max(abs(x1))
 max(abs(x2))
@@ -76,7 +80,7 @@ panel.cor <- function(x, y, ...)
 }
 
 pdf("hapmap3_comparison.pdf")
-for(i in 1:10) {
+for(i in 1:k) {
    z <- cbind(smartpca=x1[,i], flashpca=x2[,i],
       shellfish=x3[,i], R=x4[,i])
    pairs(z, main=paste("PC", i), col=pop, lower.panel=panel.cor)
@@ -106,9 +110,22 @@ grid.text("b", x=unit(0.04, "npc"), y=unit(0.96, "npc"),
 dev.off()
 
 d2 <- read.table("pcs.txt", header=FALSE, sep="")
-x2 <- as.matrix(d2[, 1:10])
+x2 <- as.matrix(d2[, 1:k])
 i <- 1
 z <- cbind(smartpca=x1[,i], flashpca=x2[,i],
      shellfish=x3[,i], R=x4[,i])
 cor(z)
+
+################################################################################
+# Compare the eigenvalues (squared principal values)
+
+v1 <- scan("data.eval")[1:k]^2
+v2 <- scan("eigenvalues.txt")[1:k]
+v3 <- scan("shellfish.evals")[1:k]^2
+v4 <- pr$sdev[1:k]^2
+
+eig <- cbind(smartpca=v1, flashpca=v2, shellfish=v3, R=v4)
+cor(eig)
+
+
 
