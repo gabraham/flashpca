@@ -11,7 +11,7 @@ using namespace Rcpp;
 RcppExport SEXP flashpca(SEXP _X, SEXP _method, SEXP _stand,
    SEXP _transpose, SEXP _ndim, SEXP _nextra, SEXP _maxiter, SEXP _tol,
    SEXP _seed, SEXP _kernel, SEXP _sigma, SEXP _rbf_center,
-   SEXP _rbf_sample, SEXP _save_kernel, SEXP _do_orth)
+   SEXP _rbf_sample, SEXP _save_kernel, SEXP _do_orth, SEXP _verbose)
 {
 //BEGIN_RCPP
 
@@ -38,9 +38,11 @@ RcppExport SEXP flashpca(SEXP _X, SEXP _method, SEXP _stand,
    unsigned int rbf_sample = Rcpp::as<unsigned int>(_rbf_sample);
    bool save_kernel = Rcpp::as<bool>(_save_kernel);
    bool do_orth = Rcpp::as<bool>(_do_orth);
+   bool verbose = Rcpp::as<bool>(_verbose);
 
    RandomPCA rp;
    rp.stand_method = stand;
+   rp.verbose = verbose;
    rp.pca(X, method, transpose, ndim, nextra,
       maxiter, tol, seed, kernel,
       sigma, rbf_center, rbf_sample,
