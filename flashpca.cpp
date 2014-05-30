@@ -308,6 +308,7 @@ int main(int argc, char * argv[])
    data.read_bed(transpose);
 
    RandomPCA rpca;
+   rpca.verbose = verbose;
    rpca.stand_method = stand_method;
    unsigned int max_dim = fminl(data.X.rows(), data.X.cols());
    

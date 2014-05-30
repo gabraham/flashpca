@@ -1,6 +1,6 @@
 
 flashpca <- function(X, method=c("eigen", "svd"),
-   stand=c("binom", "sd", "center"), transpose=NULL, ndim=10,
+   stand=c("binom", "sd", "center", "none"), transpose=NULL, ndim=10,
    nextra=10, maxiter=50, tol=1e-6, seed=1, kernel=c("linear", "rbf"),
    sigma=NULL, rbf_center=TRUE, rbf_sample=1000, save_kernel=FALSE,
    do_orth=TRUE)
@@ -21,6 +21,8 @@ flashpca <- function(X, method=c("eigen", "svd"),
       stand_i <- 2L
    } else if(stand == "center") {
       stand_i <- 3L
+   } else if(stand == "none") {
+      stand_i <- 0L
    }
 
    if(kernel == "linear") {

@@ -28,22 +28,22 @@ inline void normalize(MatrixXd& X)
    }
 }
 
-void pca_small(MatrixXd &B, int method, MatrixXd& U, VectorXd &d)
+void pca_small(MatrixXd &B, int method, MatrixXd& U, VectorXd &d, bool verbose)
 {
    if(method == METHOD_SVD)
    {
-      std::cout << timestamp() << " SVD begin" << std::endl;
+      verbose && std::cout << timestamp() << " SVD begin" << std::endl;
       JacobiSVD<MatrixXd> svd(B, ComputeThinU | ComputeThinV);
       U = svd.matrixU();
       MatrixXd V = svd.matrixV();
       d = svd.singularValues().array().pow(2);
-      std::cout << timestamp() << " SVD done" << std::endl;
+      verbose && std::cout << timestamp() << " SVD done" << std::endl;
    }
    else if(method == METHOD_EIGEN)
    {
-      std::cout << timestamp() << " Eigen-decomposition begin" << std::endl;
+      verbose && std::cout << timestamp() << " Eigen-decomposition begin" << std::endl;
       MatrixXd BBT = B * B.transpose();
-      std::cout << timestamp() << " dim(BBT): " << dim(BBT) << std::endl;
+      verbose && std::cout << timestamp() << " dim(BBT): " << dim(BBT) << std::endl;
       SelfAdjointEigenSolver<MatrixXd> eig(BBT);
 
       // The eigenvalues come out sorted in *increasing* order,
@@ -158,12 +158,16 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
    {
       if(stand_method != STANDARDIZE_NONE)
 	 M = standardize_transpose(X, stand_method);
+      else
+	 M = X;
       N = X.cols();
    }
    else
    {
       if(stand_method != STANDARDIZE_NONE)
 	 M = standardize(X, stand_method);
+      else
+	 M = X;
       N = X.rows();
    }
 
@@ -240,7 +244,7 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
    std::cout << timestamp() << " dim(B): " << dim(B) << std::endl;
 
    MatrixXd Ut;
-   pca_small(B, method, Ut, d);
+   pca_small(B, method, Ut, d, verbose);
    std::cout << timestamp() << " dim(Ut): " << dim(Ut) << std::endl;
    U.noalias() = Q * Ut;
    std::cout << timestamp() << " dim(U): " << dim(U) << std::endl;

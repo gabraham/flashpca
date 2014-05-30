@@ -26,6 +26,7 @@ class RandomPCA {
 
       int stand_method;
       long seed;
+      bool verbose;
 
       void pca(MatrixXd &X,
 	    int method, bool transpose,
