@@ -46,7 +46,7 @@ flashpca <- function(X, method=c("eigen", "svd"),
    # otherwise Rcpp will throw an exception
    storage.mode(X) <- "numeric"
 
-   .Call("flashpca", PACKAGE="flashpca",
+   .Call("flashpca", PACKAGE="flashpcaR",
       X, method_i, stand_i, transpose, ndim, nextra, maxiter,
       tol, seed, kernel_i, sigma, rbf_center, rbf_sample,
       save_kernel, do_orth)
