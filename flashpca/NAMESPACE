@@ -1,0 +1,4 @@
+useDynLib(flashpca)
+import(RcppEigen)
+importFrom(Rcpp, evalCpp)
+exportPattern("^[[:alpha:]]+")
