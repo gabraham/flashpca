@@ -386,8 +386,12 @@ int main(int argc, char * argv[])
    {
       std::cout << timestamp() << " PCA begin" << std::endl;
       rpca.pca(data.X, method, transpose, n_dim, n_extra, maxiter,
+<<<<<<< HEAD
          tol, seed, kernel, sigma, rbf_center, rbf_sample, save_kernel,
 	 do_orth);
+=======
+         tol, seed, kernel, sigma, rbf_center, rbf_sample, save_kernel);
+>>>>>>> f996449dcbe3b6f55e2a397bc8affe8d353361c3
       std::cout << timestamp() << " PCA done" << std::endl;
    }
    else if(mode == MODE_CCA)
@@ -426,12 +430,15 @@ int main(int argc, char * argv[])
       std::cout << timestamp() << " Writing " << n_dim <<
 	 " PCs to file " << pcfile << std::endl;
       save_text(pcfile.c_str(), rpca.Px);
+<<<<<<< HEAD
       if(kernel == KERNEL_LINEAR)
       {
          std::cout << timestamp() << " Writing " << n_dim << 
             " proportion variance explained to file " << eigpvefile << std::endl;
          save_text(eigpvefile.c_str(), rpca.pve);
       }
+=======
+>>>>>>> f996449dcbe3b6f55e2a397bc8affe8d353361c3
    }
    else if(mode == MODE_CCA)
    {
