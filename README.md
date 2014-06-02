@@ -106,7 +106,7 @@ for Eigen), although those available through apt-get tend to be older versions.
 First thin the data by LD (highly recommend
 [plink2](https://www.cog-genomics.org/plink2) for this):
    ```
-   plink --bfile data --indep-pairwise 1000 50 0.05 --exclude region exclusion_regions.txt
+   plink --bfile data --indep-pairwise 1000 50 0.05 --exclude range exclusion_regions.txt
    plink --bfile data --extract plink.prune.in --make-bed --out data_pruned
    ```
 where [exclusion_regions.txt](exclusion_regions.txt) contains:
