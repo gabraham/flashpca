@@ -3,7 +3,7 @@ flashpca <- function(X, method=c("eigen", "svd"),
    stand=c("binom", "sd", "center", "none"), transpose=NULL, ndim=10,
    nextra=10, maxiter=50, tol=1e-6, seed=1, kernel=c("linear", "rbf"),
    sigma=NULL, rbf_center=TRUE, rbf_sample=1000, save_kernel=FALSE,
-   do_orth=TRUE, verbose=FALSE)
+   do_orth=TRUE, verbose=FALSE, num_threads=1)
 {
    method <- match.arg(method)
    stand <- match.arg(stand)
@@ -49,6 +49,6 @@ flashpca <- function(X, method=c("eigen", "svd"),
    .Call("flashpca", PACKAGE="flashpcaR",
       X, method_i, stand_i, transpose, ndim, nextra, maxiter,
       tol, seed, kernel_i, sigma, rbf_center, rbf_sample,
-      save_kernel, do_orth, verbose)
+      save_kernel, do_orth, verbose, num_threads)
 }
 
