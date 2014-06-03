@@ -206,7 +206,7 @@ int main(int argc, char * argv[])
 
    std::string eigvecrfile = "eigenvectors_right.txt";
    if(vm.count("outvecr"))
-      eigvecfile = vm["outvecr"].as<std::string>();
+      eigvecrfile = vm["outvecr"].as<std::string>();
 
    std::string eigvalfile = "eigenvalues.txt";
    if(vm.count("outval"))
@@ -445,7 +445,7 @@ int main(int argc, char * argv[])
    else if(mode == MODE_SCCA)
    {
       std::cout << timestamp() << " Writing " << n_dim << 
-	 " right eigenvectors to file " << eigvecfile << std::endl;
+	 " right eigenvectors to file " << eigvecrfile << std::endl;
       save_text(eigvecrfile.c_str(), rpca.V);
 
       std::cout << timestamp() << " Writing " << n_dim <<
