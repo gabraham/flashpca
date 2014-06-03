@@ -26,6 +26,7 @@ class RandomPCA {
 
       int stand_method;
       long seed;
+      bool verbose;
 
       void pca(MatrixXd &X,
 	    int method, bool transpose,
@@ -34,6 +35,7 @@ class RandomPCA {
 	    int kernel, double sigma, bool rbf_center,
 	    unsigned int rbf_sample, bool save_kernel,
 	    bool do_orth);
+	    
       void zca_whiten(bool transpose);
 };
 

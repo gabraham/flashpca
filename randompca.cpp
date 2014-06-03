@@ -28,22 +28,22 @@ inline void normalize(MatrixXd& X)
    }
 }
 
-void pca_small(MatrixXd &B, int method, MatrixXd& U, VectorXd &d)
+void pca_small(MatrixXd &B, int method, MatrixXd& U, VectorXd &d, bool verbose)
 {
    if(method == METHOD_SVD)
    {
-      std::cout << timestamp() << " SVD begin" << std::endl;
+      verbose && std::cout << timestamp() << " SVD begin" << std::endl;
       JacobiSVD<MatrixXd> svd(B, ComputeThinU | ComputeThinV);
       U = svd.matrixU();
       MatrixXd V = svd.matrixV();
       d = svd.singularValues().array().pow(2);
-      std::cout << timestamp() << " SVD done" << std::endl;
+      verbose && std::cout << timestamp() << " SVD done" << std::endl;
    }
    else if(method == METHOD_EIGEN)
    {
-      std::cout << timestamp() << " Eigen-decomposition begin" << std::endl;
+      verbose && std::cout << timestamp() << " Eigen-decomposition begin" << std::endl;
       MatrixXd BBT = B * B.transpose();
-      std::cout << timestamp() << " dim(BBT): " << dim(BBT) << std::endl;
+      verbose && std::cout << timestamp() << " dim(BBT): " << dim(BBT) << std::endl;
       SelfAdjointEigenSolver<MatrixXd> eig(BBT);
 
       // The eigenvalues come out sorted in *increasing* order,
@@ -67,21 +67,21 @@ void pca_small(MatrixXd &B, int method, MatrixXd& U, VectorXd &d)
 // Compute median of pairwise distances on sample of size n from the matrix X
 // We're sampling with replacement
 // Based on http://www.machinedlearnings.com/2013/08/cosplay.html
-double median_dist(MatrixXd& X, unsigned int n, long seed)
+double median_dist(MatrixXd& X, unsigned int n, long seed, bool verbose)
 {
    boost::random::mt19937 rng;
    rng.seed(seed);
    boost::random::uniform_real_distribution<> dist(0, 1);
    double prop = (double)X.rows() / n;
 
-   std::cout << timestamp() << 
+   verbose && std::cout << timestamp() << 
       " Computing median Euclidean distance (" << n << " samples)" <<
       std::endl;
 
    MatrixXd X2(n, X.cols());
    if(n < X.rows()) 
    {
-      std::cout << timestamp() << " Sampling" << std::endl;
+      verbose && std::cout << timestamp() << " Sampling" << std::endl;
       // Sample n rows from X
       for(unsigned int i = 0, k = 0 ; i < X.rows() ; i++)
       {
@@ -111,13 +111,14 @@ double median_dist(MatrixXd& X, unsigned int n, long seed)
    else
       med = d[m / 2];
 
-   std::cout << timestamp() << " Median Euclidean distance: "
+   verbose && std::cout << timestamp() << " Median Euclidean distance: "
       << med << std::endl;
 
    return med;
 }
 
-MatrixXd rbf_kernel(MatrixXd& X, const double sigma, bool rbf_center)
+MatrixXd rbf_kernel(MatrixXd& X, const double sigma, bool rbf_center,
+   bool verbose)
 {
    unsigned int n = X.rows();
    VectorXd norms = X.array().square().rowwise().sum();
@@ -129,7 +130,7 @@ MatrixXd rbf_kernel(MatrixXd& X, const double sigma, bool rbf_center)
 
    if(rbf_center)
    {
-      std::cout << timestamp() << " Centering RBF kernel" << std::endl;
+      verbose && std::cout << timestamp() << " Centering RBF kernel" << std::endl;
       MatrixXd M = ones * ones.transpose() / n;
       MatrixXd I = ones.asDiagonal();
       K = (I - M) * K * (I - M);
@@ -147,71 +148,75 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
    if(kernel != KERNEL_LINEAR)
    {
       transpose = false;
-      std::cout << timestamp()
+      verbose && std::cout << timestamp()
 	 << " Kernel not linear, can't transpose" << std::endl;
    }
 
-   std::cout << timestamp() << " Transpose: " 
+   verbose && std::cout << timestamp() << " Transpose: " 
       << (transpose ? "yes" : "no") << std::endl;
 
    if(transpose)
    {
       if(stand_method != STANDARDIZE_NONE)
 	 M = standardize_transpose(X, stand_method);
+      else
+	 M = X;
       N = X.cols();
    }
    else
    {
       if(stand_method != STANDARDIZE_NONE)
 	 M = standardize(X, stand_method);
+      else
+	 M = X;
       N = X.rows();
    }
 
    unsigned int total_dim = ndim + nextra;
    MatrixXd R = make_gaussian(M.cols(), total_dim, seed);
    MatrixXd Y = M * R;
-   std::cout << timestamp() << " dim(Y): " << dim(Y) << std::endl;
+   verbose && std::cout << timestamp() << " dim(Y): " << dim(Y) << std::endl;
    normalize(Y);
    MatrixXd Yn;
 
-   std::cout << timestamp() << " dim(M): " << dim(M) << std::endl;
+   verbose && std::cout << timestamp() << " dim(M): " << dim(M) << std::endl;
    MatrixXd K; 
    if(kernel == KERNEL_RBF)
    {
       if(sigma == 0)
       {
 	 unsigned int med_samples = fminl(rbf_sample, N);
-      	 double med = median_dist(M, med_samples, seed);
+      	 double med = median_dist(M, med_samples, seed, verbose);
       	 sigma = sqrt(med);
       }
-      std::cout << timestamp() << " Using RBF kernel with sigma="
+      verbose && std::cout << timestamp() << " Using RBF kernel with sigma="
 	 << sigma << std::endl;
-      K.noalias() = rbf_kernel(M, sigma, rbf_center);
+      K.noalias() = rbf_kernel(M, sigma, rbf_center, verbose);
    }
    else
    {
-      std::cout << timestamp() << " Using linear kernel" << std::endl;
+      verbose && std::cout << timestamp() << " Using linear kernel" << std::endl;
       K.noalias() = M * M.transpose();
    }
 
    trace = K.diagonal().array().sum() / (N - 1);
-   std::cout << timestamp() << " Trace(K): " << trace 
+   verbose && std::cout << timestamp() << " Trace(K): " << trace 
       << " (N: " << N << ")" << std::endl;
 
-   std::cout << timestamp() << " dim(K): " << dim(K) << std::endl;
+   verbose && std::cout << timestamp() << " dim(K): " << dim(K) << std::endl;
    if(save_kernel)
    {
-      std::cout << timestamp() << " saving K" << std::endl;
+      verbose && std::cout << timestamp() << " saving K" << std::endl;
       save_text("kernel.txt", K);
    }
 
    for(unsigned int iter = 0 ; iter < maxiter ; iter++)
    {
-      std::cout << timestamp() << " iter " << iter;
+      verbose && std::cout << timestamp() << " iter " << iter;
       Yn.noalias() = K * Y;
       if(do_orth)
       {
-	 std::cout << " (orthogonalising)";
+	 verbose && std::cout << " (orthogonalising)";
 	 ColPivHouseholderQR<MatrixXd> qr(Yn);
 	 MatrixXd I = MatrixXd::Identity(Yn.rows(), Yn.cols());
 	 Yn = qr.householderQ() * I;
@@ -221,29 +226,29 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
 	 normalize(Yn);
 
       double diff =  (Y -  Yn).array().square().sum() / Y.size(); 
-      std::cout << " " << diff << std::endl;
+      verbose && std::cout << " " << diff << std::endl;
       Y.noalias() = Yn;
       if(diff < tol)
 	 break;
    }
 
-   std::cout << timestamp() << " QR begin" << std::endl;
+   verbose && std::cout << timestamp() << " QR begin" << std::endl;
    ColPivHouseholderQR<MatrixXd> qr(Y);
    MatrixXd Q = MatrixXd::Identity(Y.rows(), Y.cols());
    Q = qr.householderQ() * Q;
    Q.conservativeResize(NoChange, Y.cols());
-   std::cout << timestamp() << " dim(Q): " << dim(Q) << std::endl;
-   std::cout << timestamp() << " QR done" << std::endl;
+   verbose && std::cout << timestamp() << " dim(Q): " << dim(Q) << std::endl;
+   verbose && std::cout << timestamp() << " QR done" << std::endl;
 
    MatrixXd B = Q.transpose() * M;
    B = B.array() / sqrt(N - 1);
-   std::cout << timestamp() << " dim(B): " << dim(B) << std::endl;
+   verbose && std::cout << timestamp() << " dim(B): " << dim(B) << std::endl;
 
    MatrixXd Ut;
-   pca_small(B, method, Ut, d);
-   std::cout << timestamp() << " dim(Ut): " << dim(Ut) << std::endl;
+   pca_small(B, method, Ut, d, verbose);
+   verbose && std::cout << timestamp() << " dim(Ut): " << dim(Ut) << std::endl;
    U.noalias() = Q * Ut;
-   std::cout << timestamp() << " dim(U): " << dim(U) << std::endl;
+   verbose && std::cout << timestamp() << " dim(U): " << dim(U) << std::endl;
 
    if(transpose)
    {
@@ -271,7 +276,7 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
 // ZCA of genotypes
 void RandomPCA::zca_whiten(bool transpose)
 {
-   std::cout << timestamp() << " Whitening begin" << std::endl;
+   verbose && std::cout << timestamp() << " Whitening begin" << std::endl;
    VectorXd s = 1 / d.array();
    MatrixXd Dinv = s.asDiagonal();
 
@@ -279,6 +284,6 @@ void RandomPCA::zca_whiten(bool transpose)
       W.noalias() = U * Dinv * U.transpose() * M.transpose();
    else
       W.noalias() = U * Dinv * U.transpose() * M;
-   std::cout << timestamp() << " Whitening done (" << dim(W) << ")" << std::endl;
+   verbose && std::cout << timestamp() << " Whitening done (" << dim(W) << ")" << std::endl;
 }
 
