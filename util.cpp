@@ -5,7 +5,7 @@ using namespace Eigen;
 
 // Standardize matrix column-wise to zero mean and unit variance.
 // If a column is all zeros, it will remain zero.
-MatrixXd standardize(const MatrixXd& X, int method)
+MatrixXd standardize(const MatrixXd& X, int method, bool verbose)
 {
    std::cout.setf(std::ios_base::unitbuf);
 
@@ -14,7 +14,7 @@ MatrixXd standardize(const MatrixXd& X, int method)
 
    if(method == STANDARDIZE_SD)
    {
-      std::cout << timestamp() << " standardizing matrix (SD)" 
+      verbose && std::cout << timestamp() << " standardizing matrix (SD)" 
 	 << " p: " << p << std::endl;
       double mean, sd;
       for(unsigned int j = 0 ; j < p ; j++)
@@ -28,7 +28,7 @@ MatrixXd standardize(const MatrixXd& X, int method)
    // Same as Price 2006 eqn 3
    else if(method == STANDARDIZE_BINOM)
    {
-      std::cout << timestamp() << " standardizing matrix (BINOM)" 
+      verbose && std::cout << timestamp() << " standardizing matrix (BINOM)" 
 	 << " p: " << p << std::endl;
       double mean, r, s;
       for(unsigned int j = 0 ; j < p ; j++)
@@ -54,7 +54,7 @@ MatrixXd standardize(const MatrixXd& X, int method)
    return S;
 }
 
-MatrixXd standardize_transpose(const MatrixXd& X, int method)
+MatrixXd standardize_transpose(const MatrixXd& X, int method, bool verbose)
 {
    std::cout.setf(std::ios_base::unitbuf);
 
@@ -63,7 +63,7 @@ MatrixXd standardize_transpose(const MatrixXd& X, int method)
 
    if(method == STANDARDIZE_SD)
    {
-      std::cout << timestamp() 
+      verbose && std::cout << timestamp() 
 	 << " standardizing transposed matrix (SD)" 
 	 << " p: " << p << std::endl;
       double mean, sd;
@@ -78,7 +78,7 @@ MatrixXd standardize_transpose(const MatrixXd& X, int method)
    // Same as Price 2006 eqn 3
    else if(method == STANDARDIZE_BINOM)
    {
-      std::cout << timestamp() 
+      verbose && std::cout << timestamp() 
 	 << " standardizing transposed matrix (BINOM)" 
 	 << " p: " << p << std::endl;
       double mean, r, s;

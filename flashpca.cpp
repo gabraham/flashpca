@@ -42,6 +42,7 @@ int main(int argc, char * argv[])
       ("orth", po::value<std::string>(), "use orthornormalization (yes/no)")
       ("outpc", po::value<std::string>(), "PC output file")
       ("outvec", po::value<std::string>(), "Eigenvector output file")
+      ("outload", po::value<std::string>(), "SNP loadings")
       ("outval", po::value<std::string>(), "Eigenvalue output file")
       ("outpve", po::value<std::string>(), "Proportion of variance explained output file")
       ("whiten", "whiten the data")
@@ -104,7 +105,9 @@ int main(int argc, char * argv[])
       if(!good)
       {
 	 std::cerr << "Error: you must specify either --bfile "
-	    << "or --bed / --fam / --bim" << std::endl;
+	    << "or --bed / --fam / --bim" << std::endl
+	    << "Use --help to get more help"
+	    << std::endl;
 	 return EXIT_FAILURE;
       }
    }
@@ -175,6 +178,14 @@ int main(int argc, char * argv[])
    if(vm.count("outvec"))
       eigvecfile = vm["outvec"].as<std::string>();
 
+   bool do_loadings = false;
+   std::string loadingsfile = "";
+   if(vm.count("outload"))
+   {
+      loadingsfile = vm["outload"].as<std::string>();
+      do_loadings = true;
+   }
+
    std::string eigvalfile = "eigenvalues.txt";
    if(vm.count("outval"))
       eigvalfile = vm["outval"].as<std::string>();
@@ -190,7 +201,6 @@ int main(int argc, char * argv[])
    bool whiten = vm.count("whiten");
    bool verbose = vm.count("v");
    bool transpose = vm.count("transpose");
-
 
    bool do_orth = true;
    if(vm.count("orth"))
@@ -323,7 +333,8 @@ int main(int argc, char * argv[])
    std::cout << timestamp() << " PCA begin" << std::endl;
    
    rpca.pca(data.X, method, transpose, n_dim, n_extra, maxiter,
-      tol, seed, kernel, sigma, rbf_center, rbf_sample, save_kernel, do_orth);
+      tol, seed, kernel, sigma, rbf_center, rbf_sample, save_kernel, do_orth,
+      do_loadings);
 
    std::cout << timestamp() << " PCA done" << std::endl;
 
@@ -343,6 +354,14 @@ int main(int argc, char * argv[])
       std::cout << timestamp() << " Writing " << n_dim << 
 	 " proportion variance explained to file " << eigpvefile << std::endl;
       save_text(eigpvefile.c_str(), rpca.pve);
+
+      // only write out loadings for linear kernel
+      if(do_loadings)
+      {
+	 std::cout << timestamp() << " Writing" <<
+	    " SNP loadings to file " << loadingsfile << std::endl;
+	 save_text(loadingsfile.c_str(), rpca.V); 
+      }
    }
 
    std::cout << timestamp() << " Writing " << n_dim <<

@@ -19,7 +19,8 @@ using namespace Eigen;
 class RandomPCA {
    public:
       MatrixXd M;
-      MatrixXd U, V, W, P;
+      MatrixXd U, V, W;
+      MatrixXd P; // projected X
       VectorXd d;
       double trace;
       VectorXd pve;
@@ -34,7 +35,7 @@ class RandomPCA {
 	    unsigned int maxiter, double tol, long seed,
 	    int kernel, double sigma, bool rbf_center,
 	    unsigned int rbf_sample, bool save_kernel,
-	    bool do_orth);
+	    bool do_orth, bool do_loadings);
 	    
       void zca_whiten(bool transpose);
 };

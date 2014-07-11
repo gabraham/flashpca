@@ -12,7 +12,7 @@ RcppExport SEXP flashpca(SEXP _X, SEXP _method, SEXP _stand,
    SEXP _transpose, SEXP _ndim, SEXP _nextra, SEXP _maxiter, SEXP _tol,
    SEXP _seed, SEXP _kernel, SEXP _sigma, SEXP _rbf_center,
    SEXP _rbf_sample, SEXP _save_kernel, SEXP _do_orth,
-   SEXP _verbose, SEXP _num_threads)
+   SEXP _verbose, SEXP _num_threads, SEXP _do_loadings)
 {
 //BEGIN_RCPP
 
@@ -41,6 +41,7 @@ RcppExport SEXP flashpca(SEXP _X, SEXP _method, SEXP _stand,
    bool do_orth = Rcpp::as<bool>(_do_orth);
    bool verbose = Rcpp::as<bool>(_verbose);
    int num_threads = Rcpp::as<int>(_num_threads);
+   bool do_loadings = Rcpp::as<bool>(_do_loadings);
 
    omp_set_num_threads(num_threads);
 
@@ -50,15 +51,32 @@ RcppExport SEXP flashpca(SEXP _X, SEXP _method, SEXP _stand,
    rp.pca(X, method, transpose, ndim, nextra,
       maxiter, tol, seed, kernel,
       sigma, rbf_center, rbf_sample,
-      save_kernel, do_orth);
+      save_kernel, do_orth, do_loadings);
 
    NumericMatrix U(wrap(rp.U));
+   NumericMatrix P(wrap(rp.P));
    NumericVector d(wrap(rp.d));
 
-   Rcpp::List res = Rcpp::List::create(
-      Rcpp::Named("values")=d,
-      Rcpp::Named("vectors")=U
-   );
+   Rcpp::List res;
+
+   if(do_loadings)
+   {
+      NumericMatrix V(wrap(rp.V));
+      res = Rcpp::List::create(
+         Rcpp::Named("values")=d,
+         Rcpp::Named("vectors")=U,
+         Rcpp::Named("projection")=P,
+	 Rcpp::Named("loadings")=V
+      );
+   }
+   else
+   {
+      res = Rcpp::List::create(
+         Rcpp::Named("values")=d,
+         Rcpp::Named("vectors")=U,
+         Rcpp::Named("projection")=P
+      );
+   }
 
    return wrap(res);
 //END_RCPP

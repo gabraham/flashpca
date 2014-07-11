@@ -141,7 +141,7 @@ MatrixXd rbf_kernel(MatrixXd& X, const double sigma, bool rbf_center,
 void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
    unsigned int ndim, unsigned int nextra, unsigned int maxiter, double tol,
    long seed, int kernel, double sigma, bool rbf_center,
-   unsigned int rbf_sample, bool save_kernel, bool do_orth)
+   unsigned int rbf_sample, bool save_kernel, bool do_orth, bool do_loadings)
 {
    unsigned int N;
 
@@ -158,7 +158,7 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
    if(transpose)
    {
       if(stand_method != STANDARDIZE_NONE)
-	 M = standardize_transpose(X, stand_method);
+	 M = standardize_transpose(X, stand_method, verbose);
       else
 	 M = X;
       N = X.cols();
@@ -166,7 +166,7 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
    else
    {
       if(stand_method != STANDARDIZE_NONE)
-	 M = standardize(X, stand_method);
+	 M = standardize(X, stand_method, verbose);
       else
 	 M = X;
       N = X.rows();
@@ -196,10 +196,11 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
    else
    {
       verbose && std::cout << timestamp() << " Using linear kernel" << std::endl;
-      K.noalias() = M * M.transpose();
+      K.noalias() = M * M.transpose() / (N - 1);
    }
 
-   trace = K.diagonal().array().sum() / (N - 1);
+   //trace = K.diagonal().array().sum() / (N - 1);
+   trace = K.diagonal().array().sum();
    verbose && std::cout << timestamp() << " Trace(K): " << trace 
       << " (N: " << N << ")" << std::endl;
 
@@ -241,36 +242,42 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
    verbose && std::cout << timestamp() << " QR done" << std::endl;
 
    MatrixXd B = Q.transpose() * M;
-   B = B.array() / sqrt(N - 1);
    verbose && std::cout << timestamp() << " dim(B): " << dim(B) << std::endl;
 
-   MatrixXd Ut;
-   pca_small(B, method, Ut, d, verbose);
-   verbose && std::cout << timestamp() << " dim(Ut): " << dim(Ut) << std::endl;
-   U.noalias() = Q * Ut;
-   verbose && std::cout << timestamp() << " dim(U): " << dim(U) << std::endl;
+   MatrixXd Et;
+   pca_small(B, method, Et, d, verbose);
+   verbose && std::cout << timestamp() << " dim(Et): " << dim(Et) << std::endl;
+
+   d = d.array() / (N - 1);
 
    if(transpose)
    {
-      // P = X V
-      // since U is actually V (eigenvectors of X^T X), since data is transposed.
-      // We divide by sqrt(N - 1) since X has not been divided by it (but B
-      // has)
-      P.noalias() = M.transpose() * U;
-      double z = 1.0 / sqrt(N - 1);
-      P = P.array() * z;
+      V.noalias() = Q * Et;
+      // We divide P by sqrt(N - 1) since X has not been divided
+      // by it (but B has)
+      P.noalias() = M.transpose() * V;
+      VectorXd s = 1 / (d.array().sqrt() * sqrt(N - 1));
+      MatrixXd Dinv = s.asDiagonal();
+      U = P * Dinv;
    }
    else
    {
-      // P = U D
+      // P = U D = X V
+      U.noalias() = Q * Et;
       P.noalias() = U * d.asDiagonal();
+      if(do_loadings)
+      {
+	 VectorXd s = 1 / (d.array().sqrt() * sqrt(N - 1));
+	 MatrixXd Dinv = s.asDiagonal();
+	 V = M.transpose() * U * Dinv;
+      }
    }
 
    P.conservativeResize(NoChange, ndim);
    U.conservativeResize(NoChange, ndim);
+   V.conservativeResize(NoChange, ndim);
    d.conservativeResize(ndim);
    pve = d.array() / trace;
-
 }
 
 // ZCA of genotypes

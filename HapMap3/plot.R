@@ -1,6 +1,7 @@
 
 library(plink2R)
 library(grid)
+library(flashpcaR)
 
 readmat <- function(f)
 {
@@ -10,7 +11,7 @@ readmat <- function(f)
    matrix(readBin(con=con, what="double", n=p * K), nrow=p, ncol=K)
 }
 
-dat <- read_plink("data")
+dat <- read_plink("data", impute="random")
 
 # Price 2006 standardisation
 X <- apply(dat$bed, 2, function(x) {
@@ -47,12 +48,14 @@ d1 <- read.table("data.pca.evec",
    header=FALSE, sep="", stringsAsFactors=FALSE, skip=1, row.names=1)
 
 # flashpca
-d2 <- read.table("pcs.txt", header=FALSE, sep="")
+#d2 <- read.table("pcs.txt", header=FALSE, sep="")
+f <- flashpca(dat$bed, stand="binom", num_threads=8)
+d2 <- f$projection
 
 # shellfish
 d3 <- read.table("shellfish.evecs", header=FALSE, sep="")
    
-k <- 100
+k <- 10
 x1 <- as.matrix(d1[, 1:k])
 x2 <- as.matrix(d2[, 1:k])
 x3 <- t(as.matrix(d3))[, 1:k]
@@ -120,7 +123,8 @@ cor(z)
 # Compare the eigenvalues (squared principal values)
 
 v1 <- scan("data.eval")[1:k]^2
-v2 <- scan("eigenvalues.txt")[1:k]
+#v2 <- scan("eigenvalues.txt")[1:k]
+v2 <- f$values[1:k]
 v3 <- scan("shellfish.evals")[1:k]^2
 v4 <- pr$sdev[1:k]^2
 

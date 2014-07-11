@@ -82,6 +82,7 @@ int sign(T x)
 
 MatrixXd read_bed(const char *filename, const unsigned int nrows);
 MatrixXd read_pheno(const char *filename, unsigned int firstcol);
-MatrixXd standardize(const MatrixXd &X, int method);
-MatrixXd standardize_transpose(const MatrixXd &X, int method);
+MatrixXd standardize(const MatrixXd &X, int method, bool verbose=false);
+MatrixXd standardize_transpose(const MatrixXd &X, int method,
+   bool verbose=false);
 

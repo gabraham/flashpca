@@ -3,7 +3,7 @@ flashpca <- function(X, method=c("eigen", "svd"),
    stand=c("binom", "sd", "center", "none"), transpose=NULL, ndim=10,
    nextra=10, maxiter=50, tol=1e-6, seed=1, kernel=c("linear", "rbf"),
    sigma=NULL, rbf_center=TRUE, rbf_sample=1000, save_kernel=FALSE,
-   do_orth=TRUE, verbose=FALSE, num_threads=1)
+   do_orth=TRUE, verbose=FALSE, num_threads=1, do_loadings=FALSE)
 {
    method <- match.arg(method)
    stand <- match.arg(stand)
@@ -15,15 +15,15 @@ flashpca <- function(X, method=c("eigen", "svd"),
       method_i <- 2L
    }
 
-   if(stand == "sd") {
+   if(stand == "none") {
+      stand_i <- 0L
+   } else if(stand == "sd") {
       stand_i <- 1L
    } else if(stand == "binom") {
       stand_i <- 2L
    } else if(stand == "center") {
       stand_i <- 3L
-   } else if(stand == "none") {
-      stand_i <- 0L
-   }
+   } 
 
    if(kernel == "linear") {
       kernel_i <- 1L
@@ -32,7 +32,7 @@ flashpca <- function(X, method=c("eigen", "svd"),
    }
 
    if(is.null(transpose)) {
-      transpose <- nrow(X) > ncol(X)
+      transpose <- (nrow(X) > ncol(X))
    }
    maxdim <- min(dim(X))
    ndim <- min(maxdim, ndim)
@@ -49,6 +49,6 @@ flashpca <- function(X, method=c("eigen", "svd"),
    .Call("flashpca", PACKAGE="flashpcaR",
       X, method_i, stand_i, transpose, ndim, nextra, maxiter,
       tol, seed, kernel_i, sigma, rbf_center, rbf_sample,
-      save_kernel, do_orth, verbose, num_threads)
+      save_kernel, do_orth, verbose, num_threads, do_loadings)
 }
 
