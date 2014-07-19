@@ -1,7 +1,6 @@
 
 library(plink2R)
 library(grid)
-library(flashpcaR)
 
 readmat <- function(f)
 {
@@ -48,9 +47,7 @@ d1 <- read.table("data.pca.evec",
    header=FALSE, sep="", stringsAsFactors=FALSE, skip=1, row.names=1)
 
 # flashpca
-#d2 <- read.table("pcs.txt", header=FALSE, sep="")
-f <- flashpca(dat$bed, stand="binom", num_threads=8)
-d2 <- f$projection
+d2 <- read.table("pcs.txt", header=FALSE, sep="")
 
 # shellfish
 d3 <- read.table("shellfish.evecs", header=FALSE, sep="")
@@ -123,8 +120,7 @@ cor(z)
 # Compare the eigenvalues (squared principal values)
 
 v1 <- scan("data.eval")[1:k]^2
-#v2 <- scan("eigenvalues.txt")[1:k]
-v2 <- f$values[1:k]
+v2 <- scan("eigenvalues.txt")[1:k]
 v3 <- scan("shellfish.evals")[1:k]^2
 v4 <- pr$sdev[1:k]^2
 
