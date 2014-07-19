@@ -372,6 +372,13 @@ int main(int argc, char * argv[])
 	 save_text(loadingsfile.c_str(), rpca.V); 
       }
    }
+   else if(do_loadings)
+   {
+      std::cout << timestamp() 
+	 << " NOT computing SNP loadings due to non-linear kernel"
+	 << std::endl;
+   }
+   
 
    std::cout << timestamp() << " Writing " << n_dim <<
       " PCs to file " << pcfile << std::endl;
