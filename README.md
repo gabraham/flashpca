@@ -175,6 +175,28 @@ rbf`).
 * The rest of the options are the same as for standard PCA.
 * Currently, the proportion of variation explained is not computed for kPCA.
 
+## Calling flashpca from R
+
+flashpca is now available as an independent R package.
+
+After cloning the git archive, install the package `flashpcaR`:
+   ```
+   R CMD INSTALL flashpcaR
+   ```
+
+Example usage, assuming `X` is a sample by SNP matrix in dosage
+coding (0, 1, 2):
+   ```
+   library(flashpcaR)
+   r <- flashpca(X, do_loadings=TRUE, verbose=TRUE, stand="binom", ndim=10)
+   ```
+
+Output:
+   * `values`: eigenvalues
+   * `vectors`: eigenvectors
+   * `projection`: projection of sample onto eigenvectors (X V)
+   * `loadings`: SNP loadings, if using a linear kernel
+
 ## LD-pruned HapMap3 example data
 
 See the [HapMap3](HapMap3) directory
