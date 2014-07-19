@@ -4,25 +4,27 @@
 using namespace Eigen;
 
 // Standardize matrix column-wise to zero mean and unit variance.
+// Standardizes in place
 // If a column is all zeros, it will remain zero.
-MatrixXd standardize(const MatrixXd& X, int method, bool verbose)
+// Returns p by 2 matrix [mean, sd]
+MatrixXd standardize(MatrixXd& X, int method, bool verbose)
 {
    std::cout.setf(std::ios_base::unitbuf);
 
    unsigned int n = X.rows(), p = X.cols();
-   MatrixXd S = MatrixXd::Zero(X.rows(), X.cols());
+   VectorXd mean = MatrixXd::Zero(X.cols(), 1);
+   VectorXd sd = MatrixXd::Ones(X.cols(), 1);
 
    if(method == STANDARDIZE_SD)
    {
       verbose && std::cout << timestamp() << " standardizing matrix (SD)" 
 	 << " p: " << p << std::endl;
-      double mean, sd;
       for(unsigned int j = 0 ; j < p ; j++)
       {
-	 mean = X.col(j).sum() / n;
-	 sd = std::sqrt((X.col(j).array() - mean).square().sum() / (n - 1));
-	 if(sd > VAR_TOL)
-	    S.col(j) = (X.col(j).array() - mean) / sd;
+	 mean(j) = X.col(j).sum() / n;
+	 sd(j) = std::sqrt((X.col(j).array() - mean(j)).square().sum() / (n - 1));
+	 if(sd(j) > VAR_TOL)
+	    X.col(j) = (X.col(j).array() - mean(j)) / sd(j);
       }
    }
    // Same as Price 2006 eqn 3
@@ -30,49 +32,54 @@ MatrixXd standardize(const MatrixXd& X, int method, bool verbose)
    {
       verbose && std::cout << timestamp() << " standardizing matrix (BINOM)" 
 	 << " p: " << p << std::endl;
-      double mean, r, s;
+      double r;
       for(unsigned int j = 0 ; j < p ; j++)
       {
-	 mean = X.col(j).sum() / n;
-	 r = mean / 2.0;
-	 s = sqrt(r * (1 - r));
-	 if(s > VAR_TOL)
-	    S.col(j) = (X.col(j).array() - mean) / s;
+	 mean(j) = X.col(j).sum() / n;
+	 r = mean(j) / 2.0;
+	 sd(j) = sqrt(r * (1 - r));
+	 if(sd(j) > VAR_TOL)
+	    X.col(j) = (X.col(j).array() - mean(j)) / sd(j);
       }
    }
    else if(method == STANDARDIZE_CENTER)
    {
       for(unsigned int j = 0 ; j < p ; j++)
       {
-         double mean = X.col(j).sum() / n;
-	 S.col(j) = X.col(j).array() - mean;
+         mean(j) = X.col(j).sum() / n;
+	 X.col(j) = X.col(j).array() - mean(j);
       }
    }
    else
       throw std::string("unknown standardization method");
 
-   return S;
+   MatrixXd P = MatrixXd::Zero(X.cols(), 2); // [mean, sd]
+   P.col(0) = mean;
+   P.col(1) = sd;
+
+   return P;
 }
 
-MatrixXd standardize_transpose(const MatrixXd& X, int method, bool verbose)
+// Expects a p times N matrix X, standardized in-place
+MatrixXd standardize_transpose(MatrixXd& X, int method, bool verbose)
 {
    std::cout.setf(std::ios_base::unitbuf);
 
    unsigned int n = X.cols(), p = X.rows();
-   MatrixXd S = MatrixXd::Zero(X.rows(), X.cols());
+   VectorXd mean = MatrixXd::Zero(X.cols(), 1);
+   VectorXd sd = MatrixXd::Ones(X.cols(), 1);
 
    if(method == STANDARDIZE_SD)
    {
       verbose && std::cout << timestamp() 
 	 << " standardizing transposed matrix (SD)" 
 	 << " p: " << p << std::endl;
-      double mean, sd;
       for(unsigned int j = 0 ; j < p ; j++)
       {
-	 mean = X.row(j).sum() / n;
-	 sd = std::sqrt((X.row(j).array() - mean).square().sum() / (n - 1));
-	 if(sd > VAR_TOL)
-	    S.row(j) = (X.row(j).array() - mean) / sd;
+	 mean(j) = X.row(j).sum() / n;
+	 sd(j) = std::sqrt((X.row(j).array() - mean(j)).square().sum() / (n - 1));
+	 if(sd(j) > VAR_TOL)
+	    X.row(j) = (X.row(j).array() - mean(j)) / sd(j);
       }
    }
    // Same as Price 2006 eqn 3
@@ -81,28 +88,32 @@ MatrixXd standardize_transpose(const MatrixXd& X, int method, bool verbose)
       verbose && std::cout << timestamp() 
 	 << " standardizing transposed matrix (BINOM)" 
 	 << " p: " << p << std::endl;
-      double mean, r, s;
+      double r;
       for(unsigned int j = 0 ; j < p ; j++)
       {
-	 mean = X.row(j).sum() / n;
-	 r = mean / 2.0;
-	 s = sqrt(r * (1 - r));
-	 if(s > VAR_TOL)
-	    S.row(j) = (X.row(j).array() - mean) / s;
+	 mean(j) = X.row(j).sum() / n;
+	 r = mean(j) / 2.0;
+	 sd(j) = sqrt(r * (1 - r));
+	 if(sd(j) > VAR_TOL)
+	    X.row(j) = (X.row(j).array() - mean(j)) / sd(j);
       }
    }
    else if(method == STANDARDIZE_CENTER)
    {
       for(unsigned int j = 0 ; j < p ; j++)
       {
-	 double mean = X.row(j).sum() / n;
-	 S.row(j) = X.row(j).array() - mean;
+	 mean(j) = X.row(j).sum() / n;
+	 X.row(j) = X.row(j).array() - mean(j);
       }
    }
    else
       throw std::string("unknown standardization method");
 
-   return S;
+   MatrixXd P = MatrixXd::Zero(X.cols(), 2); // [mean, sd]
+   P.col(0) = mean;
+   P.col(1) = sd;
+
+   return P;
 }
 
 double myatof(char* c)

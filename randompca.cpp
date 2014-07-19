@@ -98,8 +98,8 @@ double median_dist(MatrixXd& X, unsigned int n, long seed, bool verbose)
 
    VectorXd norms = X2.array().square().rowwise().sum();
    VectorXd ones = VectorXd::Ones(n);
-   MatrixXd M = norms * ones.transpose();
-   MatrixXd D = M + M.transpose() - 2 * X2 * X2.transpose();
+   MatrixXd R = norms * ones.transpose();
+   MatrixXd D = R + R.transpose() - 2 * X2 * X2.transpose();
 
    unsigned int m = D.size();
    double *d = D.data();
@@ -158,45 +158,41 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
    if(transpose)
    {
       if(stand_method != STANDARDIZE_NONE)
-	 M = standardize_transpose(X, stand_method, verbose);
-      else
-	 M = X;
+	  X_meansd = standardize_transpose(X, stand_method, verbose);
       N = X.cols();
    }
    else
    {
       if(stand_method != STANDARDIZE_NONE)
-	 M = standardize(X, stand_method, verbose);
-      else
-	 M = X;
+	 X_meansd = standardize(X, stand_method, verbose);
       N = X.rows();
    }
 
    unsigned int total_dim = ndim + nextra;
-   MatrixXd R = make_gaussian(M.cols(), total_dim, seed);
-   MatrixXd Y = M * R;
+   MatrixXd R = make_gaussian(X.cols(), total_dim, seed);
+   MatrixXd Y = X * R;
    verbose && std::cout << timestamp() << " dim(Y): " << dim(Y) << std::endl;
    normalize(Y);
    MatrixXd Yn;
 
-   verbose && std::cout << timestamp() << " dim(M): " << dim(M) << std::endl;
+   verbose && std::cout << timestamp() << " dim(X): " << dim(X) << std::endl;
    MatrixXd K; 
    if(kernel == KERNEL_RBF)
    {
       if(sigma == 0)
       {
 	 unsigned int med_samples = fminl(rbf_sample, N);
-      	 double med = median_dist(M, med_samples, seed, verbose);
+      	 double med = median_dist(X, med_samples, seed, verbose);
       	 sigma = sqrt(med);
       }
       verbose && std::cout << timestamp() << " Using RBF kernel with sigma="
 	 << sigma << std::endl;
-      K.noalias() = rbf_kernel(M, sigma, rbf_center, verbose);
+      K.noalias() = rbf_kernel(X, sigma, rbf_center, verbose);
    }
    else
    {
       verbose && std::cout << timestamp() << " Using linear kernel" << std::endl;
-      K.noalias() = M * M.transpose() / (N - 1);
+      K.noalias() = X * X.transpose() / (N - 1);
    }
 
    //trace = K.diagonal().array().sum() / (N - 1);
@@ -241,7 +237,7 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
    verbose && std::cout << timestamp() << " dim(Q): " << dim(Q) << std::endl;
    verbose && std::cout << timestamp() << " QR done" << std::endl;
 
-   MatrixXd B = Q.transpose() * M;
+   MatrixXd B = Q.transpose() * X;
    verbose && std::cout << timestamp() << " dim(B): " << dim(B) << std::endl;
 
    MatrixXd Et;
@@ -255,7 +251,7 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
       V.noalias() = Q * Et;
       // We divide P by sqrt(N - 1) since X has not been divided
       // by it (but B has)
-      P.noalias() = M.transpose() * V;
+      P.noalias() = X.transpose() * V;
       VectorXd s = 1 / (d.array().sqrt() * sqrt(N - 1));
       MatrixXd Dinv = s.asDiagonal();
       U = P * Dinv;
@@ -269,7 +265,7 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
       {
 	 VectorXd s = 1 / (d.array().sqrt() * sqrt(N - 1));
 	 MatrixXd Dinv = s.asDiagonal();
-	 V = M.transpose() * U * Dinv;
+	 V = X.transpose() * U * Dinv;
       }
    }
 
@@ -288,9 +284,9 @@ void RandomPCA::zca_whiten(bool transpose)
    MatrixXd Dinv = s.asDiagonal();
 
    if(transpose)
-      W.noalias() = U * Dinv * U.transpose() * M.transpose();
+      W.noalias() = U * Dinv * U.transpose() * X.transpose();
    else
-      W.noalias() = U * Dinv * U.transpose() * M;
+      W.noalias() = U * Dinv * U.transpose() * X;
    verbose && std::cout << timestamp() << " Whitening done (" << dim(W) << ")" << std::endl;
 }
 

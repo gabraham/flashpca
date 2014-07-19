@@ -18,12 +18,13 @@ using namespace Eigen;
 
 class RandomPCA {
    public:
-      MatrixXd M;
+      MatrixXd X;
       MatrixXd U, V, W;
       MatrixXd P; // projected X
       VectorXd d;
       double trace;
       VectorXd pve;
+      MatrixXd X_meansd;
 
       int stand_method;
       long seed;

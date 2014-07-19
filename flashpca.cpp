@@ -199,6 +199,14 @@ int main(int argc, char * argv[])
    if(vm.count("outwhite"))
       whitefile = vm["outwhite"].as<std::string>();
 
+   std::string meansdfile = "";
+   bool save_meansd = false;
+   if(vm.count("outmeansd"))
+   {
+      meansdfile = vm["outmeansd"].as<std::string>();
+      save_meansd = true;
+   }
+
    bool whiten = vm.count("whiten");
    bool verbose = vm.count("v");
    bool transpose = vm.count("transpose");
@@ -368,6 +376,13 @@ int main(int argc, char * argv[])
    std::cout << timestamp() << " Writing " << n_dim <<
       " PCs to file " << pcfile << std::endl;
    save_text(pcfile.c_str(), rpca.P);
+
+   if(save_meansd)
+   {
+      std::cout << timestamp() << " Writing mean + sd file "
+	 << meansdfile << std::endl;
+      save_text(meansdfile.c_str(), rpca.X_meansd);
+   }
 
    ////////////////////////////////////////////////////////////////////////////////
    // Whiten if required
