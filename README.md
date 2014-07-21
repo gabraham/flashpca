@@ -162,6 +162,12 @@ you will want to plot the PCA plot from.
    To get the cumulative variance explained, simply
    do the cumulative sum of the variances (`cumsum` in R).
 
+## Warning:
+
+You must perform quality control using PLINK (at least filter --geno, --mind,
+--maf, --hwe) before running flashpca on your data. You will likely get
+spurious results otherwise.
+
 ## Experimental features
 
 * flashpca now experimentally supports low-rank [**kernel
