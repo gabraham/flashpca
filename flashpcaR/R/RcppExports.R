@@ -31,8 +31,9 @@ flashpca <- function(X, method=c("eigen", "svd"),
       kernel_i <- 2L
    }
 
+   # We only transpose if X is transposed, i.e., if X is SNPs by samples
    if(is.null(transpose)) {
-      transpose <- (nrow(X) > ncol(X))
+      tranpose <- FALSE
    }
    maxdim <- min(dim(X))
    ndim <- min(maxdim, ndim)
