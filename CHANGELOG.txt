@@ -1,3 +1,15 @@
+Version 1.1.1
+
+12-Aug-2014
+* Updated this file
+
+Version 1.1.0
+
+12-Aug-2014
+* Static binary compiled with Eigen 3.2.2
+* Static binary compiled with gcc -march=core2
+* Fixed bug in saving of mean + sd for each SNP (--meansd option)
+
 Version 1.0.0
 21-May-2014
 * Makefile now looks for Eigen and Boost in /usr/local, by default
