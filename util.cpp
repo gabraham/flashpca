@@ -66,8 +66,8 @@ MatrixXd standardize_transpose(MatrixXd& X, int method, bool verbose)
    std::cout.setf(std::ios_base::unitbuf);
 
    unsigned int n = X.cols(), p = X.rows();
-   VectorXd mean = MatrixXd::Zero(X.cols(), 1);
-   VectorXd sd = MatrixXd::Ones(X.cols(), 1);
+   VectorXd mean = MatrixXd::Zero(p, 1);
+   VectorXd sd = MatrixXd::Ones(p, 1);
 
    if(method == STANDARDIZE_SD)
    {
@@ -109,7 +109,7 @@ MatrixXd standardize_transpose(MatrixXd& X, int method, bool verbose)
    else
       throw std::string("unknown standardization method");
 
-   MatrixXd P = MatrixXd::Zero(X.cols(), 2); // [mean, sd]
+   MatrixXd P = MatrixXd::Zero(p, 2); // [mean, sd]
    P.col(0) = mean;
    P.col(1) = sd;
 
