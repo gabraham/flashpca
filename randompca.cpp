@@ -536,42 +536,88 @@ double inline sign_scalar(double x)
 
 VectorXd inline soft_thresh(VectorXd& a, double b)
 {
-   //VectorXd s = sign_vec(a);
    VectorXd s = a.unaryExpr(std::ptr_fun(sign_scalar));
    VectorXd d = a.array().abs() - b;
    VectorXd z = (d.array() < 0).select(0, d);
    return s.array() * z.array();
 }
 
-void RandomPCA::scca(MatrixXd &X, MatrixXd &Y, double lambda1, double lambda2,
-   long seed, unsigned int ndim)
+VectorXd norm_thresh(VectorXd& x, double lambda)
 {
-   unsigned int maxiter = 1e3L;
-   double tol = 1e-9;
+   double s = x.norm();
+   if(s > 0)
+   {
+      x = x.array() / s;
+      x = soft_thresh(x, lambda);
+      s = x.norm();
+      if(s > 0)
+	 x = x.array() / s;
+   }
+   return x;
+}
 
-   X = standardize(X, STANDARDIZE_CENTER);
-   Y = standardize(Y, STANDARDIZE_CENTER);
+void scca_lowmem(MatrixXd& X, MatrixXd &Y, MatrixXd& U, MatrixXd& V,
+   VectorXd& d, double lambda1, double lambda2,
+   unsigned int maxiter, double tol)
+{
+   MatrixXd X2 = MatrixXd::Zero(X.rows() + U.cols(), X.cols());
+   MatrixXd Y2 = MatrixXd::Zero(Y.rows() + U.cols(), Y.cols());
+   X2.block(0, 0, X.rows(), X.cols()) = X;
+   Y2.block(0, 0, Y.rows(), Y.cols()) = Y;
+   VectorXd u, v, u_old, v_old;
 
-   std::cout << timestamp() << " dim(X): " << dim(X) << std::endl;
-   std::cout << timestamp() << " dim(Y): " << dim(Y) << std::endl;
+   for(unsigned int j = 0 ; j < U.cols() ; j++)
+   {
+      if(j > 0)
+      {
+	 X2.row(X.rows() + j) = sqrt(d[j - 1]) * U.col(j - 1).transpose();
+	 Y2.row(Y.rows() + j) = -sqrt(d[j - 1]) * V.col(j - 1).transpose();
+      }
 
-   std::cout << "lambda1: " << lambda1 << " lambda2: " << lambda2 <<
-   std::endl;
+      for(unsigned int iter = 0 ; iter < maxiter ; iter++)
+      {
+	 u_old = u = U.col(j);
+	 v_old = v = V.col(j);
 
+	 u = X2.transpose() * (Y2 * v);
+	 u = norm_thresh(u, lambda1);
+	 U.col(j) = u;
+
+	 v = Y2.transpose() * (X2 * U.col(j));
+	 v = norm_thresh(v, lambda2);
+	 V.col(j) = v;
+
+	 if((v_old.array() - v.array()).abs().maxCoeff() < tol
+	       && (u_old.array() - u.array()).abs().maxCoeff() < tol)
+	 {
+	    std::cout << timestamp() << " dim " << j << " finished in "
+	       << iter << " iterations" << std::endl;
+	    break;
+	 }
+      }
+
+      long long nzu = (U.col(j).array() != 0).count();
+      long long nzv = (V.col(j).array() != 0).count();
+
+      std::cout << timestamp() << " U_" << j 
+	 << " non-zeros: " << nzu << ", V_" << j << " non-zeros: " << nzv << std::endl;
+
+      d[j] = (X2 * U.col(j)).transpose() * (Y2 * V.col(j)); 
+   }
+}
+
+void scca_highmem(MatrixXd& X, MatrixXd &Y, MatrixXd& U, MatrixXd& V,
+   VectorXd& d, double lambda1, double lambda2,
+   unsigned int maxiter, double tol)
+{
    std::cout << timestamp() << " Begin computing X^T Y" << std::endl;
    MatrixXd XY = X.transpose() * Y;
    std::cout << timestamp() << " End computing X^T Y" << std::endl;
 
-   unsigned int n = X.rows(), p = X.cols(), k = Y.cols();
-
-   V = make_gaussian(k, ndim, seed);
-   U = MatrixXd::Zero(p, ndim);
-   d = VectorXd::Zero(ndim); 
-
    MatrixXd XYj;
    VectorXd u, v, u_old, v_old;
 
-   for(unsigned int j = 0 ; j < ndim ; j++)
+   for(unsigned int j = 0 ; j < U.cols() ; j++)
    {
       std::cout << timestamp() << " dim " << j << std::endl;
       if(j == 0)
@@ -585,27 +631,11 @@ void RandomPCA::scca(MatrixXd &X, MatrixXd &Y, double lambda1, double lambda2,
 	 v_old = v = V.col(j);
 
 	 u = XYj * v;
-	 double s = u.norm();
-	 if(s > 0)
-	 {
-	    u = u.array() / s;
-	    u = soft_thresh(u, lambda1);
-	    s = u.norm();
-	    if(s > 0)
-	       u = u.array() / s;
-	 }
+	 u = norm_thresh(u, lambda1);
 	 U.col(j) = u;
 
 	 v = XYj.transpose() * U.col(j);
-	 s = v.norm();
-	 if(s > 0)
-	 {
-	    v = v.array() / s;
-	    v = soft_thresh(v, lambda2);
-	    s = u.norm();
-	    if(s > 0)
-	       v = v.array() / s;
-	 }
+	 v = norm_thresh(v, lambda2);
 	 V.col(j) = v;
 
 	 if((v_old.array() - v.array()).abs().maxCoeff() < tol
@@ -625,8 +655,33 @@ void RandomPCA::scca(MatrixXd &X, MatrixXd &Y, double lambda1, double lambda2,
 
       d[j] = U.col(j).transpose() * XYj * V.col(j); 
    }
+}
+
+void RandomPCA::scca(MatrixXd &X, MatrixXd &Y, double lambda1, double lambda2,
+   long seed, unsigned int ndim, int scca_method, unsigned int maxiter, double tol)
+{
+   X = standardize(X, stand_method);
+   Y = standardize(Y, stand_method);
+
+   std::cout << timestamp() << " dim(X): " << dim(X) << std::endl;
+   std::cout << timestamp() << " dim(Y): " << dim(Y) << std::endl;
+
+   std::cout << timestamp() << " lambda1: " << lambda1 
+      << " lambda2: " << lambda2 << std::endl;
+
+   unsigned int n = X.rows(), p = X.cols(), k = Y.cols();
+
+   V = make_gaussian(k, ndim, seed);
+   U = MatrixXd::Zero(p, ndim);
+   d = VectorXd::Zero(ndim); 
+
+   if(scca_method == SCCA_HIGHMEM)
+      scca_highmem(X, Y, U, V, d, lambda1, lambda2, maxiter, tol);
+   else
+      scca_lowmem(X, Y, U, V, d, lambda1, lambda2, maxiter, tol);
 
    Px = X * U;
    Py = Y * V;
 }
+
 

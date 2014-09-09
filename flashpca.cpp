@@ -47,9 +47,14 @@ int main(int argc, char * argv[])
 	 "number of extra dimensions to use in randomized PCA")
       ("stand", po::value<std::string>(), "standardization method (none/binom/sd/center)")
       ("method", po::value<std::string>(), "PCA method (svd/eigen)")
+      ("sccamem", po::value<std::string>(), "SCCA method (lowmem/highmem)")
       ("orth", po::value<std::string>(), "use orthornormalization (yes/no)")
       ("outpc", po::value<std::string>(), "PC output file")
+      ("outpcx", po::value<std::string>(), "X PC output file, for CCA")
+      ("outpcy", po::value<std::string>(), "Y PC output file, for CCA")
       ("outvec", po::value<std::string>(), "Eigenvector output file")
+      ("outvecx", po::value<std::string>(), "X eigenvector output file, for CCA")
+      ("outvecy", po::value<std::string>(), "Y eigenvector output file, for CCA")
       ("outval", po::value<std::string>(), "Eigenvalue output file")
       ("outpve", po::value<std::string>(), "Proportion of variance explained output file")
       ("whiten", "whiten the data")
@@ -193,20 +198,46 @@ int main(int argc, char * argv[])
       }
    }
 
+   int scca_method = SCCA_LOWMEM;
+   if(vm.count("sccamem"))
+   {
+      std::string m = vm["sccamem"].as<std::string>();
+      if(m == "highmem")
+	 scca_method = SCCA_HIGHMEM;
+      else if(m == "lowmem")
+	 scca_method = SCCA_LOWMEM;
+      else
+      {
+	 std::cerr << "Error: unknown SCCA method (--scca): "
+	    << m << std::endl;
+	 return EXIT_FAILURE;
+      }
+   }
+
    std::string pcfile = "pcs.txt";
+   std::string pcxfile = "pcsX.txt";
+   std::string pcyfile = "pcsY.txt";
+
    if(vm.count("outpc"))
       pcfile = vm["outpc"].as<std::string>();
 
-   std::string pcxfile = "pcsX.txt";
-   std::string pcyfile = "pcsY.txt";
+   if(vm.count("outpcx"))
+      pcxfile = vm["outpcx"].as<std::string>();
+
+   if(vm.count("outpcy"))
+      pcyfile = vm["outpcy"].as<std::string>();
 
    std::string eigvecfile = "eigenvectors.txt";
    if(vm.count("outvec"))
       eigvecfile = vm["outvec"].as<std::string>();
 
-   std::string eigvecrfile = "eigenvectors_right.txt";
-   if(vm.count("outvecr"))
-      eigvecrfile = vm["outvecr"].as<std::string>();
+   std::string eigvecxfile = "eigenvectorsX.txt";
+   if(vm.count("outvecx"))
+      eigvecxfile = vm["outvecx"].as<std::string>();
+
+   std::string eigvecyfile = "eigenvectorsY.txt";
+   if(vm.count("outvecy"))
+      eigvecyfile = vm["outvecy"].as<std::string>();
 
    std::string eigvalfile = "eigenvalues.txt";
    if(vm.count("outval"))
@@ -399,26 +430,30 @@ int main(int argc, char * argv[])
    else if(mode == MODE_SCCA)
    {
       std::cout << timestamp() << " SCCA begin" << std::endl;
-      rpca.scca(data.X, data.Y, lambda1, lambda2, seed, n_dim);
+      rpca.scca(data.X, data.Y, lambda1, lambda2, seed, n_dim, scca_method,
+	 maxiter, tol);
       std::cout << timestamp() << " SCCA done" << std::endl;
    }
 
    ////////////////////////////////////////////////////////////////////////////////
    // Write out results
 
-   std::cout << timestamp() << " Writing " << n_dim << 
-      " eigenvectors to file " << eigvecfile << std::endl;
-   save_text(eigvecfile.c_str(), rpca.U);
 
+   // Common to all decompositions
    std::cout << timestamp() << " Writing " << n_dim << 
       " eigenvalues to file " << eigvalfile << std::endl;
    save_text(eigvalfile.c_str(), rpca.d);
 
    if(mode == MODE_PCA)
    {
+      std::cout << timestamp() << " Writing " << n_dim << 
+	 " eigenvectors to file " << eigvecfile << std::endl;
+      save_text(eigvecfile.c_str(), rpca.U);
+
       std::cout << timestamp() << " Writing " << n_dim <<
 	 " PCs to file " << pcfile << std::endl;
       save_text(pcfile.c_str(), rpca.Px);
+
       std::cout << timestamp() << " Writing " << n_dim << 
 	 " proportion variance explained to file " << eigpvefile << std::endl;
       save_text(eigpvefile.c_str(), rpca.pve);
@@ -433,24 +468,20 @@ int main(int argc, char * argv[])
          save_text(eigpvefile.c_str(), rpca.pve);
       }
    }
-   else if(mode == MODE_CCA)
-   {
-      std::cout << timestamp() << " Writing " << n_dim <<
-	 " PCs to file " << pcxfile << std::endl;
-      save_text(pcxfile.c_str(), rpca.Px);
-      std::cout << timestamp() << " Writing " << n_dim <<
-	 " PCs to file " << pcyfile << std::endl;
-      save_text(pcyfile.c_str(), rpca.Py);
-   }
-   else if(mode == MODE_SCCA)
+   else if(mode == MODE_CCA || mode == MODE_SCCA)
    {
       std::cout << timestamp() << " Writing " << n_dim << 
-	 " right eigenvectors to file " << eigvecrfile << std::endl;
-      save_text(eigvecrfile.c_str(), rpca.V);
+	 " X eigenvectors to file " << eigvecxfile << std::endl;
+      save_text(eigvecxfile.c_str(), rpca.U);
+
+      std::cout << timestamp() << " Writing " << n_dim << 
+	 " Y eigenvectors to file " << eigvecyfile << std::endl;
+      save_text(eigvecyfile.c_str(), rpca.V);
 
       std::cout << timestamp() << " Writing " << n_dim <<
 	 " PCs to file " << pcxfile << std::endl;
       save_text(pcxfile.c_str(), rpca.Px);
+
       std::cout << timestamp() << " Writing " << n_dim <<
 	 " PCs to file " << pcyfile << std::endl;
       save_text(pcyfile.c_str(), rpca.Py);
@@ -459,7 +490,7 @@ int main(int argc, char * argv[])
    ////////////////////////////////////////////////////////////////////////////////
    // Whiten if required
 
-   if(whiten)
+   if(mode == MODE_PCA && whiten)
    {
       std::cout << timestamp() << " ZCA whitening data" << std::endl;
       rpca.zca_whiten(transpose);
