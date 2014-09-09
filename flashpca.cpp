@@ -270,7 +270,7 @@ int main(int argc, char * argv[])
       }
    }
   
-   int maxiter = 50;
+   int maxiter = 500;
    bool debug = vm.count("debug");
    
    if(vm.count("maxiter"))
@@ -284,7 +284,7 @@ int main(int argc, char * argv[])
       }
    }
 
-   double tol = 1e-6;
+   double tol = 1e-7;
    if(vm.count("tol"))
    {
       tol = vm["tol"].as<double>();

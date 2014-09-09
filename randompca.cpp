@@ -600,7 +600,8 @@ void scca_lowmem(MatrixXd& X, MatrixXd &Y, MatrixXd& U, MatrixXd& V,
       long long nzv = (V.col(j).array() != 0).count();
 
       std::cout << timestamp() << " U_" << j 
-	 << " non-zeros: " << nzu << ", V_" << j << " non-zeros: " << nzv << std::endl;
+	 << " non-zeros: " << nzu << ", V_" << j
+	 << " non-zeros: " << nzv << std::endl;
 
       d[j] = (X2 * U.col(j)).transpose() * (Y2 * V.col(j)); 
    }
@@ -651,7 +652,8 @@ void scca_highmem(MatrixXd& X, MatrixXd &Y, MatrixXd& U, MatrixXd& V,
       long long nzv = (V.col(j).array() != 0).count();
 
       std::cout << timestamp() << " U_" << j 
-	 << " non-zeros: " << nzu << ", V_" << j << " non-zeros: " << nzv << std::endl;
+	 << " non-zeros: " << nzu << ", V_" << j
+	 << " non-zeros: " << nzv << std::endl;
 
       d[j] = U.col(j).transpose() * XYj * V.col(j); 
    }
