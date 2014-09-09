@@ -32,7 +32,7 @@ class RandomPCA {
       VectorXd d;
       double trace;
       VectorXd pve;
-      MatrixXd X_meansd;
+      MatrixXd X_meansd, Y_meansd;
 
       int stand_method;
       long seed;

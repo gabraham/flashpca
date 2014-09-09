@@ -667,8 +667,8 @@ void scca_highmem(MatrixXd& X, MatrixXd &Y, MatrixXd& U, MatrixXd& V,
 void RandomPCA::scca(MatrixXd &X, MatrixXd &Y, double lambda1, double lambda2,
    long seed, unsigned int ndim, int scca_method, unsigned int maxiter, double tol)
 {
-   X = standardize(X, stand_method);
-   Y = standardize(Y, stand_method);
+   X_meansd = standardize(X, stand_method);
+   Y_meansd = standardize(Y, stand_method);
 
    std::cout << timestamp() << " dim(X): " << dim(X) << std::endl;
    std::cout << timestamp() << " dim(Y): " << dim(Y) << std::endl;
