@@ -608,7 +608,8 @@ void scca_lowmem(MatrixXd& X, MatrixXd &Y, MatrixXd& U, MatrixXd& V,
 	 << " non-zeros: " << nzu << ", V_" << j
 	 << " non-zeros: " << nzv << std::endl;
 
-      d[j] = (X2 * U.col(j)).transpose() * (Y2 * V.col(j)); 
+      // Use X and Y, not X2 and Y2
+      d[j] = (X * U.col(j)).transpose() * (Y * V.col(j)); 
    }
 }
 
