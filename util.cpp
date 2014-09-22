@@ -4,7 +4,7 @@
 using namespace Eigen;
 
 // Standardize matrix column-wise to zero mean and unit variance.
-// Standardizes in place
+// *Standardizes in place*
 // If a column is all zeros, it will remain zero.
 // Returns p by 2 matrix [mean, sd]
 MatrixXd standardize(MatrixXd& X, int method, bool verbose)
