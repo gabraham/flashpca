@@ -45,7 +45,7 @@ class RandomPCA {
 	    unsigned int maxiter, double tol, long seed,
 	    int kernel, double sigma, bool rbf_center,
 	    unsigned int rbf_sample, bool save_kernel,
-	    bool do_orth, bool do_loadings);
+	    bool do_orth, bool do_loadings, bool low_mem);
       //void cca(MatrixXd &X, MatrixXd &Y, double lambda1, double lambda2,
 	//    long seed);
       void scca(MatrixXd &X, MatrixXd &Y, double lambda1, double lambda2,

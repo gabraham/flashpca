@@ -49,6 +49,7 @@ int main(int argc, char * argv[])
       ("method", po::value<std::string>(), "PCA method [eigen | svd]")
       ("orth", po::value<std::string>(), "use orthornormalization [yes | no]")
       ("sccamem", po::value<std::string>(), "SCCA method [lowmem | highmem]")
+      ("pcamem", po::value<std::string>(), "PCA method [lowmem | highmem]")
       ("outpc", po::value<std::string>(), "PC output file")
       ("outpcx", po::value<std::string>(), "X PC output file, for CCA")
       ("outpcy", po::value<std::string>(), "Y PC output file, for CCA")
@@ -217,6 +218,22 @@ int main(int argc, char * argv[])
       else
       {
 	 std::cerr << "Error: unknown SCCA method (--scca): "
+	    << m << std::endl;
+	 return EXIT_FAILURE;
+      }
+   }
+
+   bool pca_low_mem = true;
+   if(vm.count("pcamem"))
+   {
+      std::string m = vm["pcamem"].as<std::string>();
+      if(m == "highmem")
+	 pca_low_mem = false;
+      else if(m == "lowmem")
+	 pca_low_mem = true;
+      else
+      {
+	 std::cerr << "Error: unknown PCA memory setting (--pcamem): "
 	    << m << std::endl;
 	 return EXIT_FAILURE;
       }
@@ -454,7 +471,7 @@ int main(int argc, char * argv[])
       std::cout << timestamp() << " PCA begin" << std::endl;
       rpca.pca(data.X, method, transpose, n_dim, n_extra, maxiter,
          tol, seed, kernel, sigma, rbf_center, rbf_sample, save_kernel,
-	 do_orth, do_loadings);
+	 do_orth, do_loadings, pca_low_mem);
       std::cout << timestamp() << " PCA done" << std::endl;
    }
    //else if(mode == MODE_CCA)
