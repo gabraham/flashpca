@@ -6,7 +6,7 @@ BOOST_INC=/usr/local/include/boost
 BOOST_LIB=/usr/local/lib
 
 all: flashpca
-static: flashpca_x86-64.gz
+static: flashpca_x86-64
 
 GITVER := $(shell git describe --dirty --always)
 
@@ -48,13 +48,10 @@ flashpca_x86-64: CXXFLAGS += -g -O3 -DNDEBUG -DGITVER=\"$(GITVER)\" \
 flashpca_x86-64: $(OBJ)
 	$(CXX) $(CXXFLAGS) -o flashpca_x86-64 $^ $(LDFLAGS)
 
-flashpca_x86-64.gz: flashpca_x86-64
-	gzip -f flashpca_x86-64
-
 $(OBJ): %.o: %.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 clean:
-	rm -f $(OBJ) flashpca flashpca_x86-64.gz
+	rm -f $(OBJ) flashpca flashpca_x86-64
 
 
