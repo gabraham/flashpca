@@ -144,7 +144,7 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
    unsigned int ndim, unsigned int nextra, unsigned int maxiter, double tol,
    long seed, int kernel, double sigma, bool rbf_center,
    unsigned int rbf_sample, bool save_kernel, bool do_orth, bool do_loadings,
-   bool low_mem)
+   int mem)
 {
    unsigned int N;
 
@@ -180,7 +180,7 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
 
    verbose && std::cout << timestamp() << " dim(X): " << dim(X) << std::endl;
    MatrixXd K; 
-   if(!low_mem && kernel == KERNEL_RBF)
+   if(mem == HIGHMEM && kernel == KERNEL_RBF)
    {
       if(sigma == 0)
       {
@@ -192,14 +192,14 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
 	 << sigma << std::endl;
       K.noalias() = rbf_kernel(X, sigma, rbf_center, verbose);
    }
-   else if(!low_mem)
+   else if(mem == HIGHMEM)
    {
       verbose && std::cout << timestamp() << " Using linear kernel" << std::endl;
       K.noalias() = X * X.transpose() / (N - 1);
    }
 
    //trace = K.diagonal().array().sum() / (N - 1);
-   if(low_mem)
+   if(mem == LOWMEM)
       trace = X.array().square().sum() / (N - 1);
    else
    {
@@ -211,7 +211,7 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
       << " (N: " << N << ")" << std::endl;
 
 
-   if(!low_mem && save_kernel)
+   if(mem == HIGHMEM && save_kernel)
    {
       verbose && std::cout << timestamp() << " saving K" << std::endl;
       save_text("kernel.txt", K);
@@ -220,7 +220,7 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
    for(unsigned int iter = 0 ; iter < maxiter ; iter++)
    {
       verbose && std::cout << timestamp() << " iter " << iter;
-      if(low_mem)
+      if(mem == LOWMEM)
 	 Yn.noalias() = X * (X.transpose() * Y);
       else
 	 Yn.noalias() = K * Y;
@@ -265,18 +265,18 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
    if(transpose)
    {
       V.noalias() = Q * Et;
-      // We divide P by sqrt(N - 1) since X has not been divided
+      // We divide Px by sqrt(N - 1) since X has not been divided
       // by it (but B has)
-      P.noalias() = X.transpose() * V;
+      Px.noalias() = X.transpose() * V;
       VectorXd s = 1 / (d.array().sqrt() * sqrt(N - 1));
       MatrixXd Dinv = s.asDiagonal();
-      U = P * Dinv;
+      U = Px * Dinv;
    }
    else
    {
-      // P = U D = X V
+      // Px = U D = X V
       U.noalias() = Q * Et;
-      P.noalias() = U * d.asDiagonal();
+      Px.noalias() = U * d.asDiagonal();
       if(do_loadings)
       {
 	 VectorXd s = 1 / (d.array().sqrt() * sqrt(N - 1));
@@ -438,7 +438,7 @@ void scca_highmem(MatrixXd& X, MatrixXd &Y, MatrixXd& U, MatrixXd& V,
 }
 
 void RandomPCA::scca(MatrixXd &X, MatrixXd &Y, double lambda1, double lambda2,
-   long seed, unsigned int ndim, int scca_method, unsigned int maxiter, double tol)
+   long seed, unsigned int ndim, int mem, unsigned int maxiter, double tol)
 {
    X_meansd = standardize(X, stand_method);
    Y_meansd = standardize(Y, stand_method);
@@ -455,7 +455,7 @@ void RandomPCA::scca(MatrixXd &X, MatrixXd &Y, double lambda1, double lambda2,
    U = MatrixXd::Zero(p, ndim);
    d = VectorXd::Zero(ndim); 
 
-   if(scca_method == SCCA_HIGHMEM)
+   if(mem == HIGHMEM)
       scca_highmem(X, Y, U, V, d, lambda1, lambda2, maxiter, tol);
    else
       scca_lowmem(X, Y, U, V, d, lambda1, lambda2, maxiter, tol);
