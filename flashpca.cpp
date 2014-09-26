@@ -48,7 +48,7 @@ int main(int argc, char * argv[])
       ("stand", po::value<std::string>(), "standardization method [none | binom | sd | center]")
       ("method", po::value<std::string>(), "PCA method [eigen | svd]")
       ("orth", po::value<std::string>(), "use orthornormalization [yes | no]")
-      ("sccamem", po::value<std::string>(), "SCCA method [lowmem | highmem]")
+      ("mem", po::value<std::string>(), "SCCA/PCA method [low | high]")
       ("outpc", po::value<std::string>(), "PC output file")
       ("outpcx", po::value<std::string>(), "X PC output file, for CCA")
       ("outpcy", po::value<std::string>(), "Y PC output file, for CCA")
@@ -73,6 +73,7 @@ int main(int argc, char * argv[])
       ("lambda1", po::value<double>(), "1st penalty for CCA/SCCA")
       ("lambda2", po::value<double>(), "2nd penalty for CCA/SCCA")
       ("debug", "debug, dumps all intermdiate data (WARNING: slow, call only on small data")
+      ("suffix", po::value<std::string>(), "suffix for all output files")
    ;
 
    po::variables_map vm;
@@ -206,25 +207,29 @@ int main(int argc, char * argv[])
       }
    }
 
-   int scca_method = SCCA_LOWMEM;
-   if(vm.count("sccamem"))
+   int mem = LOWMEM;
+   if(vm.count("mem"))
    {
-      std::string m = vm["sccamem"].as<std::string>();
-      if(m == "highmem")
-	 scca_method = SCCA_HIGHMEM;
-      else if(m == "lowmem")
-	 scca_method = SCCA_LOWMEM;
+      std::string m = vm["mem"].as<std::string>();
+      if(m == "low")
+	 mem = LOWMEM;
+      else if(m == "high")
+	 mem = HIGHMEM;
       else
       {
-	 std::cerr << "Error: unknown SCCA method (--scca): "
+	 std::cerr << "Error: unknown argument (--mem): "
 	    << m << std::endl;
 	 return EXIT_FAILURE;
       }
    }
 
-   std::string pcfile = "pcs.txt";
-   std::string pcxfile = "pcsX.txt";
-   std::string pcyfile = "pcsY.txt";
+   std::string suffix = ".txt";
+   if(vm.count("suffix"))
+      suffix = vm["suffix"].as<std::string>();
+   
+   std::string pcfile = "pcs" + suffix;
+   std::string pcxfile = "pcsX" + suffix;
+   std::string pcyfile = "pcsY" + suffix;
 
    if(vm.count("outpc"))
       pcfile = vm["outpc"].as<std::string>();
@@ -235,28 +240,27 @@ int main(int argc, char * argv[])
    if(vm.count("outpcy"))
       pcyfile = vm["outpcy"].as<std::string>();
 
-   std::string eigvecfile = "eigenvectors.txt";
+   std::string eigvecfile = "eigenvectors" + suffix;
    if(vm.count("outvec"))
       eigvecfile = vm["outvec"].as<std::string>();
 
-
-   std::string eigvecxfile = "eigenvectorsX.txt";
+   std::string eigvecxfile = "eigenvectorsX" + suffix;
    if(vm.count("outvecx"))
       eigvecxfile = vm["outvecx"].as<std::string>();
 
-   std::string eigvecyfile = "eigenvectorsY.txt";
+   std::string eigvecyfile = "eigenvectorsY" + suffix;
    if(vm.count("outvecy"))
       eigvecyfile = vm["outvecy"].as<std::string>();
 
-   std::string eigvalfile = "eigenvalues.txt";
+   std::string eigvalfile = "eigenvalues" + suffix;
    if(vm.count("outval"))
       eigvalfile = vm["outval"].as<std::string>();
 
-   std::string eigpvefile = "pve.txt";
+   std::string eigpvefile = "pve" + suffix;
    if(vm.count("outpve"))
       eigpvefile = vm["outpve"].as<std::string>();
 
-   std::string whitefile = "whitened.txt";
+   std::string whitefile = "whitened" + suffix;
    if(vm.count("outwhite"))
       whitefile = vm["outwhite"].as<std::string>();
 
@@ -454,7 +458,7 @@ int main(int argc, char * argv[])
       std::cout << timestamp() << " PCA begin" << std::endl;
       rpca.pca(data.X, method, transpose, n_dim, n_extra, maxiter,
          tol, seed, kernel, sigma, rbf_center, rbf_sample, save_kernel,
-	 do_orth, do_loadings);
+	 do_orth, do_loadings, mem);
       std::cout << timestamp() << " PCA done" << std::endl;
    }
    //else if(mode == MODE_CCA)
@@ -466,7 +470,7 @@ int main(int argc, char * argv[])
    else if(mode == MODE_SCCA)
    {
       std::cout << timestamp() << " SCCA begin" << std::endl;
-      rpca.scca(data.X, data.Y, lambda1, lambda2, seed, n_dim, scca_method,
+      rpca.scca(data.X, data.Y, lambda1, lambda2, seed, n_dim, mem,
 	 maxiter, tol);
       std::cout << timestamp() << " SCCA done" << std::endl;
    }

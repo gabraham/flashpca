@@ -20,13 +20,12 @@ using namespace Eigen;
 #define MODE_CCA 2
 #define MODE_SCCA 3
 
-#define SCCA_LOWMEM 1
-#define SCCA_HIGHMEM 2
+#define LOWMEM 1
+#define HIGHMEM 2
 
 class RandomPCA {
    public:
       MatrixXd X;
-      MatrixXd P; // projected X
       MatrixXd M;
       MatrixXd U, V, W, Px, Py;
       VectorXd d;
@@ -45,11 +44,11 @@ class RandomPCA {
 	    unsigned int maxiter, double tol, long seed,
 	    int kernel, double sigma, bool rbf_center,
 	    unsigned int rbf_sample, bool save_kernel,
-	    bool do_orth, bool do_loadings);
+	    bool do_orth, bool do_loadings, int mem);
       //void cca(MatrixXd &X, MatrixXd &Y, double lambda1, double lambda2,
 	//    long seed);
       void scca(MatrixXd &X, MatrixXd &Y, double lambda1, double lambda2,
-	    long seed, unsigned int ndim, int scca_method,
+	    long seed, unsigned int ndim, int mem,
 	    unsigned int maxiter, double tol);
       void zca_whiten(bool transpose);
 };
