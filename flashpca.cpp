@@ -33,7 +33,6 @@ int main(int argc, char * argv[])
    po::options_description desc("Options");
    desc.add_options()
       ("help", "produce help message")
-      ("cca", "perform canonical correlation analysis (CCA)")
       ("scca", "perform sparse canonical correlation analysis (SCCA)")
       ("numthreads", po::value<int>(), "set number of OpenMP threads")
       ("seed", po::value<long>(), "set random seed")
