@@ -206,7 +206,7 @@ int main(int argc, char * argv[])
       }
    }
 
-   int mem = LOWMEM;
+   int mem = HIGHMEM;
    if(vm.count("mem"))
    {
       std::string m = vm["mem"].as<std::string>();

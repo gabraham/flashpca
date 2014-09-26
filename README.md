@@ -12,7 +12,9 @@ Main features:
  (multi-threaded)
 * Natively reads PLINK bed/bim/fam files
 * Easy to use
-* Experimental: kernel PCA
+* Two variants: the original high-memory version, and a slightly slower
+   version that uses less RAM, useful for large datasets
+* Experimental: [kernel PCA](#kpca), [sparse CCA](#scca)
 
 ## Contact
 
@@ -44,11 +46,14 @@ See [Releases](https://github.com/gabraham/flashpca/tags) for statically-linked 
 
 ### System requirements
 * 64-bit linux
-* For large datasets you'll need large amounts of RAM, e.g. for 15,000
-   individuals (43K SNPs) you'll need about 14GB RAM, for 150,000 individuals
-   (43K SNPs) you'll need about 145GB RAM (estimated using
-   https://github.com/jhclark/memusg)
-   (we are working on a version which will use less RAM).
+* Using the original version (`--mem high`, the default), large datasets will require
+   large amounts of RAM, e.g. for 15,000 individuals (43K SNPs) you'll need
+   about 14GB RAM, for 150,000 individuals (43K SNPs) you'll need about 145GB
+   RAM (estimated using https://github.com/jhclark/memusg), roughly 8 &times;
+   min(n <sup>2</sup> &times; p + n &times; p, p <sup>2</sup> &times; n + n &times; p\)
+   bytes, where p is number of SNPs and n is number of individuals.
+   Using `--mem low`, you will only need about 8 &times; n &times; p bytes of
+   RAM.
 
 ## Building from source
 
@@ -139,21 +144,36 @@ To use genotype centering (compatible with R prcomp):
    ./flashpca --stand center ...
    ```
 
+To use the low-memory version:
+   ```
+   ./flashpca --mem low ...
+   ```
+
+To append a custom suffix '_mysuffix.txt' to all output files:
+   ```
+   ./flashpca --suffix _mysuffix.txt ...
+   ```
+
+To see all options
+   ```
+   ./flashpca --help 
+   ```
+
 ## Output
 
 flashpca produces the following files:
 
 * `eigenvectors.txt`: the top k eigenvectors of the covariance
-   X X^T / (n - 1), same as matrix U from the SVD of the genotype matrix
-   X=UDV^T.
+   X X<sup>T</sup> / (n - 1), same as matrix U from the SVD of the genotype matrix
+   X=UDV<sup>T</sup>.
 * `pcs.txt`: the top k principal components (the projection of the data on the
 eigenvectors, scaled by the eigenvalues,  same as XV (or UD). This is the file
 you will want to plot the PCA plot from.
-* `eigenvalues.txt`: the top k eigenvalues of X X^T / (n - 1). These are the
+* `eigenvalues.txt`: the top k eigenvalues of X X<sup>T</sup> / (n - 1). These are the
     square of the singular values D (square of sdev from prcomp).
 * `pve.txt`: the proportion of total variance explained by *each of the top k*
    eigenvectors (the total variance is given by the trace of the covariance
-   matrix X X^T / (n - 1), which is the same as the sum of all eigenvalues).
+   matrix X X<sup>T</sup> / (n - 1), which is the same as the sum of all eigenvalues).
    To get the cumulative variance explained, simply
    do the cumulative sum of the variances (`cumsum` in R).
 
@@ -165,9 +185,11 @@ spurious results otherwise.
 
 ## Experimental features
 
+### <a name="kpca"></a>Kernel PCA
+
 * flashpca now experimentally supports low-rank [**kernel
 PCA**](http://en.wikipedia.org/wiki/Kernel_principal_component_analysis) using an RBF
-(Gaussian) kernel K(x, x') = exp(-||x - x'||_2^2 / sigma^2) (specify using `--kernel
+(Gaussian) kernel K(x, x') = exp(-||x - x'||<sub>2</sub><sup>2</sup> / sigma<sup>2</sup>) (specify using `--kernel
 rbf`).
 * The kernel is double-centred.
 * The default kernel parameter sigma is the median of the pairwise Euclidean distances of a random subset
@@ -176,9 +198,30 @@ rbf`).
 * The rest of the options are the same as for standard PCA.
 * Currently, the proportion of variation explained is not computed for kPCA.
 
-## Calling flashpca from R
+### <a name="scca"></a>Sparse Canonical Correlation Analysis (SCCA)
 
-flashpca is now available as an independent R package.
+* flashpca now experimentally supports sparse CCA (Parkhomenko 2009, Witten
+ 2009), specify using `--scca`)  between SNPs and multivariate phenotypes (specify using `--pheno`).
+* The phenotype file is the same as PLINK phenotype file (FID, IID, pheno1,
+    pheno2, pheno3, ...), except that there must be no header line.
+* The L1 penalty for the SNPs is `--lambda1` and for the phenotypes is
+ `--lambda2`.
+* Two versions: low memory (`--mem low`) and high memory (`--mem high`).
+
+Example:
+   ```
+   ./flashpca --scca --bfile data --pheno pheno.txt --lambda1 1e-3 --lambda2 1e-2 --ndim 10
+   ```
+
+* The file eigenvectorsX.txt are the left eigenvectors of X<sup>T</sup> Y, with size (number of
+  SNPs &times; number of dimensions), and eigenvectorsY.txt are the right
+  eigenvectors of X<sup>T</sup> Y, with size (number of phenotypes &\times; number of
+  dimensions).
+
+### Calling flashpca from R
+
+flashpca is now available as an independent R package. Currently only the PCA
+functionality is supported.
 
 After cloning the git archive, install the package `flashpcaR`:
    ```

@@ -210,18 +210,22 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
    verbose && std::cout << timestamp() << " Trace(K): " << trace 
       << " (N: " << N << ")" << std::endl;
 
-
    if(mem == HIGHMEM && save_kernel)
    {
       verbose && std::cout << timestamp() << " saving K" << std::endl;
       save_text("kernel.txt", K);
    }
 
+   MatrixXd Xy(X.cols(), Y.cols());
+
    for(unsigned int iter = 0 ; iter < maxiter ; iter++)
    {
       verbose && std::cout << timestamp() << " iter " << iter;
       if(mem == LOWMEM)
-	 Yn.noalias() = X * (X.transpose() * Y);
+      {
+	 Xy.noalias() = X.transpose() * Y;
+	 Yn.noalias() = X * Xy;
+      }
       else
 	 Yn.noalias() = K * Y;
       if(do_orth)
@@ -235,7 +239,7 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
       else
 	 normalize(Yn);
 
-      double diff =  (Y -  Yn).array().square().sum() / Y.size(); 
+      double diff = (Y -  Yn).array().square().sum() / Y.size(); 
       verbose && std::cout << " " << diff << std::endl;
       Y.noalias() = Yn;
       if(diff < tol)
