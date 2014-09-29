@@ -239,7 +239,7 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
       else
 	 normalize(Yn);
 
-      double diff = (Y -  Yn).array().square().sum() / Y.size(); 
+      double diff = (Y - Yn).array().square().sum() / Y.size(); 
       verbose && std::cout << " " << diff << std::endl;
       Y.noalias() = Yn;
       if(diff < tol)
@@ -341,6 +341,7 @@ void scca_lowmem(MatrixXd& X, MatrixXd &Y, MatrixXd& U, MatrixXd& V,
    VectorXd& d, double lambda1, double lambda2,
    unsigned int maxiter, double tol)
 {
+   // TODO: X2 and Y2 take up lots of memory
    MatrixXd X2 = MatrixXd::Zero(X.rows() + U.cols(), X.cols());
    MatrixXd Y2 = MatrixXd::Zero(Y.rows() + U.cols(), Y.cols());
    X2.block(0, 0, X.rows(), X.cols()) = X;
