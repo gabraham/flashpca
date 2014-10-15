@@ -25,8 +25,6 @@ using namespace Eigen;
 
 class RandomPCA {
    public:
-      MatrixXd X;
-      MatrixXd M;
       MatrixXd U, V, W, Px, Py;
       VectorXd d;
       double trace;

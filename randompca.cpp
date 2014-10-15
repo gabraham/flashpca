@@ -297,18 +297,18 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
 }
 
 // ZCA of genotypes
-void RandomPCA::zca_whiten(bool transpose)
-{
-   verbose && std::cout << timestamp() << " Whitening begin" << std::endl;
-   VectorXd s = 1 / d.array();
-   MatrixXd Dinv = s.asDiagonal();
-
-   if(transpose)
-      W.noalias() = U * Dinv * U.transpose() * X.transpose();
-   else
-      W.noalias() = U * Dinv * U.transpose() * X;
-   verbose && std::cout << timestamp() << " Whitening done (" << dim(W) << ")" << std::endl;
-}
+//void RandomPCA::zca_whiten(bool transpose)
+//{
+//   verbose && std::cout << timestamp() << " Whitening begin" << std::endl;
+//   VectorXd s = 1 / d.array();
+//   MatrixXd Dinv = s.asDiagonal();
+//
+//   if(transpose)
+//      W.noalias() = U * Dinv * U.transpose() * X.transpose();
+//   else
+//      W.noalias() = U * Dinv * U.transpose() * X;
+//   verbose && std::cout << timestamp() << " Whitening done (" << dim(W) << ")" << std::endl;
+//}
 
 double inline sign_scalar(double x)
 {

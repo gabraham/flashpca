@@ -59,8 +59,8 @@ class Data {
       ~Data();
       void read_bed(bool transpose);
       void get_size();
-      void read_pheno(const char *filename, unsigned int firstcol, int pheno);
-      MatrixXd read_plink_pheno(const char *filename, unsigned int firstcol, int pheno);
+      void read_pheno(const char *filename, unsigned int firstcol);
+      MatrixXd read_plink_pheno(const char *filename, unsigned int firstcol);
 
       std::string tolower(const std::string& v);
 };
