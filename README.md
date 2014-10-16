@@ -38,9 +38,10 @@ Portions of this code are based on SparSNP
 (https://github.com/gabraham/SparSNP), Copyright (C) 2011-2012 Gad Abraham
 and National ICT Australia (http://www.NICTA.com.au).
 
-## Download statically linked version
+## Download statically linked version (stable versions only)
 
-Note: we recommend compiling from source for best performance.
+* We recommend compiling from source for best performance.
+* To get the devel version, you'll need to compile yourself
 
 See [Releases](https://github.com/gabraham/flashpca/tags) for statically-linked version for Linux x86-64 &ge; 2.6.15
 
