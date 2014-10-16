@@ -36,7 +36,7 @@ Copyright (C) 2014 Gad Abraham. All rights reserved.
 
 Portions of this code are based on SparSNP
 (https://github.com/gabraham/SparSNP), Copyright (C) 2011-2012 Gad Abraham
-and National ICT Australia (http://www.NICTA.com.au).
+and National ICT Australia (http://www.nicta.com.au).
 
 ## Download statically linked version (stable versions only)
 
@@ -261,7 +261,7 @@ Output:
 
 See the [HapMap3](HapMap3) directory
 
-## Changelog
+## Changelog (stable versions only)
 
 See [CHANGELOG.txt](CHANGELOG.txt)
 

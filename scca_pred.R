@@ -73,7 +73,7 @@ R <- lapply(seq(along=Px), function(i) {
    cor(Px[[i]], Py[[i]])
 })
 
-Rmax <- sapply(R, )
+Rmax <- sapply(R, max)
 
 res <- data.frame(l1=l1, l2=factor(l2), R=Rmax)
 
