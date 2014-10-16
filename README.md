@@ -13,9 +13,7 @@ Main features:
 * Natively reads PLINK bed/bim/fam files
 * Easy to use
 * Two variants: the original high-memory version, and a slightly slower
-   version that uses less RAM 
-   (8bytes &times; \#SNPs &times; \#Samples rather than 8bytes &times;
-   \#Samples &times; \#Samples), useful for large datasets with many samples
+   version that uses less RAM (proportional to data size), useful for large datasets with many samples
 * Experimental: [kernel PCA](#kpca), [sparse CCA](#scca)
 
 ## Contact
@@ -202,8 +200,8 @@ rbf`).
 
 ### <a name="scca"></a>Sparse Canonical Correlation Analysis (SCCA)
 
-* flashpca now experimentally supports sparse CCA (
-   [Parkhomenko 2009](http://dx.doi.org/10.2202/1544-6115.1406),
+* flashpca now experimentally supports sparse CCA
+   ([Parkhomenko 2009](http://dx.doi.org/10.2202/1544-6115.1406),
    [Witten 2009](http://dx.doi.org/10.1093/biostatistics/kxp008)),
    between SNPs and multivariate phenotypes.
 * The phenotype file is the same as PLINK phenotype file:
