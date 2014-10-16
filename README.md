@@ -13,7 +13,9 @@ Main features:
 * Natively reads PLINK bed/bim/fam files
 * Easy to use
 * Two variants: the original high-memory version, and a slightly slower
-   version that uses less RAM, useful for large datasets
+   version that uses less RAM 
+   (8bytes &times; \#SNPs &times; \#Samples rather than 8bytes &times;
+   \#Samples &times; \#Samples), useful for large datasets with many samples
 * Experimental: [kernel PCA](#kpca), [sparse CCA](#scca)
 
 ## Contact
@@ -200,23 +202,38 @@ rbf`).
 
 ### <a name="scca"></a>Sparse Canonical Correlation Analysis (SCCA)
 
-* flashpca now experimentally supports sparse CCA (Parkhomenko 2009, Witten
- 2009), specify using `--scca`)  between SNPs and multivariate phenotypes (specify using `--pheno`).
-* The phenotype file is the same as PLINK phenotype file (FID, IID, pheno1,
-    pheno2, pheno3, ...), except that there must be no header line.
+* flashpca now experimentally supports sparse CCA (
+   [Parkhomenko 2009](http://dx.doi.org/10.2202/1544-6115.1406),
+   [Witten 2009](http://dx.doi.org/10.1093/biostatistics/kxp008)),
+   between SNPs and multivariate phenotypes.
+* The phenotype file is the same as PLINK phenotype file:
+   `FID, IID, pheno1, pheno2, pheno3, ...`
+   except that there must be no header line. The phenotype file *must be in the same order as
+   the FAM file*.
 * The L1 penalty for the SNPs is `--lambda1` and for the phenotypes is
  `--lambda2`.
-* Two versions: low memory (`--mem low`) and high memory (`--mem high`).
+* Two versions: low memory (`--mem low`, roughly 8 x \#Samples x (\#SNPs + \#Phenotypes))
+   and high memory (`--mem high`, roughly 8bytes &times; \#SNPs &times; \#Phenotypes).
 
-Example:
+#### Quick example
    ```
-   ./flashpca --scca --bfile data --pheno pheno.txt --lambda1 1e-3 --lambda2 1e-2 --ndim 10
+   ./flashpca --scca --bfile data --pheno pheno.txt \
+   --lambda1 1e-3 --lambda2 1e-2 --ndim 10 --numthreads 8
    ```
 
 * The file eigenvectorsX.txt are the left eigenvectors of X<sup>T</sup> Y, with size (number of
   SNPs &times; number of dimensions), and eigenvectorsY.txt are the right
   eigenvectors of X<sup>T</sup> Y, with size (number of phenotypes &\times; number of
   dimensions).
+
+#### Example scripts to tune the penalties via split validation
+
+We optimise the penalties by finding the values that maximise the correlation
+of the canonical components cor(X U, Y V) in independent test data.
+
+* Wrapper script [scca.sh](scca.sh) ([GNU
+   parallel](http://www.gnu.org/software/parallel) is recommended)
+* R code for plotting the correlations [scca_pred.R](scca_pred.R)
 
 ### Calling flashpca from R
 
