@@ -1,6 +1,6 @@
-\name{flashpca-package}
-\alias{flashpca-package}
-\alias{flashpca}
+\name{flashpcaR-package}
+\alias{flashpcaR-package}
+\alias{flashpcaR}
 \docType{package}
 \title{
 R interface to flashpca
@@ -16,8 +16,6 @@ Version: \tab 1.0\cr
 Date: \tab 2014-05-30\cr
 License: \tab GPL (>= 3)\cr
 }
-~~ An overview of how to use the package, including the most important ~~
-~~ functions ~~
 }
 \author{
 Gad Abraham

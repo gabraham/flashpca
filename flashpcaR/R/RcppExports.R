@@ -3,11 +3,13 @@ flashpca <- function(X, method=c("eigen", "svd"),
    stand=c("binom", "sd", "center", "none"), transpose=NULL, ndim=10,
    nextra=10, maxiter=50, tol=1e-6, seed=1, kernel=c("linear", "rbf"),
    sigma=NULL, rbf_center=TRUE, rbf_sample=1000, save_kernel=FALSE,
-   do_orth=TRUE, verbose=FALSE, num_threads=1, do_loadings=FALSE)
+   do_orth=TRUE, verbose=FALSE, num_threads=1, do_loadings=FALSE,
+   mem=c("high", "low"))
 {
    method <- match.arg(method)
    stand <- match.arg(stand)
    kernel <- match.arg(kernel)
+   mem <- match.arg(mem)
 
    if(method == "eigen") {
       method_i <- 1L
@@ -44,12 +46,18 @@ flashpca <- function(X, method=c("eigen", "svd"),
 
    rbf_sample <- min(nrow(X), rbf_sample)
 
+   if(mem == "high") {
+      mem_i <- 2L
+   } else {
+      mem_i <- 1L
+   }
+
    # otherwise Rcpp will throw an exception
    storage.mode(X) <- "numeric"
 
    .Call("flashpca", PACKAGE="flashpcaR",
       X, method_i, stand_i, transpose, ndim, nextra, maxiter,
       tol, seed, kernel_i, sigma, rbf_center, rbf_sample,
-      save_kernel, do_orth, verbose, num_threads, do_loadings)
+      save_kernel, do_orth, verbose, num_threads, do_loadings, mem_i)
 }
 
