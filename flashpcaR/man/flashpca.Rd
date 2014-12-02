@@ -97,7 +97,7 @@ diag(cor(r$x[, 1:k], f2$projection))
 
 \dontrun{
 ## First get data from
-## https://github.com/gabraham/flashpca/blob/master/HapMap3/data.RData
+## https://github.com/gabraham/flashpca/blob/devel/HapMap3/data.RData
 ##
 ## Missing genotypes have been imputed randomly according to genotype
 ## proportions in each SNP.
