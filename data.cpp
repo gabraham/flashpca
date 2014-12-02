@@ -197,10 +197,9 @@ void Data::read_bed(bool transpose)
    in.close();
 }
 
-void Data::read_pheno(const char *filename, unsigned int firstcol,
-   int pheno)
+void Data::read_pheno(const char *filename, unsigned int firstcol)
 {
-   Y = read_plink_pheno(filename, firstcol, pheno);
+   Y = read_plink_pheno(filename, firstcol);
 }
 
 // Reads PLINK phenotype files:
@@ -209,8 +208,7 @@ void Data::read_pheno(const char *filename, unsigned int firstcol,
 // 
 // firstcol is one-based, 3 for pheno file, 6 for FAM file (ignoring gender),
 // 5 for FAM file (with gender)
-MatrixXd Data::read_plink_pheno(const char *filename, unsigned int firstcol,
-   int pheno)
+MatrixXd Data::read_plink_pheno(const char *filename, unsigned int firstcol)
 {
    std::ifstream in(filename, std::ios::in);
 

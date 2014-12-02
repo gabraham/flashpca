@@ -152,9 +152,9 @@ int main(int argc, char * argv[])
    if(vm.count("ndim"))
    {
       n_dim = vm["ndim"].as<int>();
-      if(n_dim <= 1)
+      if(n_dim < 1)
       {
-	 std::cerr << "Error: --ndim can't be less than 2" << std::endl;
+	 std::cerr << "Error: --ndim can't be less than 1" << std::endl;
 	 return EXIT_FAILURE;
       }
    }
@@ -429,15 +429,15 @@ int main(int argc, char * argv[])
    std::cout << timestamp() << " seed: " << data.seed << std::endl;
 
    if(mode == MODE_CCA || mode == MODE_SCCA)
-      data.read_pheno(pheno_file.c_str(), 3, PHENO_BINARY_12);
+      data.read_pheno(pheno_file.c_str(), 3);
    else
-      data.read_pheno(fam_file.c_str(), 6, PHENO_BINARY_12);
+      data.read_pheno(fam_file.c_str(), 6);
       
    data.geno_filename = geno_file.c_str();
    data.get_size();
    transpose = mode == MODE_PCA && (transpose || data.N > data.nsnps);
    data.read_bed(transpose);
-
+   
    RandomPCA rpca;
    rpca.verbose = verbose;
    rpca.debug = debug;
@@ -533,14 +533,14 @@ int main(int argc, char * argv[])
    ////////////////////////////////////////////////////////////////////////////////
    // Whiten if required
 
-   if(mode == MODE_PCA && whiten)
-   {
-      std::cout << timestamp() << " ZCA whitening data" << std::endl;
-      rpca.zca_whiten(transpose);
-      std::cout << timestamp() << " Writing whitened data to file "
-	 << whitefile << std::endl;
-      save_text(whitefile.c_str(), rpca.W);
-   }
+   //if(mode == MODE_PCA && whiten)
+   //{
+   //   std::cout << timestamp() << " ZCA whitening data" << std::endl;
+   //   rpca.zca_whiten(transpose);
+   //   std::cout << timestamp() << " Writing whitened data to file "
+   //      << whitefile << std::endl;
+   //   save_text(whitefile.c_str(), rpca.W);
+   //}
 
    std::cout << timestamp() << " Goodbye!" << std::endl;
 

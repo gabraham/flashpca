@@ -5,12 +5,13 @@ EIGEN_INC=/usr/local/include/eigen
 BOOST_INC=/usr/local/include/boost
 BOOST_LIB=/usr/local/lib
 
-all: flashpca
+all: flashpca predict
 static: flashpca_x86-64
 
 GITVER := $(shell git describe --dirty --always)
 
 OBJ = \
+   predict.o \
    randompca.o \
    flashpca.o \
    data.o \
@@ -39,8 +40,14 @@ debug: $(OBJ)
 flashpca: LDFLAGS = $(BOOST)
 flashpca: CXXFLAGS += -g -O3 -DNDEBUG -DGITVER=\"$(GITVER)\" \
    -funroll-loops -ftree-vectorize -ffast-math -fopenmp
-flashpca: $(OBJ)
+flashpca: flashpca.o randompca.o data.o util.o
 	$(CXX) $(CXXFLAGS) -o flashpca $^ $(LDFLAGS)
+
+predict: LDFLAGS = $(BOOST)
+predict: CXXFLAGS += -g -O3 -DNDEBUG -DGITVER=\"$(GITVER)\" \
+   -funroll-loops -ftree-vectorize -ffast-math -fopenmp
+predict: predict.o data.o util.o
+	$(CXX) $(CXXFLAGS) -o predict $^ $(LDFLAGS)
 
 flashpca_x86-64: LDFLAGS = $(BOOST) -Wl,--whole-archive -lpthread -Wl,--no-whole-archive
 flashpca_x86-64: CXXFLAGS += -g -O3 -DNDEBUG -DGITVER=\"$(GITVER)\" \
