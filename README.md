@@ -200,12 +200,16 @@ Alternatively, after cloning the git archive, install using:
 
 On Windows, see [Releases](https://github.com/gabraham/flashpca/releases) for a prebuilt Windows binary package.
 
-Example usage, assuming `X` is a sample by SNP matrix in dosage
-coding (0, 1, 2):
+Example usage, assuming `X` is a 100-sample by 1000-SNP matrix in dosage
+coding (0, 1, 2) (an actual matrix, not a path to PLINK data)
    ```
+   dim(X)
+   [1]  100 1000
    library(flashpcaR)
    r <- flashpca(X, do_loadings=TRUE, verbose=TRUE, stand="binom", ndim=10)
    ```
+
+PLINK data can be loaded into R either by recoding the data into raw format (`recode A`) or using package [plink2R](https://github.com/gabraham/plink2R).
 
 Output:
    * `values`: eigenvalues
