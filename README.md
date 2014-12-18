@@ -36,7 +36,7 @@ Portions of this code are based on SparSNP
 (https://github.com/gabraham/SparSNP), Copyright (C) 2011-2012 Gad Abraham
 and National ICT Australia (http://www.NICTA.com.au).
 
-## Download statically linked version
+## Download statically linked version for Linux
 
 Note: we recommend compiling from source for best performance.
 
@@ -185,10 +185,20 @@ rbf`).
 
 flashpca is now available as an independent R package.
 
-After cloning the git archive, install the package `flashpcaR`:
+Requirements for building: R packages Rcpp, RcppEigen, BH, g++ compiler
+
+To install on Mac or Linux, you can use devtools::install_github:
+   ```
+   library(devtools)
+   install_github("gabraham/flashpca/flashpcaR")
+   ```
+
+Alternatively, after cloning the git archive, install using:
    ```
    R CMD INSTALL flashpcaR
    ```
+
+On Windows, see [Releases](https://github.com/gabraham/flashpca/tags) for a prebuilt Windows binary package.
 
 Example usage, assuming `X` is a sample by SNP matrix in dosage
 coding (0, 1, 2):
