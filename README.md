@@ -198,7 +198,7 @@ Alternatively, after cloning the git archive, install using:
    R CMD INSTALL flashpcaR
    ```
 
-On Windows, see [Releases](https://github.com/gabraham/flashpca/tags) for a prebuilt Windows binary package.
+On Windows, see [Releases](https://github.com/gabraham/flashpca/releases) for a prebuilt Windows binary package.
 
 Example usage, assuming `X` is a sample by SNP matrix in dosage
 coding (0, 1, 2):
