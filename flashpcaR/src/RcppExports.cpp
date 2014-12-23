@@ -12,7 +12,7 @@ RcppExport SEXP flashpca(SEXP _X, SEXP _method, SEXP _stand,
    SEXP _transpose, SEXP _ndim, SEXP _nextra, SEXP _maxiter, SEXP _tol,
    SEXP _seed, SEXP _kernel, SEXP _sigma, SEXP _rbf_center,
    SEXP _rbf_sample, SEXP _save_kernel, SEXP _do_orth,
-   SEXP _verbose, SEXP _num_threads, SEXP _do_loadings)
+   SEXP _verbose, SEXP _num_threads, SEXP _do_loadings, SEXP _mem)
 {
 //BEGIN_RCPP
 
@@ -42,8 +42,13 @@ RcppExport SEXP flashpca(SEXP _X, SEXP _method, SEXP _stand,
    bool verbose = Rcpp::as<bool>(_verbose);
    int num_threads = Rcpp::as<int>(_num_threads);
    bool do_loadings = Rcpp::as<bool>(_do_loadings);
+   int mem = Rcpp::as<int>(_mem);
 
+#ifndef _WIN32
+#ifndef _WIN64
    omp_set_num_threads(num_threads);
+#endif
+#endif
 
    RandomPCA rp;
    rp.stand_method = stand;
@@ -51,10 +56,10 @@ RcppExport SEXP flashpca(SEXP _X, SEXP _method, SEXP _stand,
    rp.pca(X, method, transpose, ndim, nextra,
       maxiter, tol, seed, kernel,
       sigma, rbf_center, rbf_sample,
-      save_kernel, do_orth, do_loadings);
+      save_kernel, do_orth, do_loadings, mem);
 
    NumericMatrix U(wrap(rp.U));
-   NumericMatrix P(wrap(rp.P));
+   NumericMatrix P(wrap(rp.Px));
    NumericVector d(wrap(rp.d));
 
    Rcpp::List res;
@@ -77,6 +82,65 @@ RcppExport SEXP flashpca(SEXP _X, SEXP _method, SEXP _stand,
          Rcpp::Named("projection")=P
       );
    }
+
+   return wrap(res);
+//END_RCPP
+}
+
+RcppExport SEXP scca(SEXP _X, SEXP _Y, SEXP _lambda1, SEXP _lambda2,
+   SEXP _ndim, SEXP _stand, SEXP _mem, SEXP _seed,
+   SEXP _num_threads, SEXP _maxiter, SEXP _tol, SEXP _verbose)
+{
+//BEGIN_RCPP
+
+   Rcpp::RNGScope __rngScope;
+
+   // Hack since RcppEigen can't convert an SEXP to a MatrixXd
+   // http://lists.r-forge.r-project.org/pipermail/rcpp-devel/2012-May/003793.html
+   // Unfortunately have to make copy of X
+   typedef Eigen::Map<Eigen::MatrixXd> MapMat;
+   MapMat Xm = Rcpp::as<MapMat>(_X);
+   MapMat Ym = Rcpp::as<MapMat>(_Y);
+   Eigen::MatrixXd X = Xm;
+   Eigen::MatrixXd Y = Ym;
+
+   int stand = Rcpp::as<int>(_stand);
+   unsigned int ndim = Rcpp::as<unsigned int>(_ndim);
+   double tol = Rcpp::as<double>(_tol);
+   double lambda1 = Rcpp::as<double>(_lambda1);
+   double lambda2 = Rcpp::as<double>(_lambda2);
+   long seed = Rcpp::as<long>(_seed);
+   bool verbose = Rcpp::as<bool>(_verbose);
+   int num_threads = Rcpp::as<int>(_num_threads);
+   int mem = Rcpp::as<int>(_mem);
+   int maxiter = Rcpp::as<int>(_maxiter);
+
+#ifndef _WIN32
+#ifndef _WIN64
+   omp_set_num_threads(num_threads);
+#endif
+#endif
+
+   RandomPCA rp;
+   rp.stand_method = stand;
+   rp.verbose = verbose;
+   rp.scca(X, Y, lambda1, lambda1, seed, ndim, mem, maxiter, tol);
+
+   NumericMatrix U(wrap(rp.U));
+   NumericMatrix V(wrap(rp.V));
+   NumericMatrix Px(wrap(rp.Px));
+   NumericMatrix Py(wrap(rp.Py));
+   NumericVector d(wrap(rp.d));
+
+   Rcpp::List res;
+
+   res = Rcpp::List::create(
+	 Rcpp::Named("U")=U,
+         Rcpp::Named("V")=V,
+         Rcpp::Named("d")=d,
+         Rcpp::Named("Px")=Px,
+         Rcpp::Named("Py")=Py
+   );
 
    return wrap(res);
 //END_RCPP

@@ -1,10 +1,19 @@
+/*
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Copyright (C) 2014 Gad Abraham
+ * All rights reserved.
+ */
 
 #include "util.hpp"
 
 using namespace Eigen;
 
 // Standardize matrix column-wise to zero mean and unit variance.
-// Standardizes in place
+// *Standardizes in place*
 // If a column is all zeros, it will remain zero.
 // Returns p by 2 matrix [mean, sd]
 MatrixXd standardize(MatrixXd& X, int method, bool verbose)

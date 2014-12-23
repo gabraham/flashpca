@@ -1,4 +1,14 @@
 
+/*
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Copyright (C) 2014 Gad Abraham
+ * All rights reserved.
+ */
+
 //#include <Eigen/Core>
 //#include <Eigen/Dense>
 //#include <Eigen/Eigen>
@@ -22,17 +32,24 @@ int main(int argc, char * argv[])
    std::cout << "******* Running in Debug mode *******" << std::endl;
 #endif
 
+   std::cout << timestamp() << " arguments: flashpca ";
+   for(int i = 0 ; i < argc ; i++)
+      std::cout << argv[i] << " ";
+   std::cout << std::endl;
+
    ////////////////////////////////////////////////////////////////////////////////
    // Parse commandline arguments
 
    po::options_description desc("Options");
    desc.add_options()
       ("help", "produce help message")
+      ("scca", "perform sparse canonical correlation analysis (SCCA)")
       ("numthreads", po::value<int>(), "set number of OpenMP threads")
       ("seed", po::value<long>(), "set random seed")
       ("bed", po::value<std::string>(), "PLINK bed file")
       ("bim", po::value<std::string>(), "PLINK bim file")
       ("fam", po::value<std::string>(), "PLINK fam file")
+      ("pheno", po::value<std::string>(), "PLINK phenotype file")
       ("bfile", po::value<std::string>(), "PLINK root name")
       ("ndim", po::value<int>(), "number of PCs to output")
       ("nextra", po::value<int>(),
@@ -40,9 +57,14 @@ int main(int argc, char * argv[])
       ("stand", po::value<std::string>(), "standardization method [none | binom | sd | center]")
       ("method", po::value<std::string>(), "PCA method [eigen | svd]")
       ("orth", po::value<std::string>(), "use orthornormalization [yes | no]")
+      ("mem", po::value<std::string>(), "SCCA/PCA method [low | high]")
       ("outpc", po::value<std::string>(), "PC output file")
+      ("outpcx", po::value<std::string>(), "X PC output file, for CCA")
+      ("outpcy", po::value<std::string>(), "Y PC output file, for CCA")
       ("outvec", po::value<std::string>(), "Eigenvector output file")
       ("outload", po::value<std::string>(), "SNP loadings")
+      ("outvecx", po::value<std::string>(), "X eigenvector output file, for CCA")
+      ("outvecy", po::value<std::string>(), "Y eigenvector output file, for CCA")
       ("outval", po::value<std::string>(), "Eigenvalue output file")
       ("outpve", po::value<std::string>(), "Proportion of variance explained output file")
       ("outmeansd", po::value<std::string>(), "Mean+SD (used to standardize SNPs) output file")
@@ -57,17 +79,44 @@ int main(int argc, char * argv[])
       ("rbfcenter", po::value<std::string>(), "center the RBF kernel [yes | no]")
       ("rbfsample", po::value<int>(), "sample size for estimating RBF kernel width")
       ("savekernel", "save the kernel as text file")
+      ("lambda1", po::value<double>(), "1st penalty for CCA/SCCA")
+      ("lambda2", po::value<double>(), "2nd penalty for CCA/SCCA")
+      ("debug", "debug, dumps all intermdiate data (WARNING: slow, call only on small data")
+      ("suffix", po::value<std::string>(), "suffix for all output files")
+      ("version", "version")
    ;
 
    po::variables_map vm;
    po::store(po::parse_command_line(argc, argv, desc), vm);
    po::notify(vm);
 
+   if(vm.count("version"))
+   {
+      std::cerr << "flashpca " << VERSION << std::endl;
+      std::cerr << "Copyright (C) 2014 Gad Abraham." << std::endl
+	 << "This is free software; see the source for copying conditions.  There is NO"
+	 << std::endl
+	 << "warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE."
+	 << std::endl << std::endl;
+      return EXIT_SUCCESS;
+   }
+
    if(vm.count("help"))
    {
+      std::cerr << "flashpca " << VERSION << std::endl;
       std::cerr << desc << std::endl;
+      return EXIT_SUCCESS;
+   }
+
+   int mode = MODE_PCA;
+   if(vm.count("cca"))
+   {
+      mode = MODE_CCA;
+      std::cerr << "Error: CCA is currently disabled" << std::endl;
       return EXIT_FAILURE;
    }
+   else if(vm.count("scca"))
+      mode = MODE_SCCA;
 
    int num_threads = 1;
    if(vm.count("numthreads"))
@@ -77,13 +126,13 @@ int main(int argc, char * argv[])
    if(vm.count("seed"))
       seed = vm["seed"].as<long>();
 
-   std::string pheno_file, geno_file, bim_file;
+   std::string fam_file, geno_file, bim_file, pheno_file;
 
    if(vm.count("bfile"))
    {
       geno_file = vm["bfile"].as<std::string>() + std::string(".bed");
       bim_file = vm["bfile"].as<std::string>() + std::string(".bim");
-      pheno_file = vm["bfile"].as<std::string>() + std::string(".fam");
+      fam_file = vm["bfile"].as<std::string>() + std::string(".fam");
    }
    else
    {
@@ -99,7 +148,7 @@ int main(int argc, char * argv[])
 	 good = false;
 
       if(good && vm.count("fam"))
-	 pheno_file = vm["fam"].as<std::string>();
+	 fam_file = vm["fam"].as<std::string>();
       else
 	 good = false;
       
@@ -113,13 +162,22 @@ int main(int argc, char * argv[])
       }
    }
 
+   if(vm.count("pheno"))
+      pheno_file = vm["pheno"].as<std::string>();
+   else if(mode == MODE_CCA) 
+   {
+      std::cerr << "Error: you must specify a phenotype file "
+	 "in CCA mode using --pheno" << std::endl;
+      return EXIT_FAILURE;
+   }
+
    int n_dim = 0;
    if(vm.count("ndim"))
    {
       n_dim = vm["ndim"].as<int>();
-      if(n_dim <= 1)
+      if(n_dim < 1)
       {
-	 std::cerr << "Error: --ndim can't be less than 2" << std::endl;
+	 std::cerr << "Error: --ndim can't be less than 1" << std::endl;
 	 return EXIT_FAILURE;
       }
    }
@@ -171,31 +229,60 @@ int main(int argc, char * argv[])
       }
    }
 
-   std::string pcfile = "pcs.txt";
+   int mem = HIGHMEM;
+   if(vm.count("mem"))
+   {
+      std::string m = vm["mem"].as<std::string>();
+      if(m == "low")
+	 mem = LOWMEM;
+      else if(m == "high")
+	 mem = HIGHMEM;
+      else
+      {
+	 std::cerr << "Error: unknown argument (--mem): "
+	    << m << std::endl;
+	 return EXIT_FAILURE;
+      }
+   }
+
+   std::string suffix = ".txt";
+   if(vm.count("suffix"))
+      suffix = vm["suffix"].as<std::string>();
+   
+   std::string pcfile = "pcs" + suffix;
+   std::string pcxfile = "pcsX" + suffix;
+   std::string pcyfile = "pcsY" + suffix;
+
    if(vm.count("outpc"))
       pcfile = vm["outpc"].as<std::string>();
 
-   std::string eigvecfile = "eigenvectors.txt";
+   if(vm.count("outpcx"))
+      pcxfile = vm["outpcx"].as<std::string>();
+
+   if(vm.count("outpcy"))
+      pcyfile = vm["outpcy"].as<std::string>();
+
+   std::string eigvecfile = "eigenvectors" + suffix;
    if(vm.count("outvec"))
       eigvecfile = vm["outvec"].as<std::string>();
 
-   bool do_loadings = false;
-   std::string loadingsfile = "";
-   if(vm.count("outload"))
-   {
-      loadingsfile = vm["outload"].as<std::string>();
-      do_loadings = true;
-   }
+   std::string eigvecxfile = "eigenvectorsX" + suffix;
+   if(vm.count("outvecx"))
+      eigvecxfile = vm["outvecx"].as<std::string>();
 
-   std::string eigvalfile = "eigenvalues.txt";
+   std::string eigvecyfile = "eigenvectorsY" + suffix;
+   if(vm.count("outvecy"))
+      eigvecyfile = vm["outvecy"].as<std::string>();
+
+   std::string eigvalfile = "eigenvalues" + suffix;
    if(vm.count("outval"))
       eigvalfile = vm["outval"].as<std::string>();
 
-   std::string eigpvefile = "pve.txt";
+   std::string eigpvefile = "pve" + suffix;
    if(vm.count("outpve"))
       eigpvefile = vm["outpve"].as<std::string>();
 
-   std::string whitefile = "whitened.txt";
+   std::string whitefile = "whitened" + suffix;
    if(vm.count("outwhite"))
       whitefile = vm["outwhite"].as<std::string>();
 
@@ -226,7 +313,9 @@ int main(int argc, char * argv[])
       }
    }
   
-   int maxiter = 50;
+   int maxiter = 500;
+   bool debug = vm.count("debug");
+   
    if(vm.count("maxiter"))
    {
       maxiter = vm["maxiter"].as<int>();
@@ -238,7 +327,7 @@ int main(int argc, char * argv[])
       }
    }
 
-   double tol = 1e-6;
+   double tol = 1e-7;
    if(vm.count("tol"))
    {
       tol = vm["tol"].as<double>();
@@ -261,6 +350,24 @@ int main(int argc, char * argv[])
       else
       {
 	 std::cerr << "Error: unknown kernel " << s << std::endl;
+	 return EXIT_FAILURE;
+      }
+   }
+
+   bool do_loadings = false;
+   std::string loadingsfile = "";
+   if(vm.count("outload"))
+   {
+      if(kernel == KERNEL_LINEAR)
+      {
+	 loadingsfile = vm["outload"].as<std::string>();
+	 do_loadings = true;
+      }
+      else
+      {
+	 std::cerr
+	    << "Error: won't save SNP loadings with non-linear kernel "
+	    << std::endl;
 	 return EXIT_FAILURE;
       }
    }
@@ -306,10 +413,34 @@ int main(int argc, char * argv[])
 
    bool save_kernel = vm.count("savekernel");
 
+   double lambda1 = 0;
+   if(vm.count("lambda1"))
+   {
+      lambda1 = vm["lambda1"].as<double>();
+      if(lambda1 < 0)
+      {
+	 std::cerr << "Error: --lambda1 can't be negative"
+	    << std::endl;
+	 return EXIT_FAILURE;
+      }
+   }
+
+   double lambda2 = 0;
+   if(vm.count("lambda2"))
+   {
+      lambda2 = vm["lambda2"].as<double>();
+      if(lambda2 < 0)
+      {
+	 std::cerr << "Error: --lambda2 can't be negative"
+	    << std::endl;
+	 return EXIT_FAILURE;
+      }
+   }
+
    ////////////////////////////////////////////////////////////////////////////////
    // End command line parsing
       
-   std::cout << timestamp() << " Start flashpca (git version " << GITVER 
+   std::cout << timestamp() << " Start flashpca (version " << VERSION
       << ")" << std::endl;
    //setNbThreads(num_threads);
    omp_set_num_threads(num_threads);
@@ -320,14 +451,19 @@ int main(int argc, char * argv[])
    data.verbose = verbose;
    std::cout << timestamp() << " seed: " << data.seed << std::endl;
 
-   data.read_pheno(pheno_file.c_str(), 6, PHENO_BINARY_12);
+   if(mode == MODE_CCA || mode == MODE_SCCA)
+      data.read_pheno(pheno_file.c_str(), 3);
+   else
+      data.read_pheno(fam_file.c_str(), 6);
+      
    data.geno_filename = geno_file.c_str();
    data.get_size();
-   transpose = transpose || data.N > data.nsnps;
+   transpose = mode == MODE_PCA && (transpose || data.N > data.nsnps);
    data.read_bed(transpose);
-
+   
    RandomPCA rpca;
    rpca.verbose = verbose;
+   rpca.debug = debug;
    rpca.stand_method = stand_method;
    unsigned int max_dim = fminl(data.X.rows(), data.X.cols());
    
@@ -338,33 +474,52 @@ int main(int argc, char * argv[])
       n_extra = fminl(max_dim - n_dim, 190);
 
    ////////////////////////////////////////////////////////////////////////////////
-   // Do the PCA
-   std::cout << timestamp() << " PCA begin" << std::endl;
-   
-   rpca.pca(data.X, method, transpose, n_dim, n_extra, maxiter,
-      tol, seed, kernel, sigma, rbf_center, rbf_sample, save_kernel, do_orth,
-      do_loadings);
-
-   std::cout << timestamp() << " PCA done" << std::endl;
+   // The main analysis
+   if(mode == MODE_PCA)
+   {
+      std::cout << timestamp() << " PCA begin" << std::endl;
+      rpca.pca(data.X, method, transpose, n_dim, n_extra, maxiter,
+         tol, seed, kernel, sigma, rbf_center, rbf_sample, save_kernel,
+	 do_orth, do_loadings, mem);
+      std::cout << timestamp() << " PCA done" << std::endl;
+   }
+   //else if(mode == MODE_CCA)
+   //{
+   //   std::cout << timestamp() << " CCA begin" << std::endl;
+   //   rpca.cca(data.X, data.Y, lambda1, lambda2, seed);
+   //   std::cout << timestamp() << " CCA done" << std::endl;
+   //}
+   else if(mode == MODE_SCCA)
+   {
+      std::cout << timestamp() << " SCCA begin" << std::endl;
+      rpca.scca(data.X, data.Y, lambda1, lambda2, seed, n_dim, mem,
+	 maxiter, tol);
+      std::cout << timestamp() << " SCCA done" << std::endl;
+   }
 
    ////////////////////////////////////////////////////////////////////////////////
    // Write out results
 
-   std::cout << timestamp() << " Writing " << n_dim << 
-      " eigenvectors to file " << eigvecfile << std::endl;
-   save_text(eigvecfile.c_str(), rpca.U);
 
+   // Common to all decompositions
    std::cout << timestamp() << " Writing " << n_dim << 
       " eigenvalues to file " << eigvalfile << std::endl;
    save_text(eigvalfile.c_str(), rpca.d);
 
-   if(kernel == KERNEL_LINEAR)
+   if(mode == MODE_PCA)
    {
+      std::cout << timestamp() << " Writing " << n_dim << 
+	 " eigenvectors to file " << eigvecfile << std::endl;
+      save_text(eigvecfile.c_str(), rpca.U);
+
+      std::cout << timestamp() << " Writing " << n_dim <<
+	 " PCs to file " << pcfile << std::endl;
+      save_text(pcfile.c_str(), rpca.Px);
+
       std::cout << timestamp() << " Writing " << n_dim << 
 	 " proportion variance explained to file " << eigpvefile << std::endl;
       save_text(eigpvefile.c_str(), rpca.pve);
 
-      // only write out loadings for linear kernel
       if(do_loadings)
       {
 	 std::cout << timestamp() << " Writing" <<
@@ -372,17 +527,24 @@ int main(int argc, char * argv[])
 	 save_text(loadingsfile.c_str(), rpca.V); 
       }
    }
-   else if(do_loadings)
+   else if(mode == MODE_CCA || mode == MODE_SCCA)
    {
-      std::cout << timestamp() 
-	 << " NOT computing SNP loadings due to non-linear kernel"
-	 << std::endl;
-   }
-   
+      std::cout << timestamp() << " Writing " << n_dim << 
+	 " X eigenvectors to file " << eigvecxfile << std::endl;
+      save_text(eigvecxfile.c_str(), rpca.U);
 
-   std::cout << timestamp() << " Writing " << n_dim <<
-      " PCs to file " << pcfile << std::endl;
-   save_text(pcfile.c_str(), rpca.P);
+      std::cout << timestamp() << " Writing " << n_dim << 
+	 " Y eigenvectors to file " << eigvecyfile << std::endl;
+      save_text(eigvecyfile.c_str(), rpca.V);
+
+      std::cout << timestamp() << " Writing " << n_dim <<
+	 " PCs to file " << pcxfile << std::endl;
+      save_text(pcxfile.c_str(), rpca.Px);
+
+      std::cout << timestamp() << " Writing " << n_dim <<
+	 " PCs to file " << pcyfile << std::endl;
+      save_text(pcyfile.c_str(), rpca.Py);
+   }
 
    if(save_meansd)
    {
@@ -394,14 +556,14 @@ int main(int argc, char * argv[])
    ////////////////////////////////////////////////////////////////////////////////
    // Whiten if required
 
-   if(whiten)
-   {
-      std::cout << timestamp() << " ZCA whitening data" << std::endl;
-      rpca.zca_whiten(transpose);
-      std::cout << timestamp() << " Writing whitened data to file "
-	 << whitefile << std::endl;
-      save_text(whitefile.c_str(), rpca.W);
-   }
+   //if(mode == MODE_PCA && whiten)
+   //{
+   //   std::cout << timestamp() << " ZCA whitening data" << std::endl;
+   //   rpca.zca_whiten(transpose);
+   //   std::cout << timestamp() << " Writing whitened data to file "
+   //      << whitefile << std::endl;
+   //   save_text(whitefile.c_str(), rpca.W);
+   //}
 
    std::cout << timestamp() << " Goodbye!" << std::endl;
 

@@ -1,42 +1,33 @@
-\name{flashpca-package}
-\alias{flashpca-package}
-\alias{flashpca}
+\name{flashpcaR-package}
+\alias{flashpcaR-package}
+\alias{flashpcaR}
 \docType{package}
 \title{
-What the package does (short line)
-~~ package title ~~
+R interface to flashpca
 }
 \description{
-More about what it does (maybe more than one line)
-~~ A concise (1-5 lines) description of the package ~~
+An R interface to flashpca for fast principal component analysis.
 }
 \details{
 \tabular{ll}{
 Package: \tab flashpca\cr
 Type: \tab Package\cr
-Version: \tab 1.0\cr
-Date: \tab 2014-05-30\cr
-License: \tab What license is it under?\cr
+Version: \tab 1.2\cr
+Date: \tab 2014-12-23\cr
+License: \tab GPL (>= 3)\cr
 }
-~~ An overview of how to use the package, including the most important ~~
-~~ functions ~~
 }
 \author{
-Who wrote it
+Gad Abraham
 
-Maintainer: Who to complain to <yourfault@somewhere.net>
-~~ The author and/or maintainer of the package ~~
+Maintainer: Gad Abraham <gad.abraham@unimelb.edu.au>
 }
 \references{
-~~ Literature or other references for background information ~~
+Abraham G, Inouye M (2014) Fast Principal Component Analysis of
+Large-Scale Genome-Wide Data. PLoS ONE 9(4): e93766. doi:10.1371/journal.pone.0093766
 }
-~~ Optionally other standard keywords, one per line, from file KEYWORDS in ~~
-~~ the R documentation directory ~~
 \keyword{ package }
 \seealso{
-~~ Optional links to other man pages, e.g. ~~
-~~ \code{\link[<pkg>:<pkg>-package]{<pkg>}} ~~
 }
 \examples{
-~~ simple examples of the most important functions ~~
 }

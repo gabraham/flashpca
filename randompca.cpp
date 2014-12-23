@@ -1,3 +1,8 @@
+/*
+ * This program is free software; you can redistribute it and/or modify * it
+ under the terms of the GNU General Public License as published by * the Free
+ Software Foundation; either version 3 of the License, or * (at your option) any
+ later version.  * * Copyright (C) 2014 Gad Abraham * All rights reserved.  */
 
 #include "randompca.hpp"
 #include "util.hpp"
@@ -67,6 +72,8 @@ void pca_small(MatrixXd &B, int method, MatrixXd& U, VectorXd &d, bool verbose)
 // Compute median of pairwise distances on sample of size n from the matrix X
 // We're sampling with replacement
 // Based on http://www.machinedlearnings.com/2013/08/cosplay.html
+// Todo: use Boost accummulators for quantiles
+// http://boost-sandbox.sourceforge.net/libs/accumulators/doc/html/accumulators/user_s_guide/the_statistical_accumulators_library.html#accumulators.user_s_guide.the_statistical_accumulators_library.p_square_quantile
 double median_dist(MatrixXd& X, unsigned int n, long seed, bool verbose)
 {
    boost::random::mt19937 rng;
@@ -141,7 +148,8 @@ MatrixXd rbf_kernel(MatrixXd& X, const double sigma, bool rbf_center,
 void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
    unsigned int ndim, unsigned int nextra, unsigned int maxiter, double tol,
    long seed, int kernel, double sigma, bool rbf_center,
-   unsigned int rbf_sample, bool save_kernel, bool do_orth, bool do_loadings)
+   unsigned int rbf_sample, bool save_kernel, bool do_orth, bool do_loadings,
+   int mem)
 {
    unsigned int N;
 
@@ -177,7 +185,7 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
 
    verbose && std::cout << timestamp() << " dim(X): " << dim(X) << std::endl;
    MatrixXd K; 
-   if(kernel == KERNEL_RBF)
+   if(mem == HIGHMEM && kernel == KERNEL_RBF)
    {
       if(sigma == 0)
       {
@@ -189,28 +197,42 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
 	 << sigma << std::endl;
       K.noalias() = rbf_kernel(X, sigma, rbf_center, verbose);
    }
-   else
+   else if(mem == HIGHMEM)
    {
       verbose && std::cout << timestamp() << " Using linear kernel" << std::endl;
       K.noalias() = X * X.transpose() / (N - 1);
    }
 
    //trace = K.diagonal().array().sum() / (N - 1);
-   trace = K.diagonal().array().sum();
+   if(mem == LOWMEM)
+      trace = X.array().square().sum() / (N - 1);
+   else
+   {
+      verbose && std::cout << timestamp() << " dim(K): " << dim(K) << std::endl;
+      trace = K.diagonal().array().sum();
+   }
+
    verbose && std::cout << timestamp() << " Trace(K): " << trace 
       << " (N: " << N << ")" << std::endl;
 
-   verbose && std::cout << timestamp() << " dim(K): " << dim(K) << std::endl;
-   if(save_kernel)
+   if(mem == HIGHMEM && save_kernel)
    {
       verbose && std::cout << timestamp() << " saving K" << std::endl;
       save_text("kernel.txt", K);
    }
 
+   MatrixXd Xy(X.cols(), Y.cols());
+
    for(unsigned int iter = 0 ; iter < maxiter ; iter++)
    {
       verbose && std::cout << timestamp() << " iter " << iter;
-      Yn.noalias() = K * Y;
+      if(mem == LOWMEM)
+      {
+	 Xy.noalias() = X.transpose() * Y;
+	 Yn.noalias() = X * Xy;
+      }
+      else
+	 Yn.noalias() = K * Y;
       if(do_orth)
       {
 	 verbose && std::cout << " (orthogonalising)";
@@ -222,7 +244,7 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
       else
 	 normalize(Yn);
 
-      double diff =  (Y -  Yn).array().square().sum() / Y.size(); 
+      double diff = (Y - Yn).array().square().sum() / Y.size(); 
       verbose && std::cout << " " << diff << std::endl;
       Y.noalias() = Yn;
       if(diff < tol)
@@ -246,21 +268,24 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
 
    d = d.array() / (N - 1);
 
+   // TODO: unlike Scholkopf, when we do kernel PCA we don't divide the
+   // eigenvectors by the sqrt of each eigenvalue
+
    if(transpose)
    {
       V.noalias() = Q * Et;
-      // We divide P by sqrt(N - 1) since X has not been divided
+      // We divide Px by sqrt(N - 1) since X has not been divided
       // by it (but B has)
-      P.noalias() = X.transpose() * V;
+      Px.noalias() = X.transpose() * V;
       VectorXd s = 1 / (d.array().sqrt() * sqrt(N - 1));
       MatrixXd Dinv = s.asDiagonal();
-      U = P * Dinv;
+      U = Px * Dinv;
    }
    else
    {
-      // P = U D = X V
+      // Px = U D = X V
       U.noalias() = Q * Et;
-      P.noalias() = U * d.asDiagonal();
+      Px.noalias() = U * d.asDiagonal();
       if(do_loadings)
       {
 	 VectorXd s = 1 / (d.array().sqrt() * sqrt(N - 1));
@@ -269,7 +294,7 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
       }
    }
 
-   P.conservativeResize(NoChange, ndim);
+   Px.conservativeResize(NoChange, ndim);
    U.conservativeResize(NoChange, ndim);
    V.conservativeResize(NoChange, ndim);
    d.conservativeResize(ndim);
@@ -277,16 +302,176 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
 }
 
 // ZCA of genotypes
-void RandomPCA::zca_whiten(bool transpose)
-{
-   verbose && std::cout << timestamp() << " Whitening begin" << std::endl;
-   VectorXd s = 1 / d.array();
-   MatrixXd Dinv = s.asDiagonal();
+//void RandomPCA::zca_whiten(bool transpose)
+//{
+//   verbose && std::cout << timestamp() << " Whitening begin" << std::endl;
+//   VectorXd s = 1 / d.array();
+//   MatrixXd Dinv = s.asDiagonal();
+//
+//   if(transpose)
+//      W.noalias() = U * Dinv * U.transpose() * X.transpose();
+//   else
+//      W.noalias() = U * Dinv * U.transpose() * X;
+//   verbose && std::cout << timestamp() << " Whitening done (" << dim(W) << ")" << std::endl;
+//}
 
-   if(transpose)
-      W.noalias() = U * Dinv * U.transpose() * X.transpose();
-   else
-      W.noalias() = U * Dinv * U.transpose() * X;
-   verbose && std::cout << timestamp() << " Whitening done (" << dim(W) << ")" << std::endl;
+double inline sign_scalar(double x)
+{
+   return (0 < x) - (x < 0);
 }
+
+VectorXd inline soft_thresh(VectorXd& a, double b)
+{
+   VectorXd s = a.unaryExpr(std::ptr_fun(sign_scalar));
+   VectorXd d = a.array().abs() - b;
+   VectorXd z = (d.array() < 0).select(0, d);
+   return s.array() * z.array();
+}
+
+VectorXd norm_thresh(VectorXd& x, double lambda)
+{
+   double s = x.norm();
+   if(s > 0)
+   {
+      x = x.array() / s;
+      x = soft_thresh(x, lambda);
+      s = x.norm();
+      if(s > 0)
+	 x = x.array() / s;
+   }
+   return x;
+}
+
+void scca_lowmem(MatrixXd& X, MatrixXd &Y, MatrixXd& U, MatrixXd& V,
+   VectorXd& d, double lambda1, double lambda2,
+   unsigned int maxiter, double tol, bool verbose)
+{
+   // TODO: X2 and Y2 take up lots of memory
+   MatrixXd X2 = MatrixXd::Zero(X.rows() + U.cols(), X.cols());
+   MatrixXd Y2 = MatrixXd::Zero(Y.rows() + U.cols(), Y.cols());
+   X2.block(0, 0, X.rows(), X.cols()) = X;
+   Y2.block(0, 0, Y.rows(), Y.cols()) = Y;
+   VectorXd u, v, u_old, v_old;
+
+   for(unsigned int j = 0 ; j < U.cols() ; j++)
+   {
+      if(j > 0)
+      {
+	 X2.row(X.rows() + j) = sqrt(d[j - 1]) * U.col(j - 1).transpose();
+	 Y2.row(Y.rows() + j) = -sqrt(d[j - 1]) * V.col(j - 1).transpose();
+      }
+
+      for(unsigned int iter = 0 ; iter < maxiter ; iter++)
+      {
+	 u_old = u = U.col(j);
+	 v_old = v = V.col(j);
+
+	 u = X2.transpose() * (Y2 * v);
+	 u = norm_thresh(u, lambda1);
+	 U.col(j) = u;
+
+	 v = Y2.transpose() * (X2 * U.col(j));
+	 v = norm_thresh(v, lambda2);
+	 V.col(j) = v;
+
+	 if((v_old.array() - v.array()).abs().maxCoeff() < tol
+	       && (u_old.array() - u.array()).abs().maxCoeff() < tol)
+	 {
+	    verbose && std::cout << timestamp() << " dim " << j << " finished in "
+	       << iter << " iterations" << std::endl;
+	    break;
+	 }
+      }
+
+      long long nzu = (U.col(j).array() != 0).count();
+      long long nzv = (V.col(j).array() != 0).count();
+
+      verbose && std::cout << timestamp() << " U_" << j 
+	 << " non-zeros: " << nzu << ", V_" << j
+	 << " non-zeros: " << nzv << std::endl;
+
+      // Use X and Y, not X2 and Y2
+      d[j] = (X * U.col(j)).transpose() * (Y * V.col(j)); 
+   }
+}
+
+void scca_highmem(MatrixXd& X, MatrixXd &Y, MatrixXd& U, MatrixXd& V,
+   VectorXd& d, double lambda1, double lambda2,
+   unsigned int maxiter, double tol, bool verbose)
+{
+   verbose && std::cout << timestamp() << " Begin computing X^T Y" << std::endl;
+   MatrixXd XY = X.transpose() * Y;
+   verbose && std::cout << timestamp() << " End computing X^T Y" << std::endl;
+
+   MatrixXd XYj;
+   VectorXd u, v, u_old, v_old;
+
+   for(unsigned int j = 0 ; j < U.cols() ; j++)
+   {
+      std::cout << timestamp() << " dim " << j << std::endl;
+      if(j == 0)
+	 XYj = XY;
+      else
+	 XYj = XYj - d[j-1] * U.col(j-1) * V.col(j-1).transpose();
+	 
+      for(unsigned int iter = 0 ; iter < maxiter ; iter++)
+      {
+	 u_old = u = U.col(j);
+	 v_old = v = V.col(j);
+
+	 u = XYj * v;
+	 u = norm_thresh(u, lambda1);
+	 U.col(j) = u;
+
+	 v = XYj.transpose() * U.col(j);
+	 v = norm_thresh(v, lambda2);
+	 V.col(j) = v;
+
+	 if((v_old.array() - v.array()).abs().maxCoeff() < tol
+	       && (u_old.array() - u.array()).abs().maxCoeff() < tol)
+	 {
+	    std::cout << timestamp() << " dim " << j << " finished in "
+	       << iter << " iterations" << std::endl;
+	    break;
+	 }
+      }
+
+      long long nzu = (U.col(j).array() != 0).count();
+      long long nzv = (V.col(j).array() != 0).count();
+
+      std::cout << timestamp() << " U_" << j 
+	 << " non-zeros: " << nzu << ", V_" << j
+	 << " non-zeros: " << nzv << std::endl;
+
+      d[j] = U.col(j).transpose() * XYj * V.col(j); 
+   }
+}
+
+void RandomPCA::scca(MatrixXd &X, MatrixXd &Y, double lambda1, double lambda2,
+   long seed, unsigned int ndim, int mem, unsigned int maxiter, double tol)
+{
+   X_meansd = standardize(X, stand_method);
+   Y_meansd = standardize(Y, stand_method);
+
+   verbose && std::cout << timestamp() << " dim(X): " << dim(X) << std::endl;
+   verbose && std::cout << timestamp() << " dim(Y): " << dim(Y) << std::endl;
+
+   verbose && std::cout << timestamp() << " lambda1: " << lambda1 
+      << " lambda2: " << lambda2 << std::endl;
+
+   unsigned int n = X.rows(), p = X.cols(), k = Y.cols();
+
+   V = make_gaussian(k, ndim, seed);
+   U = MatrixXd::Zero(p, ndim);
+   d = VectorXd::Zero(ndim); 
+
+   if(mem == HIGHMEM)
+      scca_highmem(X, Y, U, V, d, lambda1, lambda2, maxiter, tol, verbose);
+   else
+      scca_lowmem(X, Y, U, V, d, lambda1, lambda2, maxiter, tol, verbose);
+
+   Px = X * U;
+   Py = Y * V;
+}
+
 

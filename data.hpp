@@ -1,3 +1,13 @@
+/*
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Copyright (C) 2014 Gad Abraham
+ * All rights reserved.
+ */
+
 #pragma once
 
 #include <iostream>
@@ -59,8 +69,8 @@ class Data {
       ~Data();
       void read_bed(bool transpose);
       void get_size();
-      void read_pheno(const char *filename, unsigned int firstcol, int pheno);
-      MatrixXd read_plink_pheno(const char *filename, unsigned int firstcol, int pheno);
+      void read_pheno(const char *filename, unsigned int firstcol);
+      MatrixXd read_plink_pheno(const char *filename, unsigned int firstcol);
 
       std::string tolower(const std::string& v);
 };

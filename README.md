@@ -12,7 +12,9 @@ Main features:
  (multi-threaded)
 * Natively reads PLINK bed/bim/fam files
 * Easy to use
-* Experimental: kernel PCA
+* Two variants: the original high-memory version, and a slightly slower
+   version that uses less RAM (proportional to data size), useful for large datasets with many samples
+* Experimental: [kernel PCA](#kpca), [sparse CCA](#scca)
 
 ## Contact
 
@@ -34,21 +36,25 @@ Copyright (C) 2014 Gad Abraham. All rights reserved.
 
 Portions of this code are based on SparSNP
 (https://github.com/gabraham/SparSNP), Copyright (C) 2011-2012 Gad Abraham
-and National ICT Australia (http://www.NICTA.com.au).
+and National ICT Australia (http://www.nicta.com.au).
 
-## Download statically linked version for Linux
+## Download statically linked version (stable versions only)
 
-Note: we recommend compiling from source for best performance.
+* We recommend compiling from source for best performance.
+* To get the devel version, you'll need to compile yourself
 
 See [Releases](https://github.com/gabraham/flashpca/tags) for statically-linked version for Linux x86-64 &ge; 2.6.15
 
 ### System requirements
 * 64-bit linux
-* For large datasets you'll need large amounts of RAM, e.g. for 15,000
-   individuals (43K SNPs) you'll need about 14GB RAM, for 150,000 individuals
-   (43K SNPs) you'll need about 145GB RAM (estimated using
-   https://github.com/jhclark/memusg)
-   (we are working on a version which will use less RAM).
+* Using the original version (`--mem high`, the default), large datasets will require
+   large amounts of RAM, e.g. for 15,000 individuals (43K SNPs) you'll need
+   about 14GB RAM, for 150,000 individuals (43K SNPs) you'll need about 145GB
+   RAM (estimated using https://github.com/jhclark/memusg), roughly 8 &times;
+   min(n <sup>2</sup> &times; p + n &times; p, p <sup>2</sup> &times; n + n &times; p\)
+   bytes, where p is number of SNPs and n is number of individuals.
+   Using `--mem low`, you will only need about 8 &times; n &times; p bytes of
+   RAM.
 
 ## Building from source
 
@@ -139,9 +145,19 @@ To use genotype centering (compatible with R prcomp):
    ./flashpca --stand center ...
    ```
 
-For more options:
+To use the low-memory version:
    ```
-   ./flashpca --help
+   ./flashpca --mem low ...
+   ```
+
+To append a custom suffix '_mysuffix.txt' to all output files:
+   ```
+   ./flashpca --suffix _mysuffix.txt ...
+   ```
+
+To see all options
+   ```
+   ./flashpca --help 
    ```
 
 ## Output
@@ -149,16 +165,16 @@ For more options:
 flashpca produces the following files:
 
 * `eigenvectors.txt`: the top k eigenvectors of the covariance
-   X X^T / (n - 1), same as matrix U from the SVD of the genotype matrix
-   X=UDV^T.
+   X X<sup>T</sup> / (n - 1), same as matrix U from the SVD of the genotype matrix
+   X=UDV<sup>T</sup>.
 * `pcs.txt`: the top k principal components (the projection of the data on the
 eigenvectors, scaled by the eigenvalues,  same as XV (or UD). This is the file
 you will want to plot the PCA plot from.
-* `eigenvalues.txt`: the top k eigenvalues of X X^T / (n - 1). These are the
+* `eigenvalues.txt`: the top k eigenvalues of X X<sup>T</sup> / (n - 1). These are the
     square of the singular values D (square of sdev from prcomp).
 * `pve.txt`: the proportion of total variance explained by *each of the top k*
    eigenvectors (the total variance is given by the trace of the covariance
-   matrix X X^T / (n - 1), which is the same as the sum of all eigenvalues).
+   matrix X X<sup>T</sup> / (n - 1), which is the same as the sum of all eigenvalues).
    To get the cumulative variance explained, simply
    do the cumulative sum of the variances (`cumsum` in R).
 
@@ -170,9 +186,11 @@ spurious results otherwise.
 
 ## Experimental features
 
+### <a name="kpca"></a>Kernel PCA
+
 * flashpca now experimentally supports low-rank [**kernel
 PCA**](http://en.wikipedia.org/wiki/Kernel_principal_component_analysis) using an RBF
-(Gaussian) kernel K(x, x') = exp(-||x - x'||_2^2 / sigma^2) (specify using `--kernel
+(Gaussian) kernel K(x, x') = exp(-||x - x'||<sub>2</sub><sup>2</sup> / sigma<sup>2</sup>) (specify using `--kernel
 rbf`).
 * The kernel is double-centred.
 * The default kernel parameter sigma is the median of the pairwise Euclidean distances of a random subset
@@ -181,11 +199,49 @@ rbf`).
 * The rest of the options are the same as for standard PCA.
 * Currently, the proportion of variation explained is not computed for kPCA.
 
-## Calling flashpca from R
+### <a name="scca"></a>Sparse Canonical Correlation Analysis (SCCA)
 
-flashpca is now available as an independent R package.
+* flashpca now experimentally supports sparse CCA
+   ([Parkhomenko 2009](http://dx.doi.org/10.2202/1544-6115.1406),
+   [Witten 2009](http://dx.doi.org/10.1093/biostatistics/kxp008)),
+   between SNPs and multivariate phenotypes.
+* The phenotype file is the same as PLINK phenotype file:
+   `FID, IID, pheno1, pheno2, pheno3, ...`
+   except that there must be no header line. The phenotype file *must be in the same order as
+   the FAM file*.
+* The L1 penalty for the SNPs is `--lambda1` and for the phenotypes is
+ `--lambda2`.
+* Two versions: low memory (`--mem low`, roughly 8 x \#Samples x (\#SNPs + \#Phenotypes))
+   and high memory (`--mem high`, roughly 8bytes &times; \#SNPs &times; \#Phenotypes).
 
-Requirements for building: R packages Rcpp, RcppEigen, BH, g++ compiler
+#### Quick example
+   ```
+   ./flashpca --scca --bfile data --pheno pheno.txt \
+   --lambda1 1e-3 --lambda2 1e-2 --ndim 10 --numthreads 8
+   ```
+
+* The file eigenvectorsX.txt are the left eigenvectors of X<sup>T</sup> Y, with size (number of
+  SNPs &times; number of dimensions), and eigenvectorsY.txt are the right
+  eigenvectors of X<sup>T</sup> Y, with size (number of phenotypes &\times; number of
+  dimensions).
+
+#### Example scripts to tune the penalties via split validation
+
+We optimise the penalties by finding the values that maximise the correlation
+of the canonical components cor(X U, Y V) in independent test data.
+
+* Wrapper script [scca.sh](scca.sh) ([GNU
+   parallel](http://www.gnu.org/software/parallel) is recommended)
+* R code for plotting the correlations [scca_pred.R](scca_pred.R)
+
+# Calling flashpca from R
+
+flashpca is now available as an independent R package. Currently only the PCA
+functionality is supported.
+
+## Requirements for building
+
+R packages Rcpp, RcppEigen, BH, g++ compiler
 
 To install on Mac or Linux, you can use devtools::install_github:
    ```
@@ -199,6 +255,8 @@ Alternatively, after cloning the git archive, install using:
    ```
 
 On Windows, see [Releases](https://github.com/gabraham/flashpca/releases) for a prebuilt Windows binary package.
+
+## PCA
 
 Example usage, assuming `X` is a 100-sample by 1000-SNP matrix in dosage
 coding (0, 1, 2) (an actual matrix, not a path to PLINK data)
@@ -217,11 +275,23 @@ Output:
    * `projection`: projection of sample onto eigenvectors (X V)
    * `loadings`: SNP loadings, if using a linear kernel
 
+## Sparse CCA
+
+Sparse CCA of matrices X and Y, with 5 components, penalties lambda1=0.1 and lambda2=0.1:
+
+   ```
+   dim(X)
+   [1]  100 1000
+   dim(Y)
+   [1]  100 50
+   r <- scca(X, Y, ndim=5, lambda1=0.1, lambda2=0.1)
+   ```
+
 ## LD-pruned HapMap3 example data
 
 See the [HapMap3](HapMap3) directory
 
-## Changelog
+## Changelog (stable versions only)
 
 See [CHANGELOG.txt](CHANGELOG.txt)
 
