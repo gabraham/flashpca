@@ -352,6 +352,8 @@ void scca_lowmem(MatrixXd& X, MatrixXd &Y, MatrixXd& U, MatrixXd& V,
    X2.block(0, 0, X.rows(), X.cols()) = X;
    Y2.block(0, 0, Y.rows(), Y.cols()) = Y;
    VectorXd u, v, u_old, v_old;
+   MatrixXd Iu = MatrixXd::Identity(U.rows(), U.cols());
+   MatrixXd Iv = MatrixXd::Identity(V.rows(), V.cols());
 
    for(unsigned int j = 0 ; j < U.cols() ; j++)
    {
@@ -359,9 +361,25 @@ void scca_lowmem(MatrixXd& X, MatrixXd &Y, MatrixXd& U, MatrixXd& V,
       {
 	 X2.row(X.rows() + j) = sqrt(d[j - 1]) * U.col(j - 1).transpose();
 	 Y2.row(Y.rows() + j) = -sqrt(d[j - 1]) * V.col(j - 1).transpose();
+	 
+	 // At least up to Eigen 3.2.1, the QR produces full Q matrices, i.e.,
+	 // U.rows() x U.rows() instead of U.rows() x ndim, so we use
+	 // an indirect to get back the original dimensions.
+	 // We purposefully don't use column pivoting QR, as this could break
+	 // ordering of columns of U wrt columns of V.
+	 HouseholderQR<MatrixXd> qrU(U.leftCols(j + 1)),
+				       qrV(V.leftCols(j + 1));
+	 MatrixXd Qu = qrU.householderQ() * Iu;
+	 MatrixXd Qv = qrV.householderQ() * Iv;
+
+	 U.leftCols(j + 1) = qrU.householderQ() * Iu;
+	 V.leftCols(j + 1) = qrV.householderQ() * Iv;
+	 U.conservativeResize(NoChange, U.cols());
+	 V.conservativeResize(NoChange, V.cols());
       }
 
-      for(unsigned int iter = 0 ; iter < maxiter ; iter++)
+      unsigned int iter = 0;
+      for( ; iter < maxiter ; iter++)
       {
 	 u_old = u = U.col(j);
 	 v_old = v = V.col(j);
@@ -382,6 +400,11 @@ void scca_lowmem(MatrixXd& X, MatrixXd &Y, MatrixXd& U, MatrixXd& V,
 	    break;
 	 }
       }
+
+      if(iter >= maxiter)
+	 verbose && std::cout << timestamp()
+	    << "SCCA did not converge in " << maxiter << " iterations" <<
+	    std::endl;
 
       long long nzu = (U.col(j).array() != 0).count();
       long long nzv = (V.col(j).array() != 0).count();
@@ -405,16 +428,31 @@ void scca_highmem(MatrixXd& X, MatrixXd &Y, MatrixXd& U, MatrixXd& V,
 
    MatrixXd XYj;
    VectorXd u, v, u_old, v_old;
+   MatrixXd Iu = MatrixXd::Identity(U.rows(), U.cols());
+   MatrixXd Iv = MatrixXd::Identity(V.rows(), V.cols());
 
    for(unsigned int j = 0 ; j < U.cols() ; j++)
    {
-      std::cout << timestamp() << " dim " << j << std::endl;
+      verbose && std::cout << timestamp() << " dim " << j << std::endl;
       if(j == 0)
 	 XYj = XY;
       else
-	 XYj = XYj - d[j-1] * U.col(j-1) * V.col(j-1).transpose();
+      {
+	 XYj = XYj - d[j-1] * U.col(j-1) * V.col(j - 1).transpose();
+
+	 HouseholderQR<MatrixXd> qrU(U.leftCols(j + 1)),
+				       qrV(V.leftCols(j + 1));
+	 MatrixXd Qu = qrU.householderQ() * Iu;
+	 MatrixXd Qv = qrV.householderQ() * Iv;
+
+	 U.leftCols(j + 1) = qrU.householderQ() * Iu;
+	 V.leftCols(j + 1) = qrV.householderQ() * Iv;
+	 U.conservativeResize(NoChange, U.cols());
+	 V.conservativeResize(NoChange, V.cols());
+      }
 	 
-      for(unsigned int iter = 0 ; iter < maxiter ; iter++)
+      unsigned int iter = 0;
+      for(; iter < maxiter ; iter++)
       {
 	 u_old = u = U.col(j);
 	 v_old = v = V.col(j);
@@ -430,16 +468,21 @@ void scca_highmem(MatrixXd& X, MatrixXd &Y, MatrixXd& U, MatrixXd& V,
 	 if((v_old.array() - v.array()).abs().maxCoeff() < tol
 	       && (u_old.array() - u.array()).abs().maxCoeff() < tol)
 	 {
-	    std::cout << timestamp() << " dim " << j << " finished in "
+	    verbose && std::cout << timestamp() << " dim " << j << " finished in "
 	       << iter << " iterations" << std::endl;
 	    break;
 	 }
       }
 
+      if(iter >= maxiter)
+	 verbose && std::cout << timestamp()
+	    << "SCCA did not converge in " << maxiter << " iterations" <<
+	    std::endl;
+
       long long nzu = (U.col(j).array() != 0).count();
       long long nzv = (V.col(j).array() != 0).count();
 
-      std::cout << timestamp() << " U_" << j 
+      verbose && std::cout << timestamp() << " U_" << j 
 	 << " non-zeros: " << nzu << ", V_" << j
 	 << " non-zeros: " << nzv << std::endl;
 
@@ -450,8 +493,11 @@ void scca_highmem(MatrixXd& X, MatrixXd &Y, MatrixXd& U, MatrixXd& V,
 void RandomPCA::scca(MatrixXd &X, MatrixXd &Y, double lambda1, double lambda2,
    long seed, unsigned int ndim, int mem, unsigned int maxiter, double tol)
 {
-   X_meansd = standardize(X, stand_method);
-   Y_meansd = standardize(Y, stand_method);
+   if(stand_method != STANDARDIZE_NONE)
+   {
+      X_meansd = standardize(X, stand_method);
+      Y_meansd = standardize(Y, stand_method);
+   }
 
    verbose && std::cout << timestamp() << " dim(X): " << dim(X) << std::endl;
    verbose && std::cout << timestamp() << " dim(Y): " << dim(Y) << std::endl;

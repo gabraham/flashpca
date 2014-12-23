@@ -1,7 +1,7 @@
 
 flashpca <- function(X, method=c("eigen", "svd"),
    stand=c("binom", "sd", "center", "none"), transpose=NULL, ndim=10,
-   nextra=10, maxiter=50, tol=1e-6, seed=1, kernel=c("linear", "rbf"),
+   nextra=10, maxiter=1e2, tol=1e-6, seed=1, kernel=c("linear", "rbf"),
    sigma=NULL, rbf_center=TRUE, rbf_sample=1000, save_kernel=FALSE,
    do_orth=TRUE, verbose=FALSE, num_threads=1, do_loadings=FALSE,
    mem=c("low", "high"))
@@ -61,9 +61,9 @@ flashpca <- function(X, method=c("eigen", "svd"),
       save_kernel, do_orth, verbose, num_threads, do_loadings, mem_i)
 }
 
-scca <- function(X, Y, lambda1, lambda2,
+scca <- function(X, Y, lambda1=0, lambda2=0,
    stand=c("binom", "sd", "center", "none"), ndim=10,
-   maxiter=50, tol=1e-6, seed=1L, verbose=FALSE, num_threads=1,
+   maxiter=1e3, tol=1e-6, seed=1L, verbose=FALSE, num_threads=1,
    mem=c("low", "high"))
 {
    stand <- match.arg(stand)
@@ -77,7 +77,7 @@ scca <- function(X, Y, lambda1, lambda2,
       stand_i <- 2L
    } else if(stand == "center") {
       stand_i <- 3L
-   } 
+   }
 
    maxdim <- min(dim(X))
    ndim <- min(maxdim, ndim)

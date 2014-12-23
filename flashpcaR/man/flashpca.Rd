@@ -65,7 +65,7 @@ but it tends to be slightly slower.}
 \code{flashpca} returns a list containing the following components:
   
   \item{values}{a numeric vector. The eigenvalues of X' X / (n - 1).}
-  \item{labels}{a numeric matrix. The eigenvectors of X' X (n - 1), i.e., U from SVD.}
+  \item{vectors}{a numeric matrix. The eigenvectors of X' X (n - 1), i.e., U from SVD.}
   \item{projection}{a numeric matrix. Equivalent to X V.} 
   \item{loadings}{a numeric matrix. The matrix of variable loadings, i.e., V
   from SVD.}
@@ -79,21 +79,21 @@ set.seed(123)
 n <- 200
 p <- 500
 x <- matrix(rnorm(n * p), n, p)
-k <- 20
-f1 <- flashpca(x, stand="sd", ndim=k, method="eigen")
-f2 <- flashpca(x, stand="sd", ndim=k, method="svd")
+ndim <- 20
+f1 <- flashpca(x, stand="sd", ndim=ndim, method="eigen")
+f2 <- flashpca(x, stand="sd", ndim=ndim, method="svd")
 
 r <- prcomp(x, center=TRUE, scale.=TRUE)
 
 ## Compare eigenvalues
-eval <- cbind(r$sdev[1:k]^2, f1$values, f2$values)
+eval <- cbind(r$sdev[1:ndim]^2, f1$values, f2$values)
 cor(eval)
 mean((eval[,1] - eval[,2])^2)
 mean((eval[,1] - eval[,3])^2)
 
 ## Compare eigenvectors
-diag(cor(r$x[, 1:k], f1$projection))
-diag(cor(r$x[, 1:k], f2$projection))
+diag(cor(r$x[, 1:ndim], f1$projection))
+diag(cor(r$x[, 1:ndim], f2$projection))
 
 \dontrun{
 ## First get data from
@@ -102,20 +102,20 @@ diag(cor(r$x[, 1:k], f2$projection))
 ## Missing genotypes have been imputed randomly according to genotype
 ## proportions in each SNP.
 load("data.RData")
-k <- 20
+ndim <- 20
 system.time({
-   f <- flashpca(hapmap3$bed, stand="center", ndim=k, nextra=50)
+   f <- flashpca(hapmap3$bed, stand="center", ndim=ndim, nextra=50)
 })
 system.time({
    r <- prcomp(hapmap3$bed)
 })
 
-eval <- cbind(r$sdev[1:k]^2, f$values)
+eval <- cbind(r$sdev[1:ndim]^2, f$values)
 cor(eval)
 mean((eval[,1] - eval[,2])^2)
 
 ## Compare eigenvectors
-diag(cor(r$x[, 1:k], f$projection))
+diag(cor(r$x[, 1:ndim], f$projection))
 }
 
 }
