@@ -365,13 +365,13 @@ void scca_lowmem(MatrixXd& X, MatrixXd &Y, MatrixXd& U, MatrixXd& V,
 	 // an indirect to get back the original dimensions.
 	 // We purposefully don't use column pivoting QR, as this could break
 	 // ordering of columns of U wrt columns of V.
-	 HouseholderQR<MatrixXd> qrU(U.leftCols(j + 1)), qrV(V.leftCols(j + 1));
-	 MatrixXd Iu = MatrixXd::Identity(U.rows(), j + 1);
-	 MatrixXd Iv = MatrixXd::Identity(V.rows(), j + 1);
-	 U.leftCols(j + 1) = qrU.householderQ() * Iu;
-	 V.leftCols(j + 1) = qrV.householderQ() * Iv;
-	 U.conservativeResize(NoChange, Iu.cols());
-	 V.conservativeResize(NoChange, Iv.cols());
+	 //HouseholderQR<MatrixXd> qrU(U.leftCols(j + 1)), qrV(V.leftCols(j + 1));
+	 //MatrixXd Iu = MatrixXd::Identity(U.rows(), j + 1);
+	 //MatrixXd Iv = MatrixXd::Identity(V.rows(), j + 1);
+	 //U.leftCols(j + 1) = qrU.householderQ() * Iu;
+	 //V.leftCols(j + 1) = qrV.householderQ() * Iv;
+	 //U.conservativeResize(NoChange, Iu.cols());
+	 //V.conservativeResize(NoChange, Iv.cols());
       }
 
       unsigned int iter = 0;
@@ -434,13 +434,13 @@ void scca_highmem(MatrixXd& X, MatrixXd &Y, MatrixXd& U, MatrixXd& V,
       {
 	 XYj = XYj - d[j-1] * U.col(j-1) * V.col(j - 1).transpose();
 
-	 HouseholderQR<MatrixXd> qrU(U.leftCols(j + 1)), qrV(V.leftCols(j + 1));
-	 MatrixXd Iu = MatrixXd::Identity(U.rows(), j + 1);
-	 MatrixXd Iv = MatrixXd::Identity(V.rows(), j + 1);
-	 U.leftCols(j + 1) = qrU.householderQ() * Iu;
-	 V.leftCols(j + 1) = qrV.householderQ() * Iv;
-	 U.conservativeResize(NoChange, Iu.cols());
-	 V.conservativeResize(NoChange, Iv.cols());
+	 //HouseholderQR<MatrixXd> qrU(U.leftCols(j + 1)), qrV(V.leftCols(j + 1));
+	 //MatrixXd Iu = MatrixXd::Identity(U.rows(), j + 1);
+	 //MatrixXd Iv = MatrixXd::Identity(V.rows(), j + 1);
+	 //U.leftCols(j + 1) = qrU.householderQ() * Iu;
+	 //V.leftCols(j + 1) = qrV.householderQ() * Iv;
+	 //U.conservativeResize(NoChange, Iu.cols());
+	 //V.conservativeResize(NoChange, Iv.cols());
       }
 	 
       unsigned int iter = 0;
