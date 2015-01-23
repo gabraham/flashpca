@@ -264,7 +264,8 @@ coding (0, 1, 2) (an actual matrix, not a path to PLINK data)
    dim(X)
    [1]  100 1000
    library(flashpcaR)
-   r <- flashpca(X, do_loadings=TRUE, verbose=TRUE, stand="binom", ndim=10)
+   r <- flashpca(X, do_loadings=TRUE, verbose=TRUE, stand="binom", ndim=10,
+   nextra=100)
    ```
 
 PLINK data can be loaded into R either by recoding the data into raw format (`recode A`) or using package [plink2R](https://github.com/gabraham/plink2R).
