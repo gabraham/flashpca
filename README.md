@@ -14,6 +14,7 @@ Main features:
 * Easy to use
 * Two variants: the original high-memory version, and a slightly slower
    version that uses less RAM (proportional to data size), useful for large datasets with many samples
+* R version [available](#R)
 * Experimental: [kernel PCA](#kpca), [sparse CCA](#scca)
 
 ## Contact
@@ -234,7 +235,7 @@ of the canonical components cor(X U, Y V) in independent test data.
    parallel](http://www.gnu.org/software/parallel) is recommended)
 * R code for plotting the correlations [scca_pred.R](scca_pred.R)
 
-# Calling flashpca from R
+# <a name="R"></a> Calling flashpca from R
 
 flashpca is now available as an independent R package.
 
