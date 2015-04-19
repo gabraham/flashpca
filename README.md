@@ -236,8 +236,7 @@ of the canonical components cor(X U, Y V) in independent test data.
 
 # Calling flashpca from R
 
-flashpca is now available as an independent R package. Currently only the PCA
-functionality is supported.
+flashpca is now available as an independent R package.
 
 ## Requirements for building
 
