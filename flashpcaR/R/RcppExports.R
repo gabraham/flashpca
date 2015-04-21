@@ -69,6 +69,17 @@ scca <- function(X, Y, lambda1=0, lambda2=0,
    stand <- match.arg(stand)
    mem <- match.arg(mem)
 
+   X <- cbind(X)
+   Y <- cbind(Y)
+
+   if(nrow(X) != nrow(Y)) {
+      stop("X and Y must have the same number of rows")
+   }
+
+   if(!is.numeric(X) || !is.numeric(Y)) {
+      stop("X and Y must both be numeric matrices")
+   }
+
    if(stand == "none") {
       stand_i <- 0L
    } else if(stand == "sd") {
