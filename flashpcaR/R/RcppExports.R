@@ -90,6 +90,7 @@ scca <- function(X, Y, lambda1=0, lambda2=0,
 
    # otherwise Rcpp will throw an exception
    storage.mode(X) <- "numeric"
+   storage.mode(Y) <- "numeric"
 
    res <- .Call("scca", PACKAGE="flashpcaR",
       X, Y, lambda1, lambda2, ndim, stand_i,
