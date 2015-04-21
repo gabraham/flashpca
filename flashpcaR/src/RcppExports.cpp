@@ -124,7 +124,7 @@ RcppExport SEXP scca(SEXP _X, SEXP _Y, SEXP _lambda1, SEXP _lambda2,
    RandomPCA rp;
    rp.stand_method = stand;
    rp.verbose = verbose;
-   rp.scca(X, Y, lambda1, lambda1, seed, ndim, mem, maxiter, tol);
+   rp.scca(X, Y, lambda1, lambda2, seed, ndim, mem, maxiter, tol);
 
    NumericMatrix U(wrap(rp.U));
    NumericMatrix V(wrap(rp.V));
