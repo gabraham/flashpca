@@ -11,6 +11,14 @@ flashpca <- function(X, method=c("eigen", "svd"),
    kernel <- match.arg(kernel)
    mem <- match.arg(mem)
 
+   if(!is.numeric(X)) {
+      stop("X must both a numeric matrix")
+   }
+
+   if(any(is.na(X))) {
+      stop("X cannot contain any missing values")
+   }
+
    if(method == "eigen") {
       method_i <- 1L
    } else {
@@ -78,6 +86,10 @@ scca <- function(X, Y, lambda1=0, lambda2=0,
 
    if(!is.numeric(X) || !is.numeric(Y)) {
       stop("X and Y must both be numeric matrices")
+   }
+
+   if(any(is.na(X)) || any(is.na(Y))) {
+      stop("X and Y cannot contain any missing values")
    }
 
    if(stand == "none") {

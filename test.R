@@ -40,3 +40,5 @@ f4 <- flashpca(t(X), ndim=k, stand="none", transpose=TRUE, tol=tol,
    s=s$d[1:k]^2 / (nrow(X) - 1)
 ))
 
+cor(r)
+

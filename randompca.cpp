@@ -399,7 +399,7 @@ void scca_lowmem(MatrixXd& X, MatrixXd &Y, MatrixXd& U, MatrixXd& V,
 
       if(iter >= maxiter)
 	 verbose && std::cout << timestamp()
-	    << "SCCA did not converge in " << maxiter << " iterations" <<
+	    << " SCCA did not converge in " << maxiter << " iterations" <<
 	    std::endl;
 
       long long nzu = (U.col(j).array() != 0).count();
