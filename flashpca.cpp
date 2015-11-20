@@ -5,7 +5,7 @@
  * the Free Software Foundation; either version 3 of the License, or
  * (at your option) any later version.
  *
- * Copyright (C) 2014 Gad Abraham
+ * Copyright (C) 2014-2015 Gad Abraham
  * All rights reserved.
  */
 
@@ -54,7 +54,7 @@ int main(int argc, char * argv[])
       ("ndim", po::value<int>(), "number of PCs to output")
       ("nextra", po::value<int>(),
 	 "number of extra dimensions to use in randomized PCA")
-      ("stand", po::value<std::string>(), "standardization method [none | binom | sd | center]")
+      ("stand", po::value<std::string>(), "standardization method [binom | none | sd | center]")
       ("method", po::value<std::string>(), "PCA method [eigen | svd]")
       ("orth", po::value<std::string>(), "use orthornormalization [yes | no]")
       ("mem", po::value<std::string>(), "SCCA/PCA method [low | high]")
@@ -81,7 +81,7 @@ int main(int argc, char * argv[])
       ("savekernel", "save the kernel as text file")
       ("lambda1", po::value<double>(), "1st penalty for CCA/SCCA")
       ("lambda2", po::value<double>(), "2nd penalty for CCA/SCCA")
-      ("debug", "debug, dumps all intermdiate data (WARNING: slow, call only on small data")
+      ("debug", "debug, dumps all intermdiate data (WARNING: slow, call only on small data)")
       ("suffix", po::value<std::string>(), "suffix for all output files")
       ("version", "version")
    ;
@@ -93,7 +93,7 @@ int main(int argc, char * argv[])
    if(vm.count("version"))
    {
       std::cerr << "flashpca " << VERSION << std::endl;
-      std::cerr << "Copyright (C) 2014 Gad Abraham." << std::endl
+      std::cerr << "Copyright (C) 2014-2015 Gad Abraham." << std::endl
 	 << "This is free software; see the source for copying conditions.  There is NO"
 	 << std::endl
 	 << "warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE."
