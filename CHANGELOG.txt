@@ -1,3 +1,7 @@
+Verson 1.2.1
+21-Nov-2015
+* Small cleanups 
+
 Version 1.2
 23-Dec-2014
 * Merged devel branch, adding support for low/high memory PCA and sparse CCA
