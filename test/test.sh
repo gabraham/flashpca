@@ -10,41 +10,41 @@ SEED=4387
 NDIM=50
 
 ## High-memory
-#../flashpca \
-#   --bfile $HM3 \
-#   --tol $TOL \
-#   --mem high \
-#   --seed $SEED \
-#   --ndim $NDIM \
-#   --suffix _highmem.txt \
-#   --v
-#
-## Low memory
-#../flashpca \
-#   --bfile $HM3 \
-#   --tol $TOL \
-#   --mem low \
-#   --seed $SEED \
-#   --ndim $NDIM \
-#   --suffix _lowhmem.txt \
-#   --v
-#
-#$PLINK \
-#   --bfile $HM3 \
-#   --pca $NDIM
+../flashpca \
+   --bfile $HM3 \
+   --tol $TOL \
+   --mem high \
+   --seed $SEED \
+   --ndim $NDIM \
+   --suffix _highmem.txt \
+   --v
 
-#Rscript test_pca.R && echo "PCA OK!"
-#
+# Low memory
+../flashpca \
+   --bfile $HM3 \
+   --tol $TOL \
+   --mem low \
+   --seed $SEED \
+   --ndim $NDIM \
+   --suffix _lowhmem.txt \
+   --v
+
+$PLINK \
+   --bfile $HM3 \
+   --pca $NDIM
+
+Rscript test_pca.R && echo "PCA OK!"
+
 #################################################################################
-## Kernel PCA on HapMap3 data
-#../flashpca \
-#   --bfile $HM3 \
-#   --tol $TOL \
-#   --kernel rbf \
-#   --seed $SEED \
-#   --ndim $NDIM \
-#   --suffix _rbf.txt \
-#   --v
+# Kernel PCA on HapMap3 data
+../flashpca \
+   --bfile $HM3 \
+   --tol $TOL \
+   --kernel rbf \
+   --seed $SEED \
+   --ndim $NDIM \
+   --suffix _rbf.txt \
+   --v
 
 ################################################################################
 # Sparse CCA on HapMap3 data plus simulated phenotypes

@@ -11,9 +11,13 @@ all: flashpca predict
 static: flashpca_x86-64
 
 OBJ = \
-   predict.o \
    randompca.o \
    flashpca.o \
+   data.o \
+   util.o
+
+OBJ2 = \
+   predict.o \
    data.o \
    util.o
 
@@ -46,7 +50,7 @@ flashpca: flashpca.o randompca.o data.o util.o
 predict: LDFLAGS = $(BOOST)
 predict: CXXFLAGS += -g -O3 -DNDEBUG -DVERSION=\"$(VERSION)\" \
    -funroll-loops -ftree-vectorize -ffast-math -fopenmp
-predict: predict.o data.o util.o
+predict: $(OBJ2)
 	$(CXX) $(CXXFLAGS) -o predict $^ $(LDFLAGS)
 
 flashpca_x86-64: LDFLAGS = $(BOOST) -Wl,--whole-archive -lpthread -Wl,--no-whole-archive
@@ -58,7 +62,10 @@ flashpca_x86-64: $(OBJ)
 $(OBJ): %.o: %.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
+$(OBJ2): %.o: %.cpp
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
 clean:
-	rm -f $(OBJ) flashpca flashpca_x86-64
+	rm -f $(OBJ) $(OBJ2) flashpca flashpca_x86-64
 
 
