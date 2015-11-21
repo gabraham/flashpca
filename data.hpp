@@ -58,8 +58,8 @@ class Data {
       
       MatrixXd X, Y;
       unsigned int N, p, K;
-      unsigned long long len;
-      unsigned int np, nsnps;
+      unsigned long long len, np;
+      unsigned int nsnps;
       const char *geno_filename;
       boost::iostreams::mapped_file_source geno_fin;
       bool verbose;

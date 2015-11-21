@@ -99,22 +99,23 @@ void Data::get_size()
    if(!in)
    {
       std::cerr << "[Data::read_bed] Error reading file " 
-	 << geno_filename << std::endl;
+	 << geno_filename << ", error " << strerror(errno) << std::endl <<
+	 std::flush;
       throw std::runtime_error("io error");
    }
 
    in.seekg(0, std::ifstream::end);
 
    // file size in bytes, ignoring first 3 bytes (2byte magic number + 1byte mode)
-   len = (unsigned int)in.tellg() - 3;
+   len = (unsigned long long)in.tellg() - 3;
 
    // size of packed data, in bytes, per SNP
-   np = (unsigned int)ceil((double)N / PACK_DENSITY);
-   nsnps = len / np;
+   np = (unsigned long long)ceil((double)N / PACK_DENSITY);
+   nsnps = (unsigned int)(len / np);
    in.seekg(3, std::ifstream::beg);
    in.close();
 
-   std::cout << ", found " << nsnps << " SNPs" << std::endl;
+   std::cout << ", found " << (len + 3) << " bytes, " << nsnps << " SNPs" << std::endl;
 }
 
 // Expects PLINK BED in SNP-major format
@@ -145,7 +146,7 @@ void Data::read_bed(bool transpose)
       X = MatrixXd(N, nsnps);
 
    std::cout << timestamp() << " Detected BED file: " << geno_filename <<
-      " with " << len << " bytes, " << N << " samples, " << nsnps 
+      " with " << (len + 3) << " bytes, " << N << " samples, " << nsnps 
       << " SNPs." << std::endl;
 
    double* avg = new double[nsnps]; 
