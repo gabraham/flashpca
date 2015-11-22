@@ -10,6 +10,13 @@
 
 #pragma once
 
+#ifdef RENV
+#include <Rcpp.h>
+#define STDOUT Rcpp::Rcout
+#else
+#define STDOUT std::cout
+#endif
+
 #include <Eigen/Core>
 #include <Eigen/Dense>
 #include <Eigen/Eigen>
@@ -65,8 +72,10 @@ bool save_text(const char *filename, MatrixBase<Derived>& m,
    out << std::setprecision(precision);
    if(!out)
    {
+#ifndef RENV
       std::cerr << "Error while saving to file " << filename 
 	 << ":" << strerror(errno) << std::endl;
+#endif
       return false;
    }
    out << m << std::endl;

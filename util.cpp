@@ -18,7 +18,9 @@ using namespace Eigen;
 // Returns p by 2 matrix [mean, sd]
 MatrixXd standardize(MatrixXd& X, int method, bool verbose)
 {
+#ifndef RENV
    std::cout.setf(std::ios_base::unitbuf);
+#endif
 
    unsigned int n = X.rows(), p = X.cols();
    VectorXd mean = MatrixXd::Zero(X.cols(), 1);
@@ -26,8 +28,9 @@ MatrixXd standardize(MatrixXd& X, int method, bool verbose)
 
    if(method == STANDARDIZE_SD)
    {
-      verbose && std::cout << timestamp() << " standardizing matrix (SD)" 
+      verbose && STDOUT << timestamp() << " standardizing matrix (SD)" 
 	 << " p: " << p << std::endl;
+
       for(unsigned int j = 0 ; j < p ; j++)
       {
 	 mean(j) = X.col(j).sum() / n;
@@ -39,8 +42,9 @@ MatrixXd standardize(MatrixXd& X, int method, bool verbose)
    // Same as Price 2006 eqn 3
    else if(method == STANDARDIZE_BINOM)
    {
-      verbose && std::cout << timestamp() << " standardizing matrix (BINOM)" 
+      verbose && STDOUT << timestamp() << " standardizing matrix (BINOM)" 
 	 << " p: " << p << std::endl;
+
       double r;
       for(unsigned int j = 0 ; j < p ; j++)
       {
@@ -72,7 +76,9 @@ MatrixXd standardize(MatrixXd& X, int method, bool verbose)
 // Expects a p times N matrix X, standardized in-place
 MatrixXd standardize_transpose(MatrixXd& X, int method, bool verbose)
 {
+#ifndef RENV
    std::cout.setf(std::ios_base::unitbuf);
+#endif
 
    unsigned int n = X.cols(), p = X.rows();
    VectorXd mean = MatrixXd::Zero(p, 1);
@@ -80,9 +86,10 @@ MatrixXd standardize_transpose(MatrixXd& X, int method, bool verbose)
 
    if(method == STANDARDIZE_SD)
    {
-      verbose && std::cout << timestamp() 
+      verbose && STDOUT << timestamp() 
 	 << " standardizing transposed matrix (SD)" 
 	 << " p: " << p << std::endl;
+
       for(unsigned int j = 0 ; j < p ; j++)
       {
 	 mean(j) = X.row(j).sum() / n;
@@ -94,9 +101,10 @@ MatrixXd standardize_transpose(MatrixXd& X, int method, bool verbose)
    // Same as Price 2006 eqn 3
    else if(method == STANDARDIZE_BINOM)
    {
-      verbose && std::cout << timestamp() 
+      verbose && STDOUT << timestamp() 
 	 << " standardizing transposed matrix (BINOM)" 
 	 << " p: " << p << std::endl;
+
       double r;
       for(unsigned int j = 0 ; j < p ; j++)
       {

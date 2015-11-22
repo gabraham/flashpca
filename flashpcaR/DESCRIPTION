@@ -7,5 +7,7 @@ Author: Gad Abraham
 Maintainer: Gad Abraham <gad.abraham@unimelb.edu.au>
 Description: R interface to flashpca
 License: GPL (>= 3)
-Imports: Rcpp (>= 0.11.1), RcppEigen (>= 0.3.2.1.2)
-LinkingTo: Rcpp, RcppEigen, BH
+Imports:
+    Rcpp (>= 0.11.1)
+LinkingTo: Rcpp, RcppEigen (>= 0.3.2.5.1), BH
+RoxygenNote: 5.0.1
