@@ -50,6 +50,11 @@
 #' using multiple threads. "Low" does not compute X' X and uses less memory,
 #' but it tends to be slightly slower.
 #'
+#' @param check_geno Logical. Whether to explicitly check if the matrix X
+#' contains values other than {0, 1, 2}, when stand="binom". This can be
+#' be set to FALSE if you are sure your matrix only contains these values
+#' (only matters when using stand="binom").
+#'
 #' @return \code{flashpca} returns a list containing the following components:
 #'
 #' \describe{  
@@ -113,7 +118,7 @@ flashpca <- function(X, method=c("eigen", "svd"),
    nextra=10, maxiter=1e2, tol=1e-6, seed=1, kernel=c("linear", "rbf"),
    sigma=NULL, rbf_center=TRUE, rbf_sample=1000, save_kernel=FALSE,
    do_orth=TRUE, verbose=FALSE, num_threads=1, do_loadings=FALSE,
-   mem=c("low", "high"))
+   mem=c("low", "high"), check_geno=TRUE)
 {
    method <- match.arg(method)
    stand <- match.arg(stand)
@@ -126,6 +131,14 @@ flashpca <- function(X, method=c("eigen", "svd"),
 
    if(any(is.na(X))) {
       stop("X cannot contain any missing values")
+   }
+
+   if(stand == "binom" && check_geno) {
+      wx <- X %in% 0:2
+      if(sum(wx) != length(X)) {
+	 stop(
+	    "Your data contains values other than {0, 1, 2}, stand='binom' can't be used here")
+      }
    }
 
    if(method == "eigen") {
@@ -190,7 +203,8 @@ flashpca <- function(X, method=c("eigen", "svd"),
 #"
 #' @param stand Character. One of "binom" (zero mean, unit variance
 #' where variance is 2*p*(1-p), for SNP data),
-#' 	"sd" (zero-mean, unit variance), "center" (zero mean), or "none".
+#' 	"sd" (zero-mean, unit variance), "center" (zero mean), or "none". Note
+#'	 that if you use "binom" for non-SNP data you may get garbage.
 #'
 #' @param ndim Integer. Positive number of canonical vectors to compute.
 #'
@@ -209,12 +223,18 @@ flashpca <- function(X, method=c("eigen", "svd"),
 #' doesn't explicitly compute X^T Y, and "high" does.
 #' This is useful for large X and Y.
 #'
+#' @param check_geno Logical. Whether to explicitly check if the matrices
+#' X and Y contain values other than {0, 1, 2}, when stand="binom". This can
+#' be set to FALSE if you are sure your matrices only contain these values
+#' (only matters when using stand="binom").
+#'
 #' @return \code{scca} returns a list containing the following components:
 #'
 #' \describe{  
 #'    \item{U}{Top ndim left canonical vectors of X^T Y.}
 #'    \item{V}{Top ndim right canonical vectors of X^T Y.}
-#'    \item{d}{Top ndim canonical correlations.}
+#'    \item{d}{Top ndim canonical covariances, i.e., diag(cov(X U, Y V)). 
+#'	 Note that we don't divide by n-1.}
 #'    \item{Px}{X times U.}
 #'    \item{Py}{Y times V.}
 #' }
@@ -231,13 +251,13 @@ flashpca <- function(X, method=c("eigen", "svd"),
 #' X <- scale(M %*% Bx + rnorm(n * p))
 #' Y <- scale(M %*% By + rnorm(n * k))
 #' 
-#' s <- scca(X, Y, lambda1=1e-3, lambda2=1e-3, ndim=5)
+#' s <- scca(X, Y, lambda1=1e-2, lambda2=1e-2, ndim=5, stand="sd")
 #'
 #' @export
 scca <- function(X, Y, lambda1=0, lambda2=0,
    stand=c("binom", "sd", "center", "none"), ndim=10,
    maxiter=1e3, tol=1e-6, seed=1L, verbose=FALSE, num_threads=1,
-   mem=c("low", "high"))
+   mem=c("low", "high"), check_geno=TRUE)
 {
    stand <- match.arg(stand)
    mem <- match.arg(mem)
@@ -255,6 +275,15 @@ scca <- function(X, Y, lambda1=0, lambda2=0,
 
    if(any(is.na(X)) || any(is.na(Y))) {
       stop("X and Y cannot contain any missing values")
+   }
+
+   if(stand == "binom" && check_geno) {
+      wx <- X %in% 0:2
+      wy <- Y %in% 0:2
+      if(sum(wx) != length(X) || sum(wy) != length(Y)) {
+	 stop(
+	    "Your data contains values other than {0, 1, 2}, stand='binom' can't be used here")
+      }
    }
 
    if(stand == "none") {

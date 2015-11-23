@@ -9,7 +9,7 @@ flashpca(X, method = c("eigen", "svd"), stand = c("binom", "sd", "center",
   tol = 1e-06, seed = 1, kernel = c("linear", "rbf"), sigma = NULL,
   rbf_center = TRUE, rbf_sample = 1000, save_kernel = FALSE,
   do_orth = TRUE, verbose = FALSE, num_threads = 1, do_loadings = FALSE,
-  mem = c("low", "high"))
+  mem = c("low", "high"), check_geno = TRUE)
 }
 \arguments{
 \item{X}{A numeric matrix to perform PCA on. X must not have any NAs.}
@@ -61,6 +61,11 @@ OpenMP support.}
 computing the X' X / (n - 1) covariance matrix which is memory intensive but fast if
 using multiple threads. "Low" does not compute X' X and uses less memory,
 but it tends to be slightly slower.}
+
+\item{check_geno}{Logical. Whether to explicitly check whether the matrix X
+contains values other than {0, 1, 2}, when stand="binom". This can be
+be set to FALSE if you are sure your matrix only contains these values
+(only matters when using stand="binom").}
 }
 \value{
 \code{flashpca} returns a list containing the following components:
