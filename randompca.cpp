@@ -68,7 +68,7 @@ void pca_small(MatrixXd &B, int method, MatrixXd& U, VectorXd &d, bool verbose)
       d.resize(eval.size());
       U.resize(BBT.rows(), BBT.rows());
 
-      unsigned int k = 0, s = d.size();
+      unsigned int k = 0;
       for(unsigned int i = d.size() - 1 ; i != -1 ; --i)
       {
 	 // we get eigenvalues, which are the squared singular values
@@ -239,7 +239,7 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
    {
       verbose && STDOUT << timestamp() << " saving K" << std::endl;
 
-      save_text("kernel.txt", K);
+      save_text(K, "kernel.txt");
    }
 
    MatrixXd Xy(X.cols(), Y.cols());
@@ -443,6 +443,8 @@ void scca_lowmem(MatrixXd& X, MatrixXd &Y, MatrixXd& U, MatrixXd& V,
 
       // Use X and Y, not X2 and Y2
       d[j] = (X * U.col(j)).transpose() * (Y * V.col(j)); 
+      verbose && STDOUT << timestamp() << " d[" << j << "]: "
+	 << d[j] << std::endl;
    }
 }
 
@@ -533,7 +535,7 @@ void RandomPCA::scca(MatrixXd &X, MatrixXd &Y, double lambda1, double lambda2,
    verbose && STDOUT << timestamp() << " lambda1: " << lambda1 
       << " lambda2: " << lambda2 << std::endl;
 
-   unsigned int n = X.rows(), p = X.cols(), k = Y.cols();
+   unsigned int p = X.cols(), k = Y.cols();
 
    V = make_gaussian(k, ndim, seed);
    U = MatrixXd::Zero(p, ndim);

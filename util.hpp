@@ -65,7 +65,7 @@ void load(const char *filename, MatrixBase<Derived>& m)
 }
 
 template <typename Derived>
-bool save_text(const char *filename, MatrixBase<Derived>& m,
+bool save_text(MatrixBase<Derived>& m, const char *filename,
    unsigned int precision=6)
 {
    std::ofstream out(filename, std::ofstream::out);
@@ -80,6 +80,7 @@ bool save_text(const char *filename, MatrixBase<Derived>& m,
    }
    out << m << std::endl;
    out.close();
+   return true;
 }
 
 template <typename Derived>

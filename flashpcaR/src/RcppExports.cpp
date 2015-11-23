@@ -40,14 +40,12 @@ RcppExport SEXP flashpca(SEXP _X, SEXP _method, SEXP _stand,
    bool save_kernel = Rcpp::as<bool>(_save_kernel);
    bool do_orth = Rcpp::as<bool>(_do_orth);
    bool verbose = Rcpp::as<bool>(_verbose);
-   int num_threads = Rcpp::as<int>(_num_threads);
    bool do_loadings = Rcpp::as<bool>(_do_loadings);
    int mem = Rcpp::as<int>(_mem);
 
-#ifndef _WIN32
-#ifndef _WIN64
+#ifdef _OPENMP
+   int num_threads = Rcpp::as<int>(_num_threads);
    omp_set_num_threads(num_threads);
-#endif
 #endif
 
    RandomPCA rp;
@@ -111,14 +109,12 @@ RcppExport SEXP scca(SEXP _X, SEXP _Y, SEXP _lambda1, SEXP _lambda2,
    double lambda2 = Rcpp::as<double>(_lambda2);
    long seed = Rcpp::as<long>(_seed);
    bool verbose = Rcpp::as<bool>(_verbose);
-   int num_threads = Rcpp::as<int>(_num_threads);
    int mem = Rcpp::as<int>(_mem);
    int maxiter = Rcpp::as<int>(_maxiter);
 
-#ifndef _WIN32
-#ifndef _WIN64
+#ifdef _OPENMP
+   int num_threads = Rcpp::as<int>(_num_threads);
    omp_set_num_threads(num_threads);
-#endif
 #endif
 
    RandomPCA rp;
