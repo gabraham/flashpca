@@ -1,5 +1,8 @@
 Verson 1.2.1
 21-Nov-2015
+* Allow much larger PLINK datasets to be loaded into flashpca
+* More documentation
+* Prepare flashpcaR for CRAN
 * Small cleanups 
 
 Version 1.2
