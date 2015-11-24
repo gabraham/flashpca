@@ -504,53 +504,53 @@ int main(int argc, char * argv[])
    // Common to all decompositions
    std::cout << timestamp() << " Writing " << n_dim << 
       " eigenvalues to file " << eigvalfile << std::endl;
-   save_text(eigvalfile.c_str(), rpca.d);
+   save_text(rpca.d, eigvalfile.c_str());
 
    if(mode == MODE_PCA)
    {
       std::cout << timestamp() << " Writing " << n_dim << 
 	 " eigenvectors to file " << eigvecfile << std::endl;
-      save_text(eigvecfile.c_str(), rpca.U);
+      save_text(rpca.U, eigvecfile.c_str());
 
       std::cout << timestamp() << " Writing " << n_dim <<
 	 " PCs to file " << pcfile << std::endl;
-      save_text(pcfile.c_str(), rpca.Px);
+      save_text(rpca.Px, pcfile.c_str());
 
       std::cout << timestamp() << " Writing " << n_dim << 
 	 " proportion variance explained to file " << eigpvefile << std::endl;
-      save_text(eigpvefile.c_str(), rpca.pve);
+      save_text(rpca.pve, eigpvefile.c_str());
 
       if(do_loadings)
       {
 	 std::cout << timestamp() << " Writing" <<
 	    " SNP loadings to file " << loadingsfile << std::endl;
-	 save_text(loadingsfile.c_str(), rpca.V); 
+	 save_text(rpca.V, loadingsfile.c_str()); 
       }
    }
    else if(mode == MODE_CCA || mode == MODE_SCCA)
    {
       std::cout << timestamp() << " Writing " << n_dim << 
 	 " X eigenvectors to file " << eigvecxfile << std::endl;
-      save_text(eigvecxfile.c_str(), rpca.U);
+      save_text(rpca.U, eigvecxfile.c_str());
 
       std::cout << timestamp() << " Writing " << n_dim << 
 	 " Y eigenvectors to file " << eigvecyfile << std::endl;
-      save_text(eigvecyfile.c_str(), rpca.V);
+      save_text(rpca.V, eigvecyfile.c_str());
 
       std::cout << timestamp() << " Writing " << n_dim <<
 	 " PCs to file " << pcxfile << std::endl;
-      save_text(pcxfile.c_str(), rpca.Px);
+      save_text(rpca.Px, pcxfile.c_str());
 
       std::cout << timestamp() << " Writing " << n_dim <<
 	 " PCs to file " << pcyfile << std::endl;
-      save_text(pcyfile.c_str(), rpca.Py);
+      save_text(rpca.Py, pcyfile.c_str());
    }
 
    if(save_meansd)
    {
       std::cout << timestamp() << " Writing mean + sd file "
 	 << meansdfile << std::endl;
-      save_text(meansdfile.c_str(), rpca.X_meansd);
+      save_text(rpca.X_meansd, meansdfile.c_str());
    }
 
    ////////////////////////////////////////////////////////////////////////////////
