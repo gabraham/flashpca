@@ -327,7 +327,7 @@ int main(int argc, char * argv[])
       }
    }
 
-   double tol = 1e-7;
+   double tol = 1e-4;
    if(vm.count("tol"))
    {
       tol = vm["tol"].as<double>();

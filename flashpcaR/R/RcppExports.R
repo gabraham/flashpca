@@ -115,7 +115,7 @@
 #' @export
 flashpca <- function(X, method=c("eigen", "svd"),
    stand=c("binom", "sd", "center", "none"), transpose=NULL, ndim=10,
-   nextra=10, maxiter=1e2, tol=1e-6, seed=1, kernel=c("linear", "rbf"),
+   nextra=10, maxiter=1e2, tol=1e-4, seed=1, kernel=c("linear", "rbf"),
    sigma=NULL, rbf_center=TRUE, rbf_sample=1000, save_kernel=FALSE,
    do_orth=TRUE, verbose=FALSE, num_threads=1, do_loadings=FALSE,
    mem=c("low", "high"), check_geno=TRUE)
@@ -256,7 +256,7 @@ flashpca <- function(X, method=c("eigen", "svd"),
 #' @export
 scca <- function(X, Y, lambda1=0, lambda2=0,
    stand=c("binom", "sd", "center", "none"), ndim=10,
-   maxiter=1e3, tol=1e-6, seed=1L, verbose=FALSE, num_threads=1,
+   maxiter=1e3, tol=1e-4, seed=1L, verbose=FALSE, num_threads=1,
    mem=c("low", "high"), check_geno=TRUE)
 {
    stand <- match.arg(stand)
