@@ -1,6 +1,11 @@
 ## With Rcpp 0.11.0 and later, we no longer need to set PKG_LIBS as there is
 ## no user-facing library. The include path to headers is already set by R.
-#PKG_LIBS = 
+#
+# DRENV is required so we know we're being compiled by R.
+# DNDEBUG is required to remove assert calls which R CMD check --as-cran
+# doesn't like.
+PKG_CXXFLAGS = -DRENV -DNDEBUG
+PKG_LIBS = 
 
 ## With R 3.1.0 or later, you can uncomment the following line to tell R to 
 ## enable compilation with C++11 (where available)
