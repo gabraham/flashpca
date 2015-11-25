@@ -106,7 +106,7 @@ int main(int argc, char * argv[])
    MatrixXd W = data.read_plink_pheno(w_file.c_str(), 1);
    MatrixXd P = data.X * W;
 
-   save_text(out_file.c_str(), P);
+   save_text(P, out_file.c_str());
 
    return EXIT_SUCCESS;
 }

@@ -6,7 +6,7 @@
 \usage{
 flashpca(X, method = c("eigen", "svd"), stand = c("binom", "sd", "center",
   "none"), transpose = NULL, ndim = 10, nextra = 10, maxiter = 100,
-  tol = 1e-06, seed = 1, kernel = c("linear", "rbf"), sigma = NULL,
+  tol = 1e-04, seed = 1, kernel = c("linear", "rbf"), sigma = NULL,
   rbf_center = TRUE, rbf_sample = 1000, save_kernel = FALSE,
   do_orth = TRUE, verbose = FALSE, num_threads = 1, do_loadings = FALSE,
   mem = c("low", "high"), check_geno = TRUE)
@@ -62,7 +62,7 @@ computing the X' X / (n - 1) covariance matrix which is memory intensive but fas
 using multiple threads. "Low" does not compute X' X and uses less memory,
 but it tends to be slightly slower.}
 
-\item{check_geno}{Logical. Whether to explicitly check whether the matrix X
+\item{check_geno}{Logical. Whether to explicitly check if the matrix X
 contains values other than {0, 1, 2}, when stand="binom". This can be
 be set to FALSE if you are sure your matrix only contains these values
 (only matters when using stand="binom").}
