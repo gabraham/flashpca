@@ -52,7 +52,6 @@ void pca_small(MatrixXd &B, int method, MatrixXd& U, VectorXd &d, bool verbose)
    }
    else if(method == METHOD_EIGEN)
    {
-
       verbose && STDOUT << timestamp() << " Eigen-decomposition begin" << std::endl;
 
       MatrixXd BBT = B * B.transpose();

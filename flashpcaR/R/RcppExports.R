@@ -54,6 +54,10 @@
 #' contains values other than {0, 1, 2}, when stand="binom". This can be
 #' be set to FALSE if you are sure your matrix only contains these values
 #' (only matters when using stand="binom").
+#' 
+#' @param return_scale Logical. Whether to return the means and standard
+#' deviations used in standardizing the matrix X.
+#'
 #'
 #' @return \code{flashpca} returns a list containing the following components:
 #'
@@ -63,6 +67,8 @@
 #'    \item{projection}{a numeric matrix. Equivalent to X V.}
 #'    \item{loadings}{a numeric matrix. The matrix of variable loadings, i.e., V
 #'    from SVD.}
+#'    \item{scale}{a list of two elements, ``center'' and ''scale'', which was
+#'	 used to standardize the input matrix X.}
 #' }
 #' 
 #' @examples
@@ -118,13 +124,13 @@ flashpca <- function(X, method=c("eigen", "svd"),
    nextra=10, maxiter=1e2, tol=1e-4, seed=1, kernel=c("linear", "rbf"),
    sigma=NULL, rbf_center=TRUE, rbf_sample=1000, save_kernel=FALSE,
    do_orth=TRUE, verbose=FALSE, num_threads=1, do_loadings=FALSE,
-   mem=c("low", "high"), check_geno=TRUE)
+   mem=c("low", "high"), check_geno=TRUE, return_scale=TRUE)
 {
    method <- match.arg(method)
    stand <- match.arg(stand)
    kernel <- match.arg(kernel)
    mem <- match.arg(mem)
-
+   
    if(!is.numeric(X)) {
       stop("X must both a numeric matrix")
    }
@@ -185,10 +191,18 @@ flashpca <- function(X, method=c("eigen", "svd"),
    # otherwise Rcpp will throw an exception
    storage.mode(X) <- "numeric"
 
-   .Call("flashpca", PACKAGE="flashpcaR",
+   res <- try(
+      .Call("flashpca", PACKAGE="flashpcaR",
       X, method_i, stand_i, transpose, ndim, nextra, maxiter,
       tol, seed, kernel_i, sigma, rbf_center, rbf_sample,
-      save_kernel, do_orth, verbose, num_threads, do_loadings, mem_i)
+      save_kernel, do_orth, verbose, num_threads, do_loadings, mem_i,
+      return_scale)
+   )
+   if(is(res, "try-error")) {
+      NULL
+   } else {
+      res
+   }
 }
 
 #' Performs sparse canonical correlation analysis
@@ -309,10 +323,16 @@ scca <- function(X, Y, lambda1=0, lambda2=0,
    storage.mode(X) <- "numeric"
    storage.mode(Y) <- "numeric"
 
-   res <- .Call("scca", PACKAGE="flashpcaR",
-      X, Y, lambda1, lambda2, ndim, stand_i,
-      mem_i, seed, num_threads, maxiter, tol, verbose)
-   res
+   res <- try(
+      .Call("scca", PACKAGE="flashpcaR",
+	 X, Y, lambda1, lambda2, ndim, stand_i,
+	 mem_i, seed, num_threads, maxiter, tol, verbose)
+   )
+   if(is(res, "try-error")) {
+      NULL
+   } else {
+      res
+   }
 }
 
 

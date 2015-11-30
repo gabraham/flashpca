@@ -12,7 +12,8 @@ RcppExport SEXP flashpca(SEXP _X, SEXP _method, SEXP _stand,
    SEXP _transpose, SEXP _ndim, SEXP _nextra, SEXP _maxiter, SEXP _tol,
    SEXP _seed, SEXP _kernel, SEXP _sigma, SEXP _rbf_center,
    SEXP _rbf_sample, SEXP _save_kernel, SEXP _do_orth,
-   SEXP _verbose, SEXP _num_threads, SEXP _do_loadings, SEXP _mem)
+   SEXP _verbose, SEXP _num_threads, SEXP _do_loadings, SEXP _mem,
+   SEXP _ret_scale)
 {
 //BEGIN_RCPP
 
@@ -42,6 +43,7 @@ RcppExport SEXP flashpca(SEXP _X, SEXP _method, SEXP _stand,
    bool verbose = Rcpp::as<bool>(_verbose);
    bool do_loadings = Rcpp::as<bool>(_do_loadings);
    int mem = Rcpp::as<int>(_mem);
+   bool return_scale = Rcpp::as<bool>(_ret_scale);
 
 #ifdef _OPENMP
    int num_threads = Rcpp::as<int>(_num_threads);
@@ -60,6 +62,17 @@ RcppExport SEXP flashpca(SEXP _X, SEXP _method, SEXP _stand,
    NumericMatrix P(wrap(rp.Px));
    NumericVector d(wrap(rp.d));
 
+   NumericVector X_mean(0);
+   NumericVector X_sd(0);
+
+   // STANDARDIZE_NONE: 0
+   if(return_scale && stand != 0)
+   {
+      NumericMatrix X_meansd(wrap(rp.X_meansd));
+      X_mean = X_meansd(_, 0);
+      X_sd = X_meansd(_, 1);
+   }
+   
    Rcpp::List res;
 
    if(do_loadings)
@@ -69,7 +82,9 @@ RcppExport SEXP flashpca(SEXP _X, SEXP _method, SEXP _stand,
          Rcpp::Named("values")=d,
          Rcpp::Named("vectors")=U,
          Rcpp::Named("projection")=P,
-	 Rcpp::Named("loadings")=V
+	 Rcpp::Named("loadings")=V,
+	 Rcpp::Named("center")=X_mean,
+	 Rcpp::Named("scale")=X_sd
       );
    }
    else
@@ -77,7 +92,9 @@ RcppExport SEXP flashpca(SEXP _X, SEXP _method, SEXP _stand,
       res = Rcpp::List::create(
          Rcpp::Named("values")=d,
          Rcpp::Named("vectors")=U,
-         Rcpp::Named("projection")=P
+         Rcpp::Named("projection")=P,
+	 Rcpp::Named("center")=X_mean,
+	 Rcpp::Named("scale")=X_sd
       );
    }
 

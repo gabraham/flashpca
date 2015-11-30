@@ -9,7 +9,8 @@ flashpca(X, method = c("eigen", "svd"), stand = c("binom", "sd", "center",
   tol = 1e-04, seed = 1, kernel = c("linear", "rbf"), sigma = NULL,
   rbf_center = TRUE, rbf_sample = 1000, save_kernel = FALSE,
   do_orth = TRUE, verbose = FALSE, num_threads = 1, do_loadings = FALSE,
-  mem = c("low", "high"), check_geno = TRUE)
+  mem = c("low", "high"), check_geno = TRUE, return_scale = c(TRUE,
+  FALSE))
 }
 \arguments{
 \item{X}{A numeric matrix to perform PCA on. X must not have any NAs.}
@@ -66,6 +67,9 @@ but it tends to be slightly slower.}
 contains values other than {0, 1, 2}, when stand="binom". This can be
 be set to FALSE if you are sure your matrix only contains these values
 (only matters when using stand="binom").}
+
+\item{return_scale}{Logical. Whether to return the means and standard
+deviations used in standardizing the matrix X.}
 }
 \value{
 \code{flashpca} returns a list containing the following components:
@@ -76,6 +80,8 @@ be set to FALSE if you are sure your matrix only contains these values
    \item{projection}{a numeric matrix. Equivalent to X V.}
    \item{loadings}{a numeric matrix. The matrix of variable loadings, i.e., V
    from SVD.}
+   \item{scale}{a list of two elements, ``center'' and ''scale'', which was
+ used to standardize the input matrix X.}
 }
 }
 \description{
