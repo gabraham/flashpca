@@ -6,7 +6,7 @@ Version: 1.2.2
 Date: 2015-11-25
 Author: Gad Abraham
 Maintainer: Gad Abraham <gad.abraham@unimelb.edu.au>
-Description: flashpca is an efficient implementation of random principal component analysis, useful for estimating the top principal components of data.
+Description: flashpca is an efficient implementation of random principal component analysisi (PCA), useful for rapidly estimating the top principal components of data. In addition to standard PCA, flashpca implements kernal PCA and sparse (L1-penalized) canonical correlation analysis (SCCA).
 URL: https://github.com/gabraham/flashpca
 License: GPL (>= 3)
 NeedCompilation: yes

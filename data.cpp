@@ -115,7 +115,8 @@ void Data::get_size()
    in.seekg(3, std::ifstream::beg);
    in.close();
 
-   std::cout << ", found " << (len + 3) << " bytes, " << nsnps << " SNPs" << std::endl;
+   std::cout << ", found " << (len + 3) << " bytes, "
+      << nsnps << " SNPs" << std::endl;
 }
 
 // Expects PLINK BED in SNP-major format
@@ -128,7 +129,8 @@ void Data::read_bed(bool transpose)
 
    if(!in)
    {
-      std::cerr << "[Data::read_bed] Error reading file " << geno_filename << std::endl;
+      std::cerr << "[Data::read_bed] Error reading file "
+	 << geno_filename << std::endl;
       throw std::runtime_error("io error");
    }
    
@@ -145,13 +147,16 @@ void Data::read_bed(bool transpose)
    else
       X = MatrixXd(N, nsnps);
 
-   std::cout << timestamp() << " Detected BED file: " << geno_filename <<
-      " with " << (len + 3) << " bytes, " << N << " samples, " << nsnps 
+   std::cout << timestamp() << " Detected BED file: "
+      << geno_filename << " with " << (len + 3)
+      << " bytes, " << N << " samples, " << nsnps 
       << " SNPs." << std::endl;
 
    double* avg = new double[nsnps]; 
    unsigned int idx = 0;
    VectorXd tmp3(N);
+
+   unsigned int md = nsnps / 50;
 
    // iterate over all SNPs, only decode those that are included in analysis
    for(unsigned int i = 0 ; i < nsnps; i++)
@@ -191,6 +196,11 @@ void Data::read_bed(bool transpose)
       else
 	 X.col(idx) = tmp3;
       idx++;
+
+      if(verbose && i % md == md - 1)
+	 std::cout << timestamp() << " Reading genotypes, "
+	    << roundl(((double)i / nsnps) * 100) << "% done" 
+	    << std::endl;
    }
 
    if(transpose)
