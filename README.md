@@ -59,9 +59,9 @@ See [Releases](https://github.com/gabraham/flashpca/releases) for statically-lin
 
 ## Note on running flashpca large datasets
 
-* As of v1.2.5, flashpca support loading PLINK datasets limited only by RAM
+* As of v1.2.5, flashpca supports loading PLINK datasets limited only by RAM
   (fixing an overflow bug in previous versions which lead to reading an incorrect
-  number of SNPs, see [issue #9](https://github.com/gabraham/flashpca/issues/)).
+  number of SNPs, see [issue #9](https://github.com/gabraham/flashpca/issues/9)).
 * For example, we have successfully run flashpca on Linux on a dataset consisting of
   160,000 individuals and 139,000 SNPs, requiring 166GB RAM, in 3-4 hours
   (depending on required accuracy of the solution).
