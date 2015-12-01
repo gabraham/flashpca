@@ -1,10 +1,12 @@
 Package: flashpcaR
 Depends: R(>= 3.0.2)
 Type: Package
-Title: R interface to flashpca
+Title: R Interface to flashpca
 Version: 1.2.2
 Date: 2015-12-01
-Authors@R: 'Gad Abraham <gad.abraham@unimelb.edu.au> [aut, cre]'
+Authors@R: c(
+   person("Gad", "Abraham", , "gad.abraham@unimelb.edu.au", c("aut", "cre"))
+   )
 Description: flashpca is an efficient implementation of random principal
    component analysisi (PCA), useful for rapidly estimating the top principal
    components of data. In addition to standard PCA, flashpca implements kernal PCA
@@ -15,7 +17,7 @@ BugReports:
    https://github.com/gabraham/flashpca/issues
 License:
    GPL (>= 3)
-NeedCompilation: yes
+NeedsCompilation: yes
 Imports: 
     Rcpp (>= 0.11.1)
 LinkingTo:
