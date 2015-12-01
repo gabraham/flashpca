@@ -44,7 +44,7 @@ and National ICT Australia (http://www.nicta.com.au).
 * We recommend compiling from source for best performance.
 * To get the devel version, you'll need to compile yourself
 
-See [Releases](https://github.com/gabraham/flashpca/tags) for statically-linked version for Linux x86-64 &ge; 2.6.15
+See [Releases](https://github.com/gabraham/flashpca/releases) for statically-linked version for Linux x86-64 &ge; 2.6.15
 
 ### System requirements
 * 64-bit linux

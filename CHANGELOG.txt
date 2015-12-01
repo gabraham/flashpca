@@ -1,4 +1,9 @@
-Verson 1.2.1
+Version 1.2.5
+1-Dec-2015
+* Fixed bug in reading PLINK bed files, allowing analysis of larger datasets.
+* Clean-ups and better documentation for flashpcaR.
+
+Version 1.2.1
 21-Nov-2015
 * Allow much larger PLINK datasets to be loaded into flashpca
 * More documentation
