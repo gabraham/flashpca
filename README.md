@@ -14,7 +14,7 @@ Main features:
 * Easy to use
 * Two variants: the original high-memory version, and a slightly slower
    version that uses less RAM (proportional to data size), useful for large datasets with many samples
-* R version [available](#R)
+* flashpcaR, an R version is [available](#R)
 * Experimental: [kernel PCA](#kpca), [sparse CCA](#scca)
 
 ## Contact
@@ -39,24 +39,6 @@ Portions of this code are based on SparSNP
 (https://github.com/gabraham/SparSNP), Copyright (C) 2011-2012 Gad Abraham
 and National ICT Australia (http://www.nicta.com.au).
 
-## Download statically linked version (stable versions only)
-
-* We recommend compiling from source for best performance.
-* To get the devel version, you'll need to compile yourself
-
-See [Releases](https://github.com/gabraham/flashpca/releases) for statically-linked version for Linux x86-64 &ge; 2.6.15
-
-### System requirements
-* 64-bit linux
-* Using the original version (`--mem high`, the default), large datasets will require
-   large amounts of RAM, e.g. for 15,000 individuals (43K SNPs) you'll need
-   about 14GB RAM, for 150,000 individuals (43K SNPs) you'll need about 145GB
-   RAM (estimated using https://github.com/jhclark/memusg), roughly 8 &times;
-   min(n <sup>2</sup> &times; p + n &times; p, p <sup>2</sup> &times; n + n &times; p\)
-   bytes, where p is number of SNPs and n is number of individuals.
-   Using `--mem low`, you will only need about 8 &times; n &times; p bytes of
-   RAM.
-
 ## Note on running flashpca large datasets
 
 * As of v1.2.5, flashpca supports loading PLINK datasets limited only by RAM
@@ -71,6 +53,23 @@ See [Releases](https://github.com/gabraham/flashpca/releases) for statically-lin
 * Note: the R package _flashpcaR_ is limited by the maximum matrix dimensions in R, and
   running it on such large data may not be supported or practical.
 
+## Download statically linked version (stable versions only)
+
+* We recommend compiling from source for best performance.
+* To get the devel version, you'll need to compile yourself
+
+See [Releases](https://github.com/gabraham/flashpca/releases) for statically-linked version for Linux x86-64 &ge; 2.6.15
+
+### System requirements
+* 64-bit Linux or Mac ([flashpcaR](#R) supported on Linux, Mac, and Windows)
+* Using the original version (`--mem high`, the default), large datasets will require
+   large amounts of RAM, e.g. for 15,000 individuals (43K SNPs) you'll need
+   about 14GB RAM, for 150,000 individuals (43K SNPs) you'll need about 145GB
+   RAM (estimated using https://github.com/jhclark/memusg), roughly 8 &times;
+   min(n <sup>2</sup> &times; p + n &times; p, p <sup>2</sup> &times; n + n &times; p\)
+   bytes, where p is number of SNPs and n is number of individuals.
+   Using `--mem low`, you will only need about 8 &times; n &times; p bytes of
+   RAM.
 
 ## Building from source
 
