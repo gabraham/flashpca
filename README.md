@@ -57,6 +57,21 @@ See [Releases](https://github.com/gabraham/flashpca/releases) for statically-lin
    Using `--mem low`, you will only need about 8 &times; n &times; p bytes of
    RAM.
 
+## Note on run flashpca large datasets
+
+* As of v1.2.5, flashpca support loading PLINK datasets limited only by RAM
+  (fixing an overflow bug in previous versions which lead to reading an incorrect
+  number of SNPs, see [issue #9](https://github.com/gabraham/flashpca/issues/)).
+* For example, we have successfully run flashpca on Linux on a dataset consisting of
+  160,000 individuals and 139,000 SNPs, requiring 166GB RAM, in 3-4 hours
+  (depending on required accuracy of the solution).
+* To analyze large datasets, use the option <code>--mem low</code>
+* Future versions of flashpca will aim to reduce the memory requirements by not loading
+  all data into RAM at once.
+* Note: the R package _flashpcaR_ is limited by the maximum matrix dimensions in R, and
+  running it on such large data may not be supported or practical.
+
+
 ## Building from source
 
 To get the latest version:
