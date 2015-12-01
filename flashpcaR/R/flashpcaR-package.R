@@ -4,7 +4,7 @@
 #' \tabular{ll}{
 #' Package: \tab flashpca\cr
 #' Type: \tab Package\cr
-#' Version: \tab 1.2.4\cr
+#' Version: \tab 1.2.5\cr
 #' Date: \tab 2015-12-01\cr
 #' License: \tab GPL (>= 3)\cr
 #' }
@@ -19,6 +19,7 @@
 #'
 #' @useDynLib flashpcaR
 #' @importFrom Rcpp evalCpp
+#' @importFrom methods is
 #'
 #'
 NULL

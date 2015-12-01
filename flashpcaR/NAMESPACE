@@ -3,4 +3,5 @@
 export(flashpca)
 export(scca)
 importFrom(Rcpp,evalCpp)
+importFrom(methods,is)
 useDynLib(flashpcaR)
