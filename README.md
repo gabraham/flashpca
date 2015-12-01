@@ -247,27 +247,42 @@ of the canonical components cor(X U, Y V) in independent test data.
 
 flashpca is now available as an independent R package.
 
-## Requirements for building
 
-R packages Rcpp, RcppEigen, BH, g++ compiler
+## Prebuilt R packages
 
-To install on Mac or Linux, you can use devtools::install_github:
+Ssee [Releases](https://github.com/gabraham/flashpca/releases) for prebuilt
+Mac/Windows binary packages and a source package for Linux.
+
+## Building from source
+
+### Requirements
+
+* R packages: Rcpp, RcppEigen, BH
+* C++ compiler
+
+As of version v1.2.5, flashpcaR will compile on Mac with either clang++ or g++.
+However, OpenMP multi-threading won't work with clang (see
+https://github.com/gabraham/flashpca/issues/5).
+
+### Several ways to install from source:
+
+* If you downloaded the Release source code:
+   ```
+   R CMD INSTALL flashpcaR_1.2.5.tar.gz
+   ```
+
+* To install the latest (potentially unstable) version on Mac or Linux,
+   you can also use devtools::install_github:
    ```
    library(devtools)
    install_github("gabraham/flashpca/flashpcaR")
    ```
 
-As of version v1.2.5, flashpcaR will compile with either clang++ or g++.
-However, OpenMP multi-threading probably won't work with clang.
-
-(issue https://github.com/gabraham/flashpca/issues/5)
-
-Alternatively, after cloning the git archive, install using:
+* Alternatively, after cloning the git archive, install using:
    ```
    R CMD INSTALL flashpcaR
    ```
 
-On Windows, see [Releases](https://github.com/gabraham/flashpca/releases) for a prebuilt Windows binary package.
 
 ## PCA
 
