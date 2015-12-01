@@ -3,7 +3,7 @@ Depends: R(>= 3.0.2)
 Type: Package
 Title: R interface to flashpca
 Version: 1.2.2
-Date: 2015-11-25
+Date: 2015-12-01
 Authors@R: 'Gad Abraham <gad.abraham@unimelb.edu.au> [aut, cre]'
 Description: flashpca is an efficient implementation of random principal
    component analysisi (PCA), useful for rapidly estimating the top principal
