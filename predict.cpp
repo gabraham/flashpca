@@ -91,9 +91,13 @@ int main(int argc, char * argv[])
       out_file = vm["out"].as<std::string>();
    }
 
+#ifdef _OPENMP
+#ifdef EIGEN_HAS_OPENMP
    omp_set_num_threads(num_threads);
    std::cout << timestamp() << " Using " << num_threads 
       << " OpenMP threads" << std::endl;
+#endif
+#endif
 
    Data data(1);
    data.verbose = true;

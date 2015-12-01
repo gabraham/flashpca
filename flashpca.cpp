@@ -442,10 +442,13 @@ int main(int argc, char * argv[])
       
    std::cout << timestamp() << " Start flashpca (version " << VERSION
       << ")" << std::endl;
-   //setNbThreads(num_threads);
+#ifdef _OPENMP
+#ifdef _EIGEN_HAS_OPENMP
    omp_set_num_threads(num_threads);
    std::cout << timestamp() << " Using " << num_threads 
       << " OpenMP threads" << std::endl;
+#endif
+#endif
 
    Data data(seed);
    data.verbose = verbose;

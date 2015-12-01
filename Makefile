@@ -25,7 +25,7 @@ CXXFLAGS = -I${BOOST_INC} -I${EIGEN_INC}
 
 UNAME := $(shell uname)
 ifeq ($(UNAME), Darwin)
-   CXXFLAGS += -msse2
+   CXXFLAGS += -msse2 -DEIGEN_DONT_PARALLELIZE
 else
    CXXFLAGS += -march=native
 endif
