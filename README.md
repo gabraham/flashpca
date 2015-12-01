@@ -57,7 +57,7 @@ See [Releases](https://github.com/gabraham/flashpca/releases) for statically-lin
    Using `--mem low`, you will only need about 8 &times; n &times; p bytes of
    RAM.
 
-## Note on run flashpca large datasets
+## Note on running flashpca large datasets
 
 * As of v1.2.5, flashpca support loading PLINK datasets limited only by RAM
   (fixing an overflow bug in previous versions which lead to reading an incorrect
