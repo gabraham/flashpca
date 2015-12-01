@@ -4,14 +4,21 @@ Type: Package
 Title: R interface to flashpca
 Version: 1.2.2
 Date: 2015-11-25
-Author: Gad Abraham
-Maintainer: Gad Abraham <gad.abraham@unimelb.edu.au>
-Description: flashpca is an efficient implementation of random principal component analysisi (PCA), useful for rapidly estimating the top principal components of data. In addition to standard PCA, flashpca implements kernal PCA and sparse (L1-penalized) canonical correlation analysis (SCCA).
-URL: https://github.com/gabraham/flashpca
-License: GPL (>= 3)
+Authors@R: 'Gad Abraham <gad.abraham@unimelb.edu.au> [aut, cre]'
+Description: flashpca is an efficient implementation of random principal
+   component analysisi (PCA), useful for rapidly estimating the top principal
+   components of data. In addition to standard PCA, flashpca implements kernal PCA
+   and sparse (L1-penalized) canonical correlation analysis (SCCA).
+URL:
+   https://github.com/gabraham/flashpca
+BugReports:
+   https://github.com/gabraham/flashpca/issues
+License:
+   GPL (>= 3)
 NeedCompilation: yes
 Imports: 
     Rcpp (>= 0.11.1)
-LinkingTo: Rcpp, RcppEigen (>= 0.3.2.5.1), BH
+LinkingTo:
+   Rcpp, RcppEigen (>= 0.3.2.5.1), BH
 RoxygenNote: 5.0.1
 Suggests: testthat
