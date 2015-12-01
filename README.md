@@ -257,11 +257,8 @@ To install on Mac or Linux, you can use devtools::install_github:
    install_github("gabraham/flashpca/flashpcaR")
    ```
 
-Note: on Mac you will need a GCC/G++ compiler (e.g., from http://brew.sh), and
-to set the correct compiler in ~/.R/Makevars to point to that compiler, e.g.,
-   ```
-   CXX=/usr/local/bin/g++-4.9 -std=c++11
-   ```
+As of version v1.2.5, flashpcaR will compile with either clang++ or g++.
+However, OpenMP multi-threading probably won't work with clang.
 
 (issue https://github.com/gabraham/flashpca/issues/5)
 
