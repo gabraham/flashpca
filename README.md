@@ -330,11 +330,11 @@ Sparse CCA of matrices X and Y, with 5 components, penalties lambda1=0.1 and lam
    r <- scca(X, Y, ndim=5, lambda1=0.1, lambda2=0.1)
    ```
 
-## LD-pruned HapMap3 example data
+# LD-pruned HapMap3 example data
 
 See the [HapMap3](HapMap3) directory
 
-## Changelog (stable versions only)
+# Changelog (stable versions only)
 
 See [CHANGELOG.txt](CHANGELOG.txt)
 
