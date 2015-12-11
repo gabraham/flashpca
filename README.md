@@ -17,6 +17,10 @@ Main features:
 * flashpcaR, an R version is [available](#R)
 * Experimental: [kernel PCA](#kpca), [sparse CCA](#scca)
 
+## Help
+
+Google Groups: [https://groups.google.com/forum/#!forum/flashpca-users](https://groups.google.com/forum/#!forum/flashpca-users)
+
 ## Contact
 
 Gad Abraham, gad.abraham@unimelb.edu.au
