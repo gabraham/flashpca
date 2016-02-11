@@ -5,7 +5,7 @@ flashpca_internal <- function(X, method, stand, transpose, ndim, nextra, maxiter
     .Call('flashpcaR_flashpca_internal', PACKAGE = 'flashpcaR', X, method, stand, transpose, ndim, nextra, maxiter, tol, seed, kernel, sigma, rbf_center, rbf_sample, save_kernel, do_orth, verbose, do_loadings, mem, return_scale, num_threads)
 }
 
-scca_internal <- function(X, Y, lambda1, lambda2, ndim, stand, mem, seed, maxiter, tol, verbose, num_threads) {
-    .Call('flashpcaR_scca_internal', PACKAGE = 'flashpcaR', X, Y, lambda1, lambda2, ndim, stand, mem, seed, maxiter, tol, verbose, num_threads)
+scca_internal <- function(X, Y, lambda1, lambda2, ndim, stand, mem, seed, maxiter, tol, verbose, num_threads, useV, Vinit) {
+    .Call('flashpcaR_scca_internal', PACKAGE = 'flashpcaR', X, Y, lambda1, lambda2, ndim, stand, mem, seed, maxiter, tol, verbose, num_threads, useV, Vinit)
 }
 

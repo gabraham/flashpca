@@ -70,7 +70,7 @@
 scca <- function(X, Y, lambda1=0, lambda2=0,
    stand=c("binom", "sd", "center", "none"),
    ndim=10, maxiter=1e3, tol=1e-4, seed=1L, verbose=FALSE, num_threads=1,
-   mem=c("low", "high"), check_geno=TRUE)
+   mem=c("low", "high"), check_geno=TRUE, V=NULL)
 {
    stand <- match.arg(stand)
    mem <- match.arg(mem)
@@ -123,8 +123,13 @@ scca <- function(X, Y, lambda1=0, lambda2=0,
    storage.mode(Y) <- "numeric"
 
    res <- try(
-      scca_internal(X, Y, lambda1, lambda2, ndim, stand_i, mem_i, seed, maxiter, tol,
-	 verbose, num_threads)
+      if(is.null(V)) {
+	 scca_internal(X, Y, lambda1, lambda2, ndim, stand_i, mem_i, seed, maxiter, tol,
+	    verbose, num_threads, FALSE, matrix(0))
+      } else {
+	 scca_internal(X, Y, lambda1, lambda2, ndim, stand_i, mem_i, seed, maxiter, tol,
+	    verbose, num_threads, TRUE, V)
+      }
    )
    if(is(res, "try-error")) {
       NULL

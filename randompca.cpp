@@ -523,6 +523,15 @@ void scca_highmem(MatrixXd& X, MatrixXd &Y, MatrixXd& U, MatrixXd& V,
 void RandomPCA::scca(MatrixXd &X, MatrixXd &Y, double lambda1, double lambda2,
    long seed, unsigned int ndim, int mem, unsigned int maxiter, double tol)
 {
+   unsigned int k = Y.cols();
+   MatrixXd M = make_gaussian(k, ndim, seed);
+   this->scca(X, Y, lambda1, lambda2, seed, ndim, mem, maxiter, tol, M);
+}
+
+void RandomPCA::scca(MatrixXd &X, MatrixXd &Y, double lambda1, double lambda2,
+   long seed, unsigned int ndim, int mem, unsigned int maxiter, double tol,
+   MatrixXd &V)
+{
    if(stand_method != STANDARDIZE_NONE)
    {
       X_meansd = standardize(X, stand_method);
@@ -534,9 +543,10 @@ void RandomPCA::scca(MatrixXd &X, MatrixXd &Y, double lambda1, double lambda2,
    verbose && STDOUT << timestamp() << " lambda1: " << lambda1 
       << " lambda2: " << lambda2 << std::endl;
 
-   unsigned int p = X.cols(), k = Y.cols();
+   unsigned int p = X.cols();
 
-   V = make_gaussian(k, ndim, seed);
+   //V = make_gaussian(k, ndim, seed);
+   this->V = V;
    U = MatrixXd::Zero(p, ndim);
    d = VectorXd::Zero(ndim); 
 

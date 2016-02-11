@@ -56,6 +56,9 @@ class RandomPCA {
       void scca(MatrixXd &X, MatrixXd &Y, double lambda1, double lambda2,
 	    long seed, unsigned int ndim, int mem,
 	    unsigned int maxiter, double tol);
+      void scca(MatrixXd &X, MatrixXd &Y, double lambda1, double lambda2,
+	    long seed, unsigned int ndim, int mem,
+	    unsigned int maxiter, double tol, MatrixXd &V);
       void zca_whiten(bool transpose);
 };
 

@@ -78,7 +78,8 @@ List flashpca_internal(Eigen::Map<Eigen::MatrixXd> X, int method, int stand,
 List scca_internal(Eigen::Map<Eigen::MatrixXd> X, Eigen::Map<Eigen::MatrixXd> Y,
    double lambda1, double lambda2, unsigned int ndim, int stand,
    int mem, long seed, int maxiter,  double tol,
-   bool verbose, unsigned int num_threads)
+   bool verbose, unsigned int num_threads, bool useV,
+   Eigen::Map<Eigen::MatrixXd> Vinit)
 {
 #ifdef _OPENMP
    omp_set_num_threads(num_threads);
@@ -90,7 +91,14 @@ List scca_internal(Eigen::Map<Eigen::MatrixXd> X, Eigen::Map<Eigen::MatrixXd> Y,
    RandomPCA rp;
    rp.stand_method = stand;
    rp.verbose = verbose;
-   rp.scca(Xm, Ym, lambda1, lambda2, seed, ndim, mem, maxiter, tol);
+
+   if(useV)
+   {
+      Eigen::MatrixXd Vm = Vinit;
+      rp.scca(Xm, Ym, lambda1, lambda2, seed, ndim, mem, maxiter, tol, Vm);
+   }
+   else
+      rp.scca(Xm, Ym, lambda1, lambda2, seed, ndim, mem, maxiter, tol);
 
    NumericMatrix U(wrap(rp.U));
    NumericMatrix V(wrap(rp.V));
