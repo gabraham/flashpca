@@ -1,7 +1,7 @@
 
 .PHONY: all
 
-VERSION=1.2.5
+VERSION=1.2.6
 
 EIGEN_INC=/usr/local/include/eigen
 BOOST_INC=/usr/local/include/boost

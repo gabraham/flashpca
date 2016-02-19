@@ -122,6 +122,13 @@ scca <- function(X, Y, lambda1=0, lambda2=0,
    storage.mode(X) <- "numeric"
    storage.mode(Y) <- "numeric"
 
+   if(!is.null(V)) {
+      V <- cbind(V)
+      if(nrow(V) < ncol(Y) || ncol(V) != ndim) {
+         stop("dimensions of V must be (nrow(Y) x (ndim))")
+      }
+   }
+
    res <- try(
       if(is.null(V)) {
 	 scca_internal(X, Y, lambda1, lambda2, ndim, stand_i, mem_i, seed, maxiter, tol,

@@ -416,7 +416,7 @@ void scca_lowmem(MatrixXd& X, MatrixXd &Y, MatrixXd& U, MatrixXd& V,
 	 v = norm_thresh(v, lambda2);
 	 V.col(j) = v;
 
-	 if((v_old.array() - v.array()).abs().maxCoeff() < tol
+	 if(iter > 0 && (v_old.array() - v.array()).abs().maxCoeff() < tol
 	       && (u_old.array() - u.array()).abs().maxCoeff() < tol)
 	 {
 	    verbose && STDOUT << timestamp() << " dim " << j << " finished in "
@@ -493,7 +493,7 @@ void scca_highmem(MatrixXd& X, MatrixXd &Y, MatrixXd& U, MatrixXd& V,
 	 v = norm_thresh(v, lambda2);
 	 V.col(j) = v;
 
-	 if((v_old.array() - v.array()).abs().maxCoeff() < tol
+	 if(iter > 0 && (v_old.array() - v.array()).abs().maxCoeff() < tol
 	       && (u_old.array() - u.array()).abs().maxCoeff() < tol)
 	 {
 	    verbose && STDOUT << timestamp() << " dim " << j << " finished in "
@@ -530,7 +530,7 @@ void RandomPCA::scca(MatrixXd &X, MatrixXd &Y, double lambda1, double lambda2,
 
 void RandomPCA::scca(MatrixXd &X, MatrixXd &Y, double lambda1, double lambda2,
    long seed, unsigned int ndim, int mem, unsigned int maxiter, double tol,
-   MatrixXd &V)
+   MatrixXd &V0)
 {
    if(stand_method != STANDARDIZE_NONE)
    {
@@ -546,7 +546,7 @@ void RandomPCA::scca(MatrixXd &X, MatrixXd &Y, double lambda1, double lambda2,
    unsigned int p = X.cols();
 
    //V = make_gaussian(k, ndim, seed);
-   this->V = V;
+   V = V0;
    U = MatrixXd::Zero(p, ndim);
    d = VectorXd::Zero(ndim); 
 

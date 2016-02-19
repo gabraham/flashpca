@@ -2,8 +2,8 @@ Package: flashpcaR
 Depends: R(>= 3.0.2)
 Type: Package
 Title: R Interface to flashpca
-Version: 1.2.5
-Date: 2015-12-01
+Version: 1.2.6
+Date: 2016-02-11
 Authors@R: c(
    person("Gad", "Abraham", , "gad.abraham@unimelb.edu.au", c("aut", "cre"))
    )
