@@ -37,7 +37,7 @@ it under the terms of the GNU General Public License as published by
 the Free Software Foundation; either version 3 of the License, or
 (at your option) any later version.
 
-Copyright (C) 2014 Gad Abraham. All rights reserved.
+Copyright (C) 2014-2016 Gad Abraham. All rights reserved.
 
 Portions of this code are based on SparSNP
 (https://github.com/gabraham/SparSNP), Copyright (C) 2011-2012 Gad Abraham
