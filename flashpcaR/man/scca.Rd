@@ -7,7 +7,7 @@
 scca(X, Y, lambda1 = 0, lambda2 = 0, stand = c("binom", "sd", "center",
   "none"), ndim = 10, maxiter = 1000, tol = 1e-04, seed = 1L,
   verbose = FALSE, num_threads = 1, mem = c("low", "high"),
-  check_geno = TRUE)
+  check_geno = TRUE, V = NULL)
 }
 \arguments{
 \item{X}{An n by p numeric matrix}
@@ -47,6 +47,9 @@ This is useful for large X and Y.}
 X and Y contain values other than {0, 1, 2}, when stand="binom". This can
 be set to FALSE if you are sure your matrices only contain these values
 (only matters when using stand="binom").}
+
+\item{V}{Numeric. A vector to initialise "v" in SCCA iterations. By
+default, it will be a vector of normally distributed variates.}
 }
 \value{
 \code{scca} returns a list containing the following components:

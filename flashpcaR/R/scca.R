@@ -37,6 +37,9 @@
 #' X and Y contain values other than {0, 1, 2}, when stand="binom". This can
 #' be set to FALSE if you are sure your matrices only contain these values
 #' (only matters when using stand="binom").
+#' 
+#' @param V Numeric. A vector to initialise "v" in SCCA iterations. By
+#' default, it will be a vector of normally distributed variates.
 #'
 #' @return \code{scca} returns a list containing the following components:
 #'

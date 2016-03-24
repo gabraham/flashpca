@@ -3,12 +3,12 @@ Depends: R(>= 3.0.2)
 Type: Package
 Title: R Interface to flashpca
 Version: 1.2.6
-Date: 2016-02-11
+Date: 2016-03-24
 Authors@R: c(
    person("Gad", "Abraham", , "gad.abraham@unimelb.edu.au", c("aut", "cre"))
    )
 Description: flashpca is an efficient implementation of random principal
-   component analysisi (PCA), useful for rapidly estimating the top principal
+   component analysis (PCA), useful for rapidly estimating the top principal
    components of data. In addition to standard PCA, flashpca implements kernal PCA
    and sparse (L1-penalized) canonical correlation analysis (SCCA).
 URL:
