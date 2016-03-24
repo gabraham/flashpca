@@ -139,10 +139,10 @@ for Eigen), although those available through apt-get tend to be older versions.
 First thin the data by LD (highly recommend
 [plink2](https://www.cog-genomics.org/plink2) for this):
    ```
-   plink --bfile data --indep-pairwise 1000 50 0.05 --exclude range exclusion_regions.txt
+   plink --bfile data --indep-pairwise 1000 50 0.05 --exclude range exclusion_regions_hg19.txt
    plink --bfile data --extract plink.prune.in --make-bed --out data_pruned
    ```
-where [exclusion_regions.txt](exclusion_regions.txt) contains:
+where [exclusion_regions_hg19.txt](exclusion_regions_hg19.txt) contains:
    ```
    5 44000000 51500000 r1
    6 25000000 33500000 r2

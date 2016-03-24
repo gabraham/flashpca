@@ -5,7 +5,7 @@
  * the Free Software Foundation; either version 3 of the License, or
  * (at your option) any later version.
  *
- * Copyright (C) 2014-2015 Gad Abraham
+ * Copyright (C) 2014-2016 Gad Abraham
  * All rights reserved.
  */
 
@@ -93,7 +93,7 @@ int main(int argc, char * argv[])
    if(vm.count("version"))
    {
       std::cerr << "flashpca " << VERSION << std::endl;
-      std::cerr << "Copyright (C) 2014-2015 Gad Abraham." << std::endl
+      std::cerr << "Copyright (C) 2014-2016 Gad Abraham." << std::endl
 	 << "This is free software; see the source for copying conditions.  There is NO"
 	 << std::endl
 	 << "warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE."

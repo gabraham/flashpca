@@ -4,7 +4,7 @@
  * the Free Software Foundation; either version 3 of the License, or
  * (at your option) any later version.
  *
- * Copyright (C) 2014-2015 Gad Abraham
+ * Copyright (C) 2014-2016 Gad Abraham
  * All rights reserved.
  */
 
