@@ -160,7 +160,7 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
    unsigned int ndim, unsigned int nextra, unsigned int maxiter, double tol,
    long seed, int kernel, double sigma, bool rbf_center,
    unsigned int rbf_sample, bool save_kernel, bool do_orth, bool do_loadings,
-   int mem)
+   int mem, bool divide_n)
 {
    unsigned int N;
 
@@ -218,18 +218,23 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
    {
       verbose && STDOUT << timestamp() << " Using linear kernel" << std::endl;
 
-      K.noalias() = X * X.transpose() / (N - 1);
+      if(divide_n)
+	 K.noalias() = X * X.transpose() / (N - 1);
+      else
+	 K.noalias() = X * X.transpose();
    }
 
    //trace = K.diagonal().array().sum() / (N - 1);
    if(mem == LOWMEM)
-      trace = X.array().square().sum() / (N - 1);
+      trace = X.array().square().sum();
    else
    {
       verbose && STDOUT << timestamp() << " dim(K): " << dim(K) << std::endl;
-
       trace = K.diagonal().array().sum();
    }
+   
+   if(divide_n)
+      trace /= (N - 1);
 
    verbose && STDOUT << timestamp() << " Trace(K): " << trace 
       << " (N: " << N << ")" << std::endl;
@@ -294,7 +299,8 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
 
    verbose && STDOUT << timestamp() << " dim(Et): " << dim(Et) << std::endl;
 
-   d = d.array() / (N - 1);
+   if(divide_n)
+      d = d.array() / (N - 1);
 
    // TODO: unlike Scholkopf, when we do kernel PCA we don't divide the
    // eigenvectors by the sqrt of each eigenvalue
@@ -305,7 +311,12 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
       // We divide Px by sqrt(N - 1) since X has not been divided
       // by it (but B has)
       Px.noalias() = X.transpose() * V;
-      VectorXd s = 1 / (d.array().sqrt() * sqrt(N - 1));
+      VectorXd s;
+      if(divide_n)
+	 s = 1 / (d.array().sqrt() * sqrt(N - 1));
+      else
+	 s = 1 / (d.array().sqrt());
+
       MatrixXd Dinv = s.asDiagonal();
       U = Px * Dinv;
    }
@@ -313,10 +324,15 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
    {
       // Px = U D = X V
       U.noalias() = Q * Et;
-      Px.noalias() = U * d.asDiagonal();
+      VectorXd dtmp = d.array().sqrt();
+      Px.noalias() = U * dtmp.asDiagonal();
       if(do_loadings)
       {
-	 VectorXd s = 1 / (d.array().sqrt() * sqrt(N - 1));
+	 VectorXd s;
+	 if(divide_n)
+	    s = 1 / (d.array().sqrt() * sqrt(N - 1));
+	 else
+	    s = 1 / (d.array().sqrt());
 	 MatrixXd Dinv = s.asDiagonal();
 	 V = X.transpose() * U * Dinv;
       }

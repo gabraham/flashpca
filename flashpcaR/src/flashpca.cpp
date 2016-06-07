@@ -14,7 +14,7 @@ List flashpca_internal(Eigen::Map<Eigen::MatrixXd> X, int method, int stand,
    unsigned int maxiter, double tol, long seed, int kernel,
    double sigma, bool rbf_center, unsigned int rbf_sample,
    bool save_kernel, bool do_orth, bool verbose, bool do_loadings,
-   int mem, bool return_scale, unsigned int num_threads)
+   int mem, bool return_scale, unsigned int num_threads, bool divide_n)
 {
 
 #ifdef _OPENMP
@@ -29,7 +29,8 @@ List flashpca_internal(Eigen::Map<Eigen::MatrixXd> X, int method, int stand,
    rp.pca(Xm, method, transpose, ndim, nextra,
       maxiter, tol, seed, kernel,
       sigma, rbf_center, rbf_sample,
-      save_kernel, do_orth, do_loadings, mem);
+      save_kernel, do_orth, do_loadings, mem,
+      divide_n);
 
    NumericMatrix U(wrap(rp.U));
    NumericMatrix P(wrap(rp.Px));

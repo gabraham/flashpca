@@ -199,6 +199,8 @@ int main(int argc, char * argv[])
       std::string m = vm["stand"].as<std::string>();
       if(m == "binom")
 	 stand_method = STANDARDIZE_BINOM;
+      if(m == "binom2")
+	 stand_method = STANDARDIZE_BINOM2;
       else if(m == "sd")
 	 stand_method = STANDARDIZE_SD;
       else if(m == "center")

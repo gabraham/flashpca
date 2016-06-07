@@ -7,8 +7,8 @@
 using namespace Rcpp;
 
 // flashpca_internal
-List flashpca_internal(Eigen::Map<Eigen::MatrixXd> X, int method, int stand, bool transpose, unsigned int ndim, unsigned int nextra, unsigned int maxiter, double tol, long seed, int kernel, double sigma, bool rbf_center, unsigned int rbf_sample, bool save_kernel, bool do_orth, bool verbose, bool do_loadings, int mem, bool return_scale, unsigned int num_threads);
-RcppExport SEXP flashpcaR_flashpca_internal(SEXP XSEXP, SEXP methodSEXP, SEXP standSEXP, SEXP transposeSEXP, SEXP ndimSEXP, SEXP nextraSEXP, SEXP maxiterSEXP, SEXP tolSEXP, SEXP seedSEXP, SEXP kernelSEXP, SEXP sigmaSEXP, SEXP rbf_centerSEXP, SEXP rbf_sampleSEXP, SEXP save_kernelSEXP, SEXP do_orthSEXP, SEXP verboseSEXP, SEXP do_loadingsSEXP, SEXP memSEXP, SEXP return_scaleSEXP, SEXP num_threadsSEXP) {
+List flashpca_internal(Eigen::Map<Eigen::MatrixXd> X, int method, int stand, bool transpose, unsigned int ndim, unsigned int nextra, unsigned int maxiter, double tol, long seed, int kernel, double sigma, bool rbf_center, unsigned int rbf_sample, bool save_kernel, bool do_orth, bool verbose, bool do_loadings, int mem, bool return_scale, unsigned int num_threads, bool divide_n);
+RcppExport SEXP flashpcaR_flashpca_internal(SEXP XSEXP, SEXP methodSEXP, SEXP standSEXP, SEXP transposeSEXP, SEXP ndimSEXP, SEXP nextraSEXP, SEXP maxiterSEXP, SEXP tolSEXP, SEXP seedSEXP, SEXP kernelSEXP, SEXP sigmaSEXP, SEXP rbf_centerSEXP, SEXP rbf_sampleSEXP, SEXP save_kernelSEXP, SEXP do_orthSEXP, SEXP verboseSEXP, SEXP do_loadingsSEXP, SEXP memSEXP, SEXP return_scaleSEXP, SEXP num_threadsSEXP, SEXP divide_nSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
@@ -32,7 +32,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type mem(memSEXP);
     Rcpp::traits::input_parameter< bool >::type return_scale(return_scaleSEXP);
     Rcpp::traits::input_parameter< unsigned int >::type num_threads(num_threadsSEXP);
-    __result = Rcpp::wrap(flashpca_internal(X, method, stand, transpose, ndim, nextra, maxiter, tol, seed, kernel, sigma, rbf_center, rbf_sample, save_kernel, do_orth, verbose, do_loadings, mem, return_scale, num_threads));
+    Rcpp::traits::input_parameter< bool >::type divide_n(divide_nSEXP);
+    __result = Rcpp::wrap(flashpca_internal(X, method, stand, transpose, ndim, nextra, maxiter, tol, seed, kernel, sigma, rbf_center, rbf_sample, save_kernel, do_orth, verbose, do_loadings, mem, return_scale, num_threads, divide_n));
     return __result;
 END_RCPP
 }

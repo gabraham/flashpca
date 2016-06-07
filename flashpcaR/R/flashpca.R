@@ -3,11 +3,11 @@
 #' @param X A numeric matrix to perform PCA on. X must not have any NAs.
 #'
 #' @param method A character string indicating which decomposition to use, one of "eigen"
-#' (eigen-decomposition of X'X / (n - 1)) or "svd" (SVD of X).
+#' (eigen-decomposition of X'X / (n - 1) or X'X, or "svd" (SVD of X).
 #'
 #' @param stand A character string indicating how to standardize X before PCA,
-#' one of "binom" (Eigenstrat-style), "sd" (zero-mean unit-variance), "center"
-#' (zero mean), or "none".
+#' one of "binom" (old Eigenstrat-style), "binom2" (new Eigenstrat-style),
+#' "sd" (zero-mean unit-variance), "center" (zero mean), or "none".
 #'
 #' @param transpose Logical. If X is transposed (samples are on columns rather
 #' than rows), set to \code{TRUE}.
@@ -46,7 +46,7 @@
 #' @param do_loadings Logical. Whether to compute loadings (matrix V from SVD).
 #'
 #' @param mem A character string, one of "high" or "low". "High" requires
-#' computing the X' X / (n - 1) covariance matrix which is memory intensive but fast if
+#' computing the X' X covariance matrix which is memory intensive but fast if
 #' using multiple threads. "Low" does not compute X' X and uses less memory,
 #' but it tends to be slightly slower.
 #'
@@ -58,12 +58,29 @@
 #' @param return_scale Logical. Whether to return the means and standard
 #' deviations used in standardizing the matrix X.
 #'
+#' @param divide_n Logical. Whether to compute the eigendecomposition
+#' of  X' X / (n - 1) or of  X' X.
 #'
+#'
+#' @details
+#'    The decomposition is either done on X'X or on X'X/(n-1), depending on
+#'    the \code{divide_n} argument. 
+#'
+#'    The data is standardised by default. \code{stand = "binom"} uses the old Eigensoft
+#'    (Price 2006) formulation of
+#'	       \deqn{p_j = sum_{i=1}^n X_{i,j} / (2 * n)}
+#'	       \deqn{mean_j = 2 * p}
+#'	       \deqn{sd_j = sqrt(p * (1 - p)),}
+#'    where j is the index for the SNP and i is the index for the sample.
+#'    Alternatively, `stand = "binom2"' uses the newer formula, which is
+#'    similar to the above except for
+#'	       \deqn{sd_j = sqrt(2 * p * (1 - p)).}
+#' 
 #' @return \code{flashpca} returns a list containing the following components:
-#'
 #' \describe{  
-#'    \item{values}{a numeric vector. The eigenvalues of X' X / (n - 1).}
-#'    \item{vectors}{a numeric matrix. The eigenvectors of X' X (n - 1), i.e., U from SVD.}
+#'    \item{values}{a numeric vector. The eigenvalues of X' X / (n - 1) or X' X.}
+#'    \item{vectors}{a numeric matrix. The eigenvectors 
+#'	 of X' X (n - 1) or X' X, i.e., U from SVD.}
 #'    \item{projection}{a numeric matrix. Equivalent to X V.}
 #'    \item{loadings}{a numeric matrix. The matrix of variable loadings, i.e., V
 #'    from SVD.}
@@ -120,11 +137,13 @@
 #'
 #' @export
 flashpca <- function(X, method=c("eigen", "svd"),
-   stand=c("binom", "sd", "center", "none"), transpose=NULL, ndim=10,
+   stand=c("binom", "binom2", "sd", "center", "none"),
+   transpose=NULL, ndim=10,
    nextra=10, maxiter=1e2, tol=1e-4, seed=1, kernel=c("linear", "rbf"),
    sigma=NULL, rbf_center=TRUE, rbf_sample=1000, save_kernel=FALSE,
    do_orth=TRUE, verbose=FALSE, num_threads=1, do_loadings=FALSE,
-   mem=c("low", "high"), check_geno=TRUE, return_scale=TRUE)
+   mem=c("low", "high"), check_geno=TRUE, return_scale=TRUE,
+   divide_n=TRUE)
 {
    method <- match.arg(method)
    stand <- match.arg(stand)
@@ -139,12 +158,17 @@ flashpca <- function(X, method=c("eigen", "svd"),
       stop("X cannot contain any missing values")
    }
 
-   if(stand == "binom" && check_geno) {
+   if(stand %in% c("binom", "binom2") && check_geno) {
       wx <- X %in% 0:2
       if(sum(wx) != length(X)) {
 	 stop(
-	    "Your data contains values other than {0, 1, 2}, stand='binom' can't be used here")
+	    "Your data contains values other than {0, 1, 2}, ",
+	    "stand='binom'/'binom2' can't be used here")
       }
+   }
+
+   if(!is.logical(divide_n)) {
+      stop("divide_n must be a logical (TRUE/FALSE)")
    }
 
    if(method == "eigen") {
@@ -159,8 +183,10 @@ flashpca <- function(X, method=c("eigen", "svd"),
       stand_i <- 1L
    } else if(stand == "binom") {
       stand_i <- 2L
-   } else if(stand == "center") {
+   } else if(stand == "binom2") {
       stand_i <- 3L
+   } else if(stand == "center") {
+      stand_i <- 4L
    } 
 
    if(kernel == "linear") {
@@ -194,7 +220,7 @@ flashpca <- function(X, method=c("eigen", "svd"),
    res <- try(
       flashpca_internal(X, method_i, stand_i, transpose, ndim, nextra, maxiter,
       tol, seed, kernel_i, sigma, rbf_center, rbf_sample, save_kernel, do_orth,
-      verbose, do_loadings, mem_i, return_scale, num_threads)
+      verbose, do_loadings, mem_i, return_scale, num_threads, divide_n)
    )
    if(is(res, "try-error")) {
       NULL

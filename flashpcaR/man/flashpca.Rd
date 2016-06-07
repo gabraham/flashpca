@@ -9,17 +9,18 @@ flashpca(X, method = c("eigen", "svd"), stand = c("binom", "sd", "center",
   tol = 1e-04, seed = 1, kernel = c("linear", "rbf"), sigma = NULL,
   rbf_center = TRUE, rbf_sample = 1000, save_kernel = FALSE,
   do_orth = TRUE, verbose = FALSE, num_threads = 1, do_loadings = FALSE,
-  mem = c("low", "high"), check_geno = TRUE, return_scale = TRUE)
+  mem = c("low", "high"), check_geno = TRUE, return_scale = TRUE,
+  divide_n = TRUE)
 }
 \arguments{
 \item{X}{A numeric matrix to perform PCA on. X must not have any NAs.}
 
 \item{method}{A character string indicating which decomposition to use, one of "eigen"
-(eigen-decomposition of X'X / (n - 1)) or "svd" (SVD of X).}
+(eigen-decomposition of X'X / (n - 1) or X'X, or "svd" (SVD of X).}
 
 \item{stand}{A character string indicating how to standardize X before PCA,
-one of "binom" (Eigenstrat-style), "sd" (zero-mean unit-variance), "center"
-(zero mean), or "none".}
+one of "binom" (old Eigenstrat-style), "binom2" (new Eigenstrat-style),
+"sd" (zero-mean unit-variance), "center" (zero mean), or "none".}
 
 \item{transpose}{Logical. If X is transposed (samples are on columns rather
 than rows), set to \code{TRUE}.}
@@ -58,7 +59,7 @@ OpenMP support.}
 \item{do_loadings}{Logical. Whether to compute loadings (matrix V from SVD).}
 
 \item{mem}{A character string, one of "high" or "low". "High" requires
-computing the X' X / (n - 1) covariance matrix which is memory intensive but fast if
+computing the X' X covariance matrix which is memory intensive but fast if
 using multiple threads. "Low" does not compute X' X and uses less memory,
 but it tends to be slightly slower.}
 
@@ -69,13 +70,16 @@ be set to FALSE if you are sure your matrix only contains these values
 
 \item{return_scale}{Logical. Whether to return the means and standard
 deviations used in standardizing the matrix X.}
+
+\item{divide_n}{Logical. Whether to compute the eigendecomposition
+of  X' X / (n - 1) or of  X' X.}
 }
 \value{
 \code{flashpca} returns a list containing the following components:
-
 \describe{  
-   \item{values}{a numeric vector. The eigenvalues of X' X / (n - 1).}
-   \item{vectors}{a numeric matrix. The eigenvectors of X' X (n - 1), i.e., U from SVD.}
+   \item{values}{a numeric vector. The eigenvalues of X' X / (n - 1) or X' X.}
+   \item{vectors}{a numeric matrix. The eigenvectors 
+ of X' X (n - 1) or X' X, i.e., U from SVD.}
    \item{projection}{a numeric matrix. Equivalent to X V.}
    \item{loadings}{a numeric matrix. The matrix of variable loadings, i.e., V
    from SVD.}
@@ -85,6 +89,20 @@ deviations used in standardizing the matrix X.}
 }
 \description{
 Principal Component Analysis using flashpca
+}
+\details{
+The decomposition is either done on X'X or on X'X/(n-1), depending on
+   the \code{divide_n} argument. 
+
+   The data is standardised by default. \code{stand = "binom"} uses the old Eigensoft
+   (Price 2006) formulation of
+       \deqn{p_j = sum_{i=1}^n X_{i,j} / (2 * n)}
+       \deqn{mean_j = 2 * p}
+       \deqn{sd_j = sqrt(p * (1 - p)),}
+   where j is the index for the SNP and i is the index for the sample.
+   Alternatively, `stand = "binom2"' uses the newer formula, which is
+   similar to the above except for
+       \deqn{sd_j = sqrt(2 * p * (1 - p)).}
 }
 \examples{
 

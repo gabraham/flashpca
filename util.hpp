@@ -34,7 +34,8 @@
 #define STANDARDIZE_NONE 0
 #define STANDARDIZE_SD 1
 #define STANDARDIZE_BINOM 2
-#define STANDARDIZE_CENTER 3
+#define STANDARDIZE_BINOM2 3
+#define STANDARDIZE_CENTER 4
 
 using namespace Eigen;
 

@@ -55,6 +55,21 @@ MatrixXd standardize(MatrixXd& X, int method, bool verbose)
 	    X.col(j) = (X.col(j).array() - mean(j)) / sd(j);
       }
    }
+   else if(method == STANDARDIZE_BINOM2)
+   {
+      verbose && STDOUT << timestamp() << " standardizing matrix (BINOM2)" 
+	 << " p: " << p << std::endl;
+
+      double r;
+      for(unsigned int j = 0 ; j < p ; j++)
+      {
+	 mean(j) = X.col(j).sum() / n;
+	 r = mean(j) / 2.0;
+	 sd(j) = sqrt(2.0 * r * (1 - r)); // note the factor of 2
+	 if(sd(j) > VAR_TOL)
+	    X.col(j) = (X.col(j).array() - mean(j)) / sd(j);
+      }
+   }
    else if(method == STANDARDIZE_CENTER)
    {
       for(unsigned int j = 0 ; j < p ; j++)
@@ -111,6 +126,22 @@ MatrixXd standardize_transpose(MatrixXd& X, int method, bool verbose)
 	 mean(j) = X.row(j).sum() / n;
 	 r = mean(j) / 2.0;
 	 sd(j) = sqrt(r * (1 - r));
+	 if(sd(j) > VAR_TOL)
+	    X.row(j) = (X.row(j).array() - mean(j)) / sd(j);
+      }
+   }
+   else if(method == STANDARDIZE_BINOM2)
+   {
+      verbose && STDOUT << timestamp() 
+	 << " standardizing transposed matrix (BINOM2)"
+	 << " p: " << p << std::endl;
+
+      double r;
+      for(unsigned int j = 0 ; j < p ; j++)
+      {
+	 mean(j) = X.row(j).sum() / n;
+	 r = mean(j) / 2.0;
+	 sd(j) = sqrt(2 * r * (1 - r)); // Note the factor of 2
 	 if(sd(j) > VAR_TOL)
 	    X.row(j) = (X.row(j).array() - mean(j)) / sd(j);
       }
