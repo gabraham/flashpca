@@ -54,10 +54,12 @@ int main(int argc, char * argv[])
       ("ndim", po::value<int>(), "number of PCs to output")
       ("nextra", po::value<int>(),
 	 "number of extra dimensions to use in randomized PCA")
-      ("stand", po::value<std::string>(), "standardization method [binom | none | sd | center]")
+      ("stand", po::value<std::string>(),
+	 "standardization method [binom | binom2 | none | sd | center]")
       ("method", po::value<std::string>(), "PCA method [eigen | svd]")
       ("orth", po::value<std::string>(), "use orthornormalization [yes | no]")
       ("mem", po::value<std::string>(), "SCCA/PCA method [low | high]")
+      ("no_divide_n", "whether to divide X'X by n - 1")
       ("outpc", po::value<std::string>(), "PC output file")
       ("outpcx", po::value<std::string>(), "X PC output file, for CCA")
       ("outpcy", po::value<std::string>(), "Y PC output file, for CCA")
@@ -199,7 +201,7 @@ int main(int argc, char * argv[])
       std::string m = vm["stand"].as<std::string>();
       if(m == "binom")
 	 stand_method = STANDARDIZE_BINOM;
-      if(m == "binom2")
+      else if(m == "binom2")
 	 stand_method = STANDARDIZE_BINOM2;
       else if(m == "sd")
 	 stand_method = STANDARDIZE_SD;
@@ -439,6 +441,8 @@ int main(int argc, char * argv[])
       }
    }
 
+   bool divide_n = !vm.count("no_divide_n");
+
    ////////////////////////////////////////////////////////////////////////////////
    // End command line parsing
       
@@ -485,7 +489,7 @@ int main(int argc, char * argv[])
       std::cout << timestamp() << " PCA begin" << std::endl;
       rpca.pca(data.X, method, transpose, n_dim, n_extra, maxiter,
          tol, seed, kernel, sigma, rbf_center, rbf_sample, save_kernel,
-	 do_orth, do_loadings, mem);
+	 do_orth, do_loadings, mem, divide_n);
       std::cout << timestamp() << " PCA done" << std::endl;
    }
    //else if(mode == MODE_CCA)
