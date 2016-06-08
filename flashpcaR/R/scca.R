@@ -9,8 +9,9 @@
 #' @param lambda2 Numeric. Non-negative L1 penalty on canonical vectors of Y.
 #"
 #' @param stand Character. One of "binom" (zero mean, unit variance
-#' where variance is 2*p*(1-p), for SNP data),
-#' "sd" (zero-mean, unit variance), "center" (zero mean), or "none". Note
+#' where variance is p * (1 - p), for SNP data), "binom2" (zero mean, unit
+#' variance where variance is 2 * p * (1 - p),
+#' "sd" (zero-mean, unit Gaussian variance), "center" (zero mean), or "none". Note
 #' that if you use "binom" for non-SNP data you may get garbage. Note that
 #' currently the same standardization is applied to both X and Y. If you
 #' require different standardizations, it's best to standardize yourself
@@ -71,7 +72,7 @@
 #'
 #' @export
 scca <- function(X, Y, lambda1=0, lambda2=0,
-   stand=c("binom", "sd", "center", "none"),
+   stand=c("binom", "binom2", "sd", "center", "none"),
    ndim=10, maxiter=1e3, tol=1e-4, seed=1L, verbose=FALSE, num_threads=1,
    mem=c("low", "high"), check_geno=TRUE, V=NULL)
 {
@@ -108,8 +109,10 @@ scca <- function(X, Y, lambda1=0, lambda2=0,
       stand_i <- 1L
    } else if(stand == "binom") {
       stand_i <- 2L
-   } else if(stand == "center") {
+   } else if(stand == "binom2") {
       stand_i <- 3L
+   } else if(stand == "center") {
+      stand_i <- 4L
    }
 
    maxdim <- min(dim(X))
@@ -147,3 +150,4 @@ scca <- function(X, Y, lambda1=0, lambda2=0,
       res
    }
 }
+

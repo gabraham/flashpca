@@ -5,6 +5,10 @@ context("Checking SCCA")
 ## - canonical correlations, i.e., diag(cor(Px, Py)), are equal to 1.
 ## - and that the canonical covariances ``d'' are the same as the eigenvalues
 ## of X^T X.
+##
+## We use very small penalisation so as to give very close results to
+## classic eigen-decomposition.
+
 
 n <- 500
 p <- 100
@@ -40,6 +44,8 @@ test_that("Testing self-self SCCA (X with X)", {
 })
 
 test_that("Testing self-self SCCA with stand='sd'", {
+   # X0 is already unit-variance so scaling within scca is moot but still
+   # useful as a sanity check
    s <- scca(X0, X0, lambda1=l1, lambda2=l2, ndim=ndim, stand="sd")
    eval <- eigen(crossprod(X0))$val[1:ndim]
    r <- diag(cor(s$Px, s$Py))
@@ -48,6 +54,7 @@ test_that("Testing self-self SCCA with stand='sd'", {
 })
 
 test_that("Testing self-self SCCA with stand='none'", {
+   # X0 is already unit-variance so not scaling within scca is ok
    s <- scca(X0, X0, lambda1=l1, lambda2=l2, ndim=ndim, stand="none")
    eval <- eigen(crossprod(X0))$val[1:ndim]
    r <- diag(cor(s$Px, s$Py))
@@ -56,6 +63,8 @@ test_that("Testing self-self SCCA with stand='none'", {
 })
 
 test_that("Testing self-self SCCA with stand='center'", {
+   # X0 is already zero-mean so scaling within scca is moot but still
+   # useful as a sanity check
    s <- scca(X0, X0, lambda1=l1, lambda2=l2, ndim=ndim, stand="center")
    eval <- eigen(crossprod(X0))$val[1:ndim]
    r <- diag(cor(s$Px, s$Py))
