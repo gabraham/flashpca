@@ -27,7 +27,7 @@ UNAME := $(shell uname)
 ifeq ($(UNAME), Darwin)
    CXXFLAGS += -msse2 -DEIGEN_DONT_PARALLELIZE
 else
-   CXXFLAGS += -march=native
+   CXXFLAGS += -march=native -fopenmp
 endif
 
 BOOST = -L${BOOST_LIB} \
@@ -37,25 +37,25 @@ BOOST = -L${BOOST_LIB} \
    -lboost_program_options
 
 debug: LDFLAGS = $(BOOST)
-debug: CXXFLAGS += -O0 -ggdb3 -DVERSION=\"$(VERSION)\" -fopenmp
+debug: CXXFLAGS += -O0 -ggdb3 -DVERSION=\"$(VERSION)\"
 debug: $(OBJ)
 	$(CXX) $(CXXFLAGS) -o flashpca $^ $(LDFLAGS)
 
 flashpca: LDFLAGS = $(BOOST)
 flashpca: CXXFLAGS += -g -O3 -DNDEBUG -DVERSION=\"$(VERSION)\" \
-   -funroll-loops -ftree-vectorize -ffast-math -fopenmp
+   -funroll-loops -ftree-vectorize -ffast-math
 flashpca: flashpca.o randompca.o data.o util.o
 	$(CXX) $(CXXFLAGS) -o flashpca $^ $(LDFLAGS)
 
 predict: LDFLAGS = $(BOOST)
 predict: CXXFLAGS += -g -O3 -DNDEBUG -DVERSION=\"$(VERSION)\" \
-   -funroll-loops -ftree-vectorize -ffast-math -fopenmp
+   -funroll-loops -ftree-vectorize -ffast-math
 predict: $(OBJ2)
 	$(CXX) $(CXXFLAGS) -o predict $^ $(LDFLAGS)
 
 flashpca_x86-64: LDFLAGS = $(BOOST) -Wl,--whole-archive -lpthread -Wl,--no-whole-archive
 flashpca_x86-64: CXXFLAGS += -g -O3 -DNDEBUG -DVERSION=\"$(VERSION)\" \
-   -funroll-loops -ftree-vectorize -ffast-math -fopenmp -static
+   -funroll-loops -ftree-vectorize -ffast-math -static
 flashpca_x86-64: $(OBJ)
 	$(CXX) $(CXXFLAGS) -o flashpca_x86-64 $^ $(LDFLAGS)
 
