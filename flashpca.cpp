@@ -233,7 +233,7 @@ int main(int argc, char * argv[])
       }
    }
 
-   int mem = HIGHMEM;
+   int mem = LOWMEM;
    if(vm.count("mem"))
    {
       std::string m = vm["mem"].as<std::string>();
