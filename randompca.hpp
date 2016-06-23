@@ -61,5 +61,6 @@ class RandomPCA {
 	    long seed, unsigned int ndim, int mem,
 	    unsigned int maxiter, double tol, MatrixXd &V);
       void zca_whiten(bool transpose);
+      void univcca(MatrixXd &X, MatrixXd &Y);
 };
 

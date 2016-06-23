@@ -156,6 +156,24 @@ MatrixXd rbf_kernel(MatrixXd& X, const double sigma, bool rbf_center,
    return K;
 }
 
+template <typename Derived>
+double var(const MatrixBase<Derived>& x)
+{
+   const unsigned int n = x.size();
+   const double mean = x.array().sum() / n;
+   return (x.array() - mean).array().pow(2).sum() / (n - 1);
+}
+
+template <typename DerivedA, typename DerivedB>
+MatrixXd cov(const MatrixBase<DerivedA>& X, const MatrixBase<DerivedB>& Y)
+{
+   const unsigned int n = X.rows();
+   const RowVectorXd xmean = X.colwise().sum() / n;
+   const RowVectorXd ymean = X.colwise().sum() / n;
+
+   return (X.rowwise() - xmean).transpose() * (Y.rowwise() - ymean) / (n - 1);
+}
+
 void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
    unsigned int ndim, unsigned int nextra, unsigned int maxiter, double tol,
    long seed, int kernel, double sigma, bool rbf_center,
@@ -573,5 +591,37 @@ void RandomPCA::scca(MatrixXd &X, MatrixXd &Y, double lambda1, double lambda2,
 
    Px = X * U;
    Py = Y * V;
+}
+
+void RandomPCA::univcca(MatrixXd &X, MatrixXd &Y)
+{
+   // w <- !is.na(X[,j]) & rowSums(is.na(Y) == 0)
+   // nf[j] <- sum(w)
+   // s11 <- var(X[w, j])
+   // s12 <- cov(X[w,j], Y[w,])
+   // sy <- svd(Y / sqrt(nf[j] - 1))
+   // s22.inv <- with(sy, v %*% tcrossprod(diag(1 / d^2), v))
+   // r[j] <- sqrt((1 / s11) * s12 %*% s22.inv %*% t(s12))
+
+   if(stand_method != STANDARDIZE_NONE)
+   {
+      X_meansd = standardize(X, stand_method);
+      Y_meansd = standardize(Y, stand_method);
+   }
+
+   unsigned int p = X.cols();
+   double varx;
+   MatrixXd covXY;
+
+   JacobiSVD<MatrixXd> svd(Y, ComputeThinU | ComputeThinV);
+   VectorXd d = svd.singularValues().array().pow(-2);
+   MatrixXd covYinv = svd.matrixV() * d.diagonal() * svd.matrixV().transpose();
+
+   for(unsigned int j = 0 ; j < p ; j++)
+   {
+      varx = var(X.col(j));
+      covXY = cov(X.col(j), Y);
+      
+   }
 }
 
