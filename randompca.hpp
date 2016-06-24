@@ -43,8 +43,9 @@ class RandomPCA {
       double trace;
       VectorXd pve;
       MatrixXd X_meansd, Y_meansd;
+      ArrayXXd res;
 
-      int stand_method;
+      int stand_method_x, stand_method_y;
       long seed;
       bool verbose;
       bool debug;

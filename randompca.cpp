@@ -206,14 +206,14 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
 
    if(transpose)
    {
-      if(stand_method != STANDARDIZE_NONE)
-	  X_meansd = standardize_transpose(X, stand_method, verbose);
+      if(stand_method_x != STANDARDIZE_NONE)
+	  X_meansd = standardize_transpose(X, stand_method_x, verbose);
       N = X.cols();
    }
    else
    {
-      if(stand_method != STANDARDIZE_NONE)
-	 X_meansd = standardize(X, stand_method, verbose);
+      if(stand_method_x != STANDARDIZE_NONE)
+	 X_meansd = standardize(X, stand_method_x, verbose);
       N = X.rows();
    }
 
@@ -577,10 +577,10 @@ void RandomPCA::scca(MatrixXd &X, MatrixXd &Y, double lambda1, double lambda2,
    long seed, unsigned int ndim, int mem, unsigned int maxiter, double tol,
    MatrixXd &V0)
 {
-   if(stand_method != STANDARDIZE_NONE)
+   if(stand_method_x != STANDARDIZE_NONE)
    {
-      X_meansd = standardize(X, stand_method);
-      Y_meansd = standardize(Y, stand_method);
+      X_meansd = standardize(X, stand_method_x);
+      Y_meansd = standardize(Y, stand_method_x);
    }
 
    verbose && STDOUT << timestamp() << " dim(X): " << dim(X) << std::endl;

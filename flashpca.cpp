@@ -55,8 +55,10 @@ int main(int argc, char * argv[])
       ("ndim", po::value<int>(), "number of PCs to output")
       ("nextra", po::value<int>(),
 	 "number of extra dimensions to use in randomized PCA")
-      ("stand", po::value<std::string>(),
-	 "standardization method [binom | binom2 | none | sd | center]")
+      ("standx,stand", po::value<std::string>(),
+	 "standardization method for genotypes [binom | binom2 | none | sd | center] (alias: stand)")
+      ("standy", po::value<std::string>(),
+	 "standardization method for phenotypes [binom | binom2 | none | sd | center]")
       ("method", po::value<std::string>(), "PCA method [eigen | svd]")
       ("orth", po::value<std::string>(), "use orthornormalization [yes | no]")
       ("mem", po::value<std::string>(), "SCCA/PCA method [low | high]")
@@ -73,7 +75,7 @@ int main(int argc, char * argv[])
       ("outmeansd", po::value<std::string>(), "Mean+SD (used to standardize SNPs) output file")
       ("whiten", "whiten the data")
       ("outwhite", po::value<std::string>(), "whitened data output file")
-      ("v", "verbose")
+      ("verbose,v", "verbose")
       ("maxiter", po::value<int>(), "maximum number of randomized PCA iterations")
       ("tol", po::value<double>(), "tolerance for randomized PCA iterations")
       ("transpose", "force a transpose of the data, if possible")
@@ -198,23 +200,45 @@ int main(int argc, char * argv[])
       }
    }
    
-   int stand_method = STANDARDIZE_BINOM;
-   if(vm.count("stand"))
+   int stand_method_x = STANDARDIZE_BINOM;
+   if(vm.count("standx"))
    {
-      std::string m = vm["stand"].as<std::string>();
+      std::string m = vm["standx"].as<std::string>();
       if(m == "binom")
-	 stand_method = STANDARDIZE_BINOM;
+	 stand_method_x = STANDARDIZE_BINOM;
       else if(m == "binom2")
-	 stand_method = STANDARDIZE_BINOM2;
+	 stand_method_x = STANDARDIZE_BINOM2;
       else if(m == "sd")
-	 stand_method = STANDARDIZE_SD;
+	 stand_method_x = STANDARDIZE_SD;
       else if(m == "center")
-	 stand_method = STANDARDIZE_CENTER;
+	 stand_method_x = STANDARDIZE_CENTER;
       else if(m == "none")
-	 stand_method = STANDARDIZE_NONE;
+	 stand_method_x = STANDARDIZE_NONE;
       else
       {
-	 std::cerr << "Error: unknown standardization method (--stand): "
+	 std::cerr << "Error: unknown standardization method (--standx): "
+	    << m << std::endl;
+	 return EXIT_FAILURE;
+      }
+   }
+
+   int stand_method_y = STANDARDIZE_SD;
+   if(vm.count("standy"))
+   {
+      std::string m = vm["standy"].as<std::string>();
+      if(m == "binom")
+	 stand_method_x = STANDARDIZE_BINOM;
+      else if(m == "binom2")
+	 stand_method_x = STANDARDIZE_BINOM2;
+      else if(m == "sd")
+	 stand_method_x = STANDARDIZE_SD;
+      else if(m == "center")
+	 stand_method_x = STANDARDIZE_CENTER;
+      else if(m == "none")
+	 stand_method_x = STANDARDIZE_NONE;
+      else
+      {
+	 std::cerr << "Error: unknown standardization method (--standy): "
 	    << m << std::endl;
 	 return EXIT_FAILURE;
       }
@@ -476,7 +500,8 @@ int main(int argc, char * argv[])
    RandomPCA rpca;
    rpca.verbose = verbose;
    rpca.debug = debug;
-   rpca.stand_method = stand_method;
+   rpca.stand_method_x = stand_method_x;
+   rpca.stand_method_y = stand_method_y;
    unsigned int max_dim = fminl(data.X.rows(), data.X.cols());
    
    if(n_dim == 0)
