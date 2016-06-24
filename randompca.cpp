@@ -165,13 +165,24 @@ double var(const MatrixBase<Derived>& x)
 }
 
 template <typename DerivedA, typename DerivedB>
-MatrixXd cov(const MatrixBase<DerivedA>& X, const MatrixBase<DerivedB>& Y)
+RowVectorXd cov(const MatrixBase<DerivedA>& X, const MatrixBase<DerivedB>& Y)
 {
    const unsigned int n = X.rows();
    const RowVectorXd xmean = X.colwise().sum() / n;
    const RowVectorXd ymean = X.colwise().sum() / n;
 
    return (X.rowwise() - xmean).transpose() * (Y.rowwise() - ymean) / (n - 1);
+}
+
+ArrayXd wilks(const ArrayXd& r2, unsigned int n, unsigned int k)
+{
+   ArrayXd lambda = 1 - r2;
+   boost::math::fisher_f pf(k, n - k - 1);
+   ArrayXd pval(r2.size());
+   for(unsigned int i = 0 ; i < r2.size() ; i++)
+      pval(i) = cdf(complement(pf, r2(i)));
+
+   return pval;
 }
 
 void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
@@ -593,7 +604,7 @@ void RandomPCA::scca(MatrixXd &X, MatrixXd &Y, double lambda1, double lambda2,
    Py = Y * V;
 }
 
-void RandomPCA::univcca(MatrixXd &X, MatrixXd &Y)
+void RandomPCA::ucca(MatrixXd &X, MatrixXd &Y)
 {
    // w <- !is.na(X[,j]) & rowSums(is.na(Y) == 0)
    // nf[j] <- sum(w)
@@ -611,17 +622,20 @@ void RandomPCA::univcca(MatrixXd &X, MatrixXd &Y)
 
    unsigned int p = X.cols();
    double varx;
-   MatrixXd covXY;
+   RowVectorXd covXY;
 
    JacobiSVD<MatrixXd> svd(Y, ComputeThinU | ComputeThinV);
    VectorXd d = svd.singularValues().array().pow(-2);
    MatrixXd covYinv = svd.matrixV() * d.diagonal() * svd.matrixV().transpose();
+   ArrayXd r2(p);
 
    for(unsigned int j = 0 ; j < p ; j++)
    {
       varx = var(X.col(j));
       covXY = cov(X.col(j), Y);
-      
+      r2(j) = 1.0 / varx * covXY * covYinv * covXY.transpose();
    }
+
+   ArrayXd pval = wilks(r2, X.rows(), Y.cols());
 }
 

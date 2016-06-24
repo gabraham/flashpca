@@ -17,6 +17,8 @@
 #include <boost/random/normal_distribution.hpp>
 #include <boost/random/uniform_real_distribution.hpp>
 #include <boost/random/variate_generator.hpp>
+#include <boost/math/distributions.hpp>
+#include <boost/math/distributions/fisher_f.hpp>
 
 using namespace Eigen;
 
@@ -29,6 +31,7 @@ using namespace Eigen;
 #define MODE_PCA 1
 #define MODE_CCA 2
 #define MODE_SCCA 3
+#define MODE_UCCA 4
 
 #define LOWMEM 1
 #define HIGHMEM 2
@@ -61,6 +64,6 @@ class RandomPCA {
 	    long seed, unsigned int ndim, int mem,
 	    unsigned int maxiter, double tol, MatrixXd &V);
       void zca_whiten(bool transpose);
-      void univcca(MatrixXd &X, MatrixXd &Y);
+      void ucca(MatrixXd &X, MatrixXd &Y);
 };
 

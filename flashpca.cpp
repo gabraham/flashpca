@@ -44,6 +44,7 @@ int main(int argc, char * argv[])
    desc.add_options()
       ("help", "produce help message")
       ("scca", "perform sparse canonical correlation analysis (SCCA)")
+      ("ucca", "perform per-SNP canonical correlation analysis")
       ("numthreads", po::value<int>(), "set number of OpenMP threads")
       ("seed", po::value<long>(), "set random seed")
       ("bed", po::value<std::string>(), "PLINK bed file")
@@ -119,6 +120,8 @@ int main(int argc, char * argv[])
    }
    else if(vm.count("scca"))
       mode = MODE_SCCA;
+   else if(vm.count("ucca"))
+      mode = MODE_UCCA;
 
    int num_threads = 1;
    if(vm.count("numthreads"))
@@ -166,7 +169,7 @@ int main(int argc, char * argv[])
 
    if(vm.count("pheno"))
       pheno_file = vm["pheno"].as<std::string>();
-   else if(mode == MODE_CCA) 
+   else if(mode == MODE_CCA || mode == MODE_UCCA) 
    {
       std::cerr << "Error: you must specify a phenotype file "
 	 "in CCA mode using --pheno" << std::endl;
@@ -460,7 +463,7 @@ int main(int argc, char * argv[])
    data.verbose = verbose;
    std::cout << timestamp() << " seed: " << data.seed << std::endl;
 
-   if(mode == MODE_CCA || mode == MODE_SCCA)
+   if(mode == MODE_CCA || mode == MODE_SCCA || mode == MODE_UCCA)
       data.read_pheno(pheno_file.c_str(), 3);
    else
       data.read_pheno(fam_file.c_str(), 6);
@@ -504,6 +507,12 @@ int main(int argc, char * argv[])
       rpca.scca(data.X, data.Y, lambda1, lambda2, seed, n_dim, mem,
 	 maxiter, tol);
       std::cout << timestamp() << " SCCA done" << std::endl;
+   }
+   else if(mode == MODE_UCCA)
+   {
+      std::cout << timestamp() << " UCCA begin" << std::endl;
+      rpca.ucca(data.X, data.Y);
+      std::cout << timestamp() << " UCCA done" << std::endl;
    }
 
    ////////////////////////////////////////////////////////////////////////////////
