@@ -20,6 +20,8 @@
 #include <boost/math/distributions.hpp>
 #include <boost/math/distributions/fisher_f.hpp>
 
+#include "data.hpp"
+
 using namespace Eigen;
 
 #define METHOD_EIGEN 1
@@ -32,6 +34,9 @@ using namespace Eigen;
 #define MODE_CCA 2
 #define MODE_SCCA 3
 #define MODE_UCCA 4
+
+#define MEM_MODE_OFFLINE 1
+#define MEM_MODE_ONLINE 2
 
 #define LOWMEM 1
 #define HIGHMEM 2
@@ -58,6 +63,14 @@ class RandomPCA {
 	    unsigned int rbf_sample, bool save_kernel,
 	    bool do_orth, bool do_loadings, int mem,
 	    bool divide_n);
+      void pca(Data &dat,
+	    int method, bool transpose,
+	    unsigned int ndim, unsigned int nextra,
+	    unsigned int maxiter, double tol, long seed,
+	    int kernel, double sigma, bool rbf_center,
+	    unsigned int rbf_sample, bool save_kernel,
+	    bool do_orth, bool do_loadings, int mem,
+	    bool divide_n);
       void scca(MatrixXd &X, MatrixXd &Y, double lambda1, double lambda2,
 	    long seed, unsigned int ndim, int mem,
 	    unsigned int maxiter, double tol);
@@ -66,5 +79,6 @@ class RandomPCA {
 	    unsigned int maxiter, double tol, MatrixXd &V);
       void zca_whiten(bool transpose);
       void ucca(MatrixXd &X, MatrixXd &Y);
+      void ucca(Data &dat);
 };
 

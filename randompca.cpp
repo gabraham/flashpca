@@ -192,6 +192,16 @@ ArrayXXd wilks(const ArrayXd& r2, unsigned int n, unsigned int k)
    return res;
 }
 
+// stub for now
+void RandomPCA::pca(Data& dat, int method, bool transpose,
+   unsigned int ndim, unsigned int nextra, unsigned int maxiter, double tol,
+   long seed, int kernel, double sigma, bool rbf_center,
+   unsigned int rbf_sample, bool save_kernel, bool do_orth, bool do_loadings,
+   int mem, bool divide_n)
+{
+   
+}
+
 void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
    unsigned int ndim, unsigned int nextra, unsigned int maxiter, double tol,
    long seed, int kernel, double sigma, bool rbf_center,
@@ -613,14 +623,6 @@ void RandomPCA::scca(MatrixXd &X, MatrixXd &Y, double lambda1, double lambda2,
 
 void RandomPCA::ucca(MatrixXd &X, MatrixXd &Y)
 {
-   // w <- !is.na(X[,j]) & rowSums(is.na(Y) == 0)
-   // nf[j] <- sum(w)
-   // s11 <- var(X[w, j])
-   // s12 <- cov(X[w,j], Y[w,])
-   // sy <- svd(Y / sqrt(nf[j] - 1))
-   // s22.inv <- with(sy, v %*% tcrossprod(diag(1 / d^2), v))
-   // r[j] <- sqrt((1 / s11) * s12 %*% s22.inv %*% t(s12))
-
    if(stand_method_x != STANDARDIZE_NONE)
       X_meansd = standardize(X, stand_method_x);
 
@@ -639,16 +641,6 @@ void RandomPCA::ucca(MatrixXd &X, MatrixXd &Y)
    MatrixXd covYinv = svd.matrixV() * d2.asDiagonal() * svd.matrixV().transpose();
    ArrayXd r2 = ArrayXd(p);
 
-   //const RowVectorXd xmean = X.colwise().sum() / n;
-   //const RowVectorXd ymean = Y.colwise().sum() / n;
-
-   //std::cout << "X:" << std::endl;
-   //std::cout << X.col(0).rowwise() - xmean << std::endl << std::endl;
-   //std::cout << "Y:" << std::endl;
-   //std::cout << Y.rowwise() - ymean << std::endl << std::endl;
-   //std::cout << "cov:" << std::endl;
-   //std::cout << cov(X.col(0), Y) << std::endl;
-
    for(unsigned int j = 0 ; j < p ; j++)
    {
       varx = var(X.col(j));
@@ -660,5 +652,40 @@ void RandomPCA::ucca(MatrixXd &X, MatrixXd &Y)
    }
 
    res = wilks(r2, X.rows(), Y.cols());
+}
+
+void RandomPCA::ucca(Data& data)
+{
+   if(stand_method_y != STANDARDIZE_NONE)
+      Y_meansd = standardize(data.Y, stand_method_y);
+
+   unsigned int n = data.N;
+   unsigned int p = data.nsnps;
+   double varx;
+   RowVectorXd covXY;
+
+   std::cout << "ucca online mode, N=" << n << " p=" << p << std::endl;
+
+   JacobiSVD<MatrixXd> svd(data.Y, ComputeThinU | ComputeThinV);
+   VectorXd d = svd.singularValues() / sqrt(n - 1);
+   VectorXd d2 = d.array().pow(-2);
+   MatrixXd V = svd.matrixV();
+   MatrixXd covYinv = svd.matrixV() * d2.asDiagonal() * svd.matrixV().transpose();
+   ArrayXd r2 = ArrayXd(p);
+
+   for(unsigned int j = 0 ; j < p ; j++)
+   {
+      data.read_snp_block(j, j, false);
+      if(stand_method_x != STANDARDIZE_NONE)
+	 X_meansd = standardize(data.X, stand_method_x);
+      varx = var(data.X.col(0));
+      covXY = cov(data.X.col(0), data.Y);
+
+      // take absolute value to prevent numerical issues with negative numbers
+      // close to zero
+      r2(j) = fabs(1.0 / varx * covXY * covYinv * covXY.transpose());
+   }
+
+   res = wilks(r2, n, data.Y.cols());
 }
 

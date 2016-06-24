@@ -67,12 +67,22 @@ class Data {
       
       Data(long seed);
       ~Data();
+      void prepare();
+      void finish();
       void read_bed(bool transpose);
+      void read_snp_block(unsigned int start_idx, unsigned int stop_idx,
+	 bool transpose);
       void get_size();
       void read_pheno(const char *filename, unsigned int firstcol);
       MatrixXd read_plink_pheno(const char *filename, unsigned int firstcol);
 
       std::string tolower(const std::string& v);
+
+   private:
+      unsigned char *tmp, *tmp2;
+      std::ifstream in;
+      double* avg;
+      VectorXd tmpx;
 };
 
 

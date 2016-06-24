@@ -45,6 +45,7 @@ int main(int argc, char * argv[])
       ("help", "produce help message")
       ("scca", "perform sparse canonical correlation analysis (SCCA)")
       ("ucca", "perform per-SNP canonical correlation analysis")
+      ("online", "don't load all genotypes into RAM at once")
       ("numthreads", po::value<int>(), "set number of OpenMP threads")
       ("seed", po::value<long>(), "set random seed")
       ("bed", po::value<std::string>(), "PLINK bed file")
@@ -124,6 +125,8 @@ int main(int argc, char * argv[])
       mode = MODE_SCCA;
    else if(vm.count("ucca"))
       mode = MODE_UCCA;
+
+   int mem_mode = vm.count("online") ? MEM_MODE_ONLINE : MEM_MODE_OFFLINE;
 
    int num_threads = 1;
    if(vm.count("numthreads"))
@@ -495,7 +498,17 @@ int main(int argc, char * argv[])
    data.geno_filename = geno_file.c_str();
    data.get_size();
    transpose = mode == MODE_PCA && (transpose || data.N > data.nsnps);
-   data.read_bed(transpose);
+
+   if(mem_mode == MEM_MODE_OFFLINE)
+   {
+      data.prepare();
+      data.read_bed(transpose);
+      data.finish();
+   }
+   else if(mem_mode == MEM_MODE_ONLINE)
+   {
+      data.prepare();
+   }
    
    RandomPCA rpca;
    rpca.verbose = verbose;
@@ -515,9 +528,15 @@ int main(int argc, char * argv[])
    if(mode == MODE_PCA)
    {
       std::cout << timestamp() << " PCA begin" << std::endl;
-      rpca.pca(data.X, method, transpose, n_dim, n_extra, maxiter,
-         tol, seed, kernel, sigma, rbf_center, rbf_sample, save_kernel,
-	 do_orth, do_loadings, mem, divide_n);
+
+      if(mem_mode == MEM_MODE_OFFLINE)
+	 rpca.pca(data.X, method, transpose, n_dim, n_extra, maxiter,
+	    tol, seed, kernel, sigma, rbf_center, rbf_sample, save_kernel,
+	    do_orth, do_loadings, mem, divide_n);
+      else
+	 rpca.pca(data, method, transpose, n_dim, n_extra, maxiter,
+	    tol, seed, kernel, sigma, rbf_center, rbf_sample, save_kernel,
+	    do_orth, do_loadings, mem, divide_n);
       std::cout << timestamp() << " PCA done" << std::endl;
    }
    //else if(mode == MODE_CCA)
@@ -536,8 +555,19 @@ int main(int argc, char * argv[])
    else if(mode == MODE_UCCA)
    {
       std::cout << timestamp() << " UCCA begin" << std::endl;
-      rpca.ucca(data.X, data.Y);
+      if(mem_mode == MEM_MODE_OFFLINE)
+	 rpca.ucca(data.X, data.Y);
+      else
+	 rpca.ucca(data);
       std::cout << timestamp() << " UCCA done" << std::endl;
+   }
+
+
+   ////////////////////////////////////////////////////////////////////////////////
+   //  Close open files if in online mode
+   if(mem_mode == MEM_MODE_ONLINE)
+   {
+      data.finish();
    }
 
    ////////////////////////////////////////////////////////////////////////////////
