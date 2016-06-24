@@ -65,9 +65,11 @@ void load(const char *filename, MatrixBase<Derived>& m)
    f.read((char*)m.derived().data(), sizeof(typename Derived::Scalar) * nrows * ncols);
 }
 
-template <typename Derived>
-bool save_text(MatrixBase<Derived>& m, const char *filename,
-   unsigned int precision=6)
+template <typename Derived, typename T>
+bool save_text(MatrixBase<Derived>& m,
+   const std::vector<T>& colnames,
+   const char *filename,
+   const unsigned int precision=6)
 {
    std::ofstream out(filename, std::ofstream::out);
    out << std::setprecision(precision);
@@ -79,7 +81,18 @@ bool save_text(MatrixBase<Derived>& m, const char *filename,
 #endif
       return false;
    }
-   out << m << std::endl;
+
+   for(unsigned int i = 0 ; i < colnames.size() ; i++)
+   {
+      out << colnames[i];
+      if(i == colnames.size() - 1) 
+	 out << std::endl;
+      else
+         out << "\t";
+   }
+   
+   const IOFormat fmt(6, DontAlignCols, "\t", "\n", "", "", "", "");
+   out << m.format(fmt) << std::endl;
    out.close();
    return true;
 }

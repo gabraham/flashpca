@@ -169,20 +169,27 @@ RowVectorXd cov(const MatrixBase<DerivedA>& X, const MatrixBase<DerivedB>& Y)
 {
    const unsigned int n = X.rows();
    const RowVectorXd xmean = X.colwise().sum() / n;
-   const RowVectorXd ymean = X.colwise().sum() / n;
+   const RowVectorXd ymean = Y.colwise().sum() / n;
 
    return (X.rowwise() - xmean).transpose() * (Y.rowwise() - ymean) / (n - 1);
 }
 
-ArrayXd wilks(const ArrayXd& r2, unsigned int n, unsigned int k)
+ArrayXXd wilks(const ArrayXd& r2, unsigned int n, unsigned int k)
 {
    ArrayXd lambda = 1 - r2;
    boost::math::fisher_f pf(k, n - k - 1);
    ArrayXd pval(r2.size());
-   for(unsigned int i = 0 ; i < r2.size() ; i++)
-      pval(i) = cdf(complement(pf, r2(i)));
+   ArrayXXd res(r2.size(), 3); 
+   res.col(0) = r2.sqrt();
+   res.col(1) = (1 - lambda) / lambda * (n - k - 1) / k;
 
-   return pval;
+   for(unsigned int i = 0 ; i < lambda.size() ; i++)
+   {
+      //double fstat = (1 - lambda(i)) / lambda(i) * (n - k - 1) / k;
+      res(i, 2) = cdf(complement(pf, res(i, 1)));
+   }
+
+   return res;
 }
 
 void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
@@ -272,7 +279,7 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
    {
       verbose && STDOUT << timestamp() << " saving K" << std::endl;
 
-      save_text(K, "kernel.txt");
+      //save_text(K, "kernel.txt");
    }
 
    MatrixXd Xy(X.cols(), Y.cols());
@@ -614,28 +621,44 @@ void RandomPCA::ucca(MatrixXd &X, MatrixXd &Y)
    // s22.inv <- with(sy, v %*% tcrossprod(diag(1 / d^2), v))
    // r[j] <- sqrt((1 / s11) * s12 %*% s22.inv %*% t(s12))
 
-   if(stand_method != STANDARDIZE_NONE)
-   {
-      X_meansd = standardize(X, stand_method);
-      Y_meansd = standardize(Y, stand_method);
-   }
+   if(stand_method_x != STANDARDIZE_NONE)
+      X_meansd = standardize(X, stand_method_x);
 
+   if(stand_method_y != STANDARDIZE_NONE)
+      Y_meansd = standardize(Y, stand_method_y);
+
+   unsigned int n = X.rows();
    unsigned int p = X.cols();
    double varx;
    RowVectorXd covXY;
 
    JacobiSVD<MatrixXd> svd(Y, ComputeThinU | ComputeThinV);
-   VectorXd d = svd.singularValues().array().pow(-2);
-   MatrixXd covYinv = svd.matrixV() * d.diagonal() * svd.matrixV().transpose();
-   ArrayXd r2(p);
+   VectorXd d = svd.singularValues() / sqrt(n - 1);
+   VectorXd d2 = d.array().pow(-2);
+   MatrixXd V = svd.matrixV();
+   MatrixXd covYinv = svd.matrixV() * d2.asDiagonal() * svd.matrixV().transpose();
+   ArrayXd r2 = ArrayXd(p);
+
+   //const RowVectorXd xmean = X.colwise().sum() / n;
+   //const RowVectorXd ymean = Y.colwise().sum() / n;
+
+   //std::cout << "X:" << std::endl;
+   //std::cout << X.col(0).rowwise() - xmean << std::endl << std::endl;
+   //std::cout << "Y:" << std::endl;
+   //std::cout << Y.rowwise() - ymean << std::endl << std::endl;
+   //std::cout << "cov:" << std::endl;
+   //std::cout << cov(X.col(0), Y) << std::endl;
 
    for(unsigned int j = 0 ; j < p ; j++)
    {
       varx = var(X.col(j));
       covXY = cov(X.col(j), Y);
-      r2(j) = 1.0 / varx * covXY * covYinv * covXY.transpose();
+      
+      // take absolute value to prevent numerical issues with negative numbers
+      // close to zero
+      r2(j) = fabs(1.0 / varx * covXY * covYinv * covXY.transpose());
    }
 
-   ArrayXd pval = wilks(r2, X.rows(), Y.cols());
+   res = wilks(r2, X.rows(), Y.cols());
 }
 

@@ -544,56 +544,70 @@ int main(int argc, char * argv[])
    // Write out results
 
 
-   // Common to all decompositions
-   std::cout << timestamp() << " Writing " << n_dim << 
-      " eigenvalues to file " << eigvalfile << std::endl;
-   save_text(rpca.d, eigvalfile.c_str());
+   // Common to all decompositions, except UCCA
+   if(mode != MODE_UCCA)
+   {
+      std::cout << timestamp() << " Writing " << n_dim << 
+	 " eigenvalues to file " << eigvalfile << std::endl;
+      save_text(rpca.d, std::vector<std::string>(), eigvalfile.c_str());
+   }
 
    if(mode == MODE_PCA)
    {
       std::cout << timestamp() << " Writing " << n_dim << 
 	 " eigenvectors to file " << eigvecfile << std::endl;
-      save_text(rpca.U, eigvecfile.c_str());
+      save_text(rpca.U, std::vector<std::string>(), eigvecfile.c_str());
 
       std::cout << timestamp() << " Writing " << n_dim <<
 	 " PCs to file " << pcfile << std::endl;
-      save_text(rpca.Px, pcfile.c_str());
+      std::vector<std::string> v(n_dim);
+      for(unsigned int i = 0 ; i < n_dim ; i++)
+	 v[i] = "PC" + std::to_string(i + 1);
+      save_text(rpca.Px, v, pcfile.c_str());
 
       std::cout << timestamp() << " Writing " << n_dim << 
 	 " proportion variance explained to file " << eigpvefile << std::endl;
-      save_text(rpca.pve, eigpvefile.c_str());
+      save_text(rpca.pve, std::vector<std::string>(), eigpvefile.c_str());
 
       if(do_loadings)
       {
 	 std::cout << timestamp() << " Writing" <<
 	    " SNP loadings to file " << loadingsfile << std::endl;
-	 save_text(rpca.V, loadingsfile.c_str()); 
+	 save_text(rpca.V, std::vector<std::string>(), loadingsfile.c_str()); 
       }
    }
    else if(mode == MODE_CCA || mode == MODE_SCCA)
    {
       std::cout << timestamp() << " Writing " << n_dim << 
 	 " X eigenvectors to file " << eigvecxfile << std::endl;
-      save_text(rpca.U, eigvecxfile.c_str());
+      save_text(rpca.U, std::vector<std::string>(), eigvecxfile.c_str());
 
       std::cout << timestamp() << " Writing " << n_dim << 
 	 " Y eigenvectors to file " << eigvecyfile << std::endl;
-      save_text(rpca.V, eigvecyfile.c_str());
+      save_text(rpca.V, std::vector<std::string>(), eigvecyfile.c_str());
 
       std::cout << timestamp() << " Writing " << n_dim <<
 	 " PCs to file " << pcxfile << std::endl;
-      save_text(rpca.Px, pcxfile.c_str());
+      save_text(rpca.Px, std::vector<std::string>(), pcxfile.c_str());
 
       std::cout << timestamp() << " Writing " << n_dim <<
 	 " PCs to file " << pcyfile << std::endl;
-      save_text(rpca.Py, pcyfile.c_str());
+
+      save_text(rpca.Py, std::vector<std::string>(), pcyfile.c_str());
+   }
+   else if(mode == MODE_UCCA)
+   {
+      MatrixXd res(rpca.res);
+      std::string str[] = {"R", "Fstat", "P"};
+      std::vector<std::string> v(str, str + 3);
+      save_text(res, v, std::string("ucca.txt").c_str());
    }
 
    if(save_meansd)
    {
       std::cout << timestamp() << " Writing mean + sd file "
 	 << meansdfile << std::endl;
-      save_text(rpca.X_meansd, meansdfile.c_str());
+      save_text(rpca.X_meansd, std::vector<std::string>(), meansdfile.c_str());
    }
 
    ////////////////////////////////////////////////////////////////////////////////
