@@ -621,6 +621,8 @@ void RandomPCA::scca(MatrixXd &X, MatrixXd &Y, double lambda1, double lambda2,
    Py = Y * V;
 }
 
+// Single-SNP CCA (like plink.multivariate), offline version (loading all SNPs
+// into memory)
 void RandomPCA::ucca(MatrixXd &X, MatrixXd &Y)
 {
    if(stand_method_x != STANDARDIZE_NONE)
@@ -654,6 +656,8 @@ void RandomPCA::ucca(MatrixXd &X, MatrixXd &Y)
    res = wilks(r2, X.rows(), Y.cols());
 }
 
+// Single-SNP CCA (like plink.multivariate), online version (loading one SNP
+// at a time)
 void RandomPCA::ucca(Data& data)
 {
    if(stand_method_y != STANDARDIZE_NONE)
