@@ -110,7 +110,10 @@ int main(int argc, char * argv[])
    MatrixXd W = data.read_plink_pheno(w_file.c_str(), 1);
    MatrixXd P = data.X * W;
 
-   save_text(P, std::vector<std::string>(), out_file.c_str());
+   save_text(P,
+      std::vector<std::string>(),
+      std::vector<std::string>(),
+      out_file.c_str());
 
    return EXIT_SUCCESS;
 }

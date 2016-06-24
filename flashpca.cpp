@@ -494,6 +494,8 @@ int main(int argc, char * argv[])
       data.read_pheno(pheno_file.c_str(), 3);
    else
       data.read_pheno(fam_file.c_str(), 6);
+
+   data.read_plink_bim(bim_file.c_str());
       
    data.geno_filename = geno_file.c_str();
    data.get_size();
@@ -579,65 +581,92 @@ int main(int argc, char * argv[])
    {
       std::cout << timestamp() << " Writing " << n_dim << 
 	 " eigenvalues to file " << eigvalfile << std::endl;
-      save_text(rpca.d, std::vector<std::string>(), eigvalfile.c_str());
+      save_text(rpca.d,
+	 std::vector<std::string>(),
+	 std::vector<std::string>(),
+	 eigvalfile.c_str());
    }
 
    if(mode == MODE_PCA)
    {
       std::cout << timestamp() << " Writing " << n_dim << 
 	 " eigenvectors to file " << eigvecfile << std::endl;
-      save_text(rpca.U, std::vector<std::string>(), eigvecfile.c_str());
+      save_text(rpca.U,
+	 std::vector<std::string>(),
+	 std::vector<std::string>(),
+	 eigvecfile.c_str());
 
       std::cout << timestamp() << " Writing " << n_dim <<
 	 " PCs to file " << pcfile << std::endl;
       std::vector<std::string> v(n_dim);
       for(unsigned int i = 0 ; i < n_dim ; i++)
 	 v[i] = "PC" + std::to_string(i + 1);
-      save_text(rpca.Px, v, pcfile.c_str());
+      save_text(rpca.Px, v, std::vector<std::string>(), pcfile.c_str());
 
       std::cout << timestamp() << " Writing " << n_dim << 
 	 " proportion variance explained to file " << eigpvefile << std::endl;
-      save_text(rpca.pve, std::vector<std::string>(), eigpvefile.c_str());
+      save_text(rpca.pve,
+	 std::vector<std::string>(),
+	 std::vector<std::string>(),
+	 eigpvefile.c_str());
 
       if(do_loadings)
       {
 	 std::cout << timestamp() << " Writing" <<
 	    " SNP loadings to file " << loadingsfile << std::endl;
-	 save_text(rpca.V, std::vector<std::string>(), loadingsfile.c_str()); 
+	 save_text(rpca.V,
+	    std::vector<std::string>(),
+	    std::vector<std::string>(),
+	    loadingsfile.c_str()); 
       }
    }
    else if(mode == MODE_CCA || mode == MODE_SCCA)
    {
       std::cout << timestamp() << " Writing " << n_dim << 
 	 " X eigenvectors to file " << eigvecxfile << std::endl;
-      save_text(rpca.U, std::vector<std::string>(), eigvecxfile.c_str());
+      save_text(rpca.U,
+	 std::vector<std::string>(),
+	 std::vector<std::string>(),
+	 eigvecxfile.c_str());
 
       std::cout << timestamp() << " Writing " << n_dim << 
 	 " Y eigenvectors to file " << eigvecyfile << std::endl;
-      save_text(rpca.V, std::vector<std::string>(), eigvecyfile.c_str());
+      save_text(rpca.V,
+	 std::vector<std::string>(),
+	 std::vector<std::string>(),
+	 eigvecyfile.c_str());
 
       std::cout << timestamp() << " Writing " << n_dim <<
 	 " PCs to file " << pcxfile << std::endl;
-      save_text(rpca.Px, std::vector<std::string>(), pcxfile.c_str());
+      save_text(rpca.Px,
+	 std::vector<std::string>(),
+	 std::vector<std::string>(),
+	 pcxfile.c_str());
 
       std::cout << timestamp() << " Writing " << n_dim <<
 	 " PCs to file " << pcyfile << std::endl;
 
-      save_text(rpca.Py, std::vector<std::string>(), pcyfile.c_str());
+      save_text(rpca.Py,
+	 std::vector<std::string>(),
+	 std::vector<std::string>(),
+	 pcyfile.c_str());
    }
    else if(mode == MODE_UCCA)
    {
       MatrixXd res(rpca.res);
-      std::string str[] = {"R", "Fstat", "P"};
-      std::vector<std::string> v(str, str + 3);
-      save_text(res, v, std::string("ucca.txt").c_str());
+      std::string str[] = {"SNP", "R", "Fstat", "P"};
+      std::vector<std::string> v(str, str + 4);
+      save_text(res, v, data.snp_ids, std::string("ucca.txt").c_str());
    }
 
    if(save_meansd)
    {
       std::cout << timestamp() << " Writing mean + sd file "
 	 << meansdfile << std::endl;
-      save_text(rpca.X_meansd, std::vector<std::string>(), meansdfile.c_str());
+      save_text(rpca.X_meansd,
+	 std::vector<std::string>(),
+	 std::vector<std::string>(),
+	 meansdfile.c_str());
    }
 
    ////////////////////////////////////////////////////////////////////////////////

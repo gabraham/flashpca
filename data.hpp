@@ -64,6 +64,7 @@ class Data {
       boost::iostreams::mapped_file_source geno_fin;
       bool verbose;
       long seed;
+      std::vector<std::string> snp_ids;
       
       Data(long seed);
       ~Data();
@@ -74,6 +75,7 @@ class Data {
 	 bool transpose);
       void get_size();
       void read_pheno(const char *filename, unsigned int firstcol);
+      void read_plink_bim(const char *filename);
       MatrixXd read_plink_pheno(const char *filename, unsigned int firstcol);
 
       std::string tolower(const std::string& v);

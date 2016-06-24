@@ -377,6 +377,42 @@ MatrixXd Data::read_plink_pheno(const char *filename, unsigned int firstcol)
    return Z;
 }
 
+void Data::read_plink_bim(const char *filename)
+{
+   std::ifstream in(filename, std::ios::in);
+
+   if(!in)
+   {
+      std::cerr << "[Data::read_plink_bim] Error reading file " 
+	 << filename << std::endl;
+      throw std::string("io error");
+   }
+   std::vector<std::string> lines;
+   
+   while(in)
+   {
+      std::string line;
+      std::getline(in, line);
+      if(!in.eof())
+	 lines.push_back(line);
+   }
+
+   std::cout << timestamp() << " Detected bim file " <<
+      filename << ", " << lines.size() << " SNPs" << std::endl;
+   in.close();
+
+   for(unsigned int i = 0 ; i < lines.size() ; i++)
+   {
+      std::stringstream ss(lines[i]);
+      std::string s;
+      std::vector<std::string> tokens;
+
+      while(ss >> s)
+	 tokens.push_back(s);
+      snp_ids.push_back(tokens[1]);
+   }
+}
+
 std::string Data::tolower(const std::string& v)
 {
    std::string r = v;
