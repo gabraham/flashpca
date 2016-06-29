@@ -11,12 +11,6 @@
 #include "randompca.hpp"
 #include "util.hpp"
 
-
-///////////////////////
-//
-// A'A or A A'??
-//
-//////////////////////
 class SVDWide
 {
    private:
@@ -33,7 +27,6 @@ class SVDWide
       {
 	 Map<VectorXd> x(x_in, n);
 	 Map<VectorXd> y(y_out, n);
-	 //y.noalias() = mat.transpose() * (mat * x);
 	 y.noalias() = mat * (mat.transpose() * x);
       }
 };
@@ -43,12 +36,31 @@ class SVDWideOnline
    private:
       Data& dat;
       const unsigned int n, p;
-      const unsigned int block_size = 1;
+      unsigned int nblocks;
+      unsigned int *start, *stop;
 
    public:
-      SVDWideOnline(Data& dat_): dat(dat_), n(dat_.N), p(dat_.nsnps)
+      SVDWideOnline(Data& dat_,
+	 unsigned int block_size=1000): dat(dat_), n(dat_.N), p(dat_.nsnps)
       {
-	 
+	 block_size = block_size >= p ? p : block_size;
+	 nblocks = (unsigned int)ceil((double)p / block_size);
+	 std::cout << "Using blocksize " << block_size << ", " <<
+	    nblocks << " blocks"<< std::endl;
+	 start = new unsigned int[nblocks];
+	 stop = new unsigned int[nblocks];
+	 for(unsigned int i = 0 ; i < nblocks ; i++)
+	 {
+	    start[i] = i * block_size;
+	    stop[i] = start[i] + block_size - 1;
+	    stop[i] = stop[i] >= p ? p - 1 : stop[i];
+	 }
+      }
+
+      ~SVDWideOnline()
+      {
+	 delete[] start;
+	 delete[] stop;
       }
 
       inline unsigned int rows() const { return n; }
@@ -59,15 +71,21 @@ class SVDWideOnline
 	 Map<VectorXd> x(x_in, n);
 	 Map<VectorXd> y(y_out, n);
 
-	 dat.read_snp_block(0, 0, false);
-	 y.noalias() = dat.X.col(0) * (dat.X.col(0).transpose() * x);
+	 //dat.read_snp_block(0, 0, false);
+	 //y.noalias() = dat.X.col(0) * (dat.X.col(0).transpose() * x);
+	 //for(unsigned int j = 1 ; j < p ; j++)
+	 //{
+	 //   dat.read_snp_block(j, j, false);
+	 //   y.noalias() = y + dat.X.col(0) * (dat.X.col(0).transpose() * x);
+	 //}
 
-	 for(unsigned int j = 1 ; j < p ; j++)
+	 dat.read_snp_block(start[0], stop[0], false);
+	 y.noalias() = dat.X * (dat.X.transpose() * x);
+
+	 for(unsigned int k = 1 ; k < nblocks ; k++)
 	 {
-	    dat.read_snp_block(j, j, false);
-	    //d = dat.X.col(0) * (dat.X.col(0).transpose() * x);
-	    //y = y + d;
-	    y.noalias() = y + dat.X.col(0) * (dat.X.col(0).transpose() * x);
+	    dat.read_snp_block(start[k], stop[k], false);
+	    y.noalias() = y + dat.X * (dat.X.transpose() * x);
 	 }
 
       }
@@ -254,7 +272,7 @@ ArrayXXd wilks(const ArrayXd& r2, unsigned int n, unsigned int k)
    return res;
 }
 
-void RandomPCA::pca_fast(MatrixXd& X, int method, bool transpose,
+void RandomPCA::pca_fast(MatrixXd& X, unsigned int block_size, int method, bool transpose,
    unsigned int ndim, unsigned int nextra, unsigned int maxiter, double tol,
    long seed, int kernel, double sigma, bool rbf_center,
    unsigned int rbf_sample, bool save_kernel, bool do_orth, bool do_loadings,
@@ -278,14 +296,15 @@ void RandomPCA::pca_fast(MatrixXd& X, int method, bool transpose,
    }
 }
 
-void RandomPCA::pca_fast(Data& dat, int method, bool transpose,
+void RandomPCA::pca_fast(Data& dat, unsigned int block_size, int method, bool transpose,
    unsigned int ndim, unsigned int nextra, unsigned int maxiter, double tol,
    long seed, int kernel, double sigma, bool rbf_center,
    unsigned int rbf_sample, bool save_kernel, bool do_orth, bool do_loadings,
    int mem, bool divide_n)
 {
-   SVDWideOnline op(dat);
-   Spectra::SymEigsSolver<double, Spectra::LARGEST_ALGE, SVDWideOnline> eigs(&op, ndim, ndim * 2 + 1);
+   SVDWideOnline op(dat, block_size);
+   Spectra::SymEigsSolver<double, Spectra::LARGEST_ALGE,
+      SVDWideOnline> eigs(&op, ndim, ndim * 2 + 1);
 
    eigs.init();
    eigs.compute();

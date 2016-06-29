@@ -66,7 +66,7 @@ class RandomPCA {
 	    unsigned int rbf_sample, bool save_kernel,
 	    bool do_orth, bool do_loadings, int mem,
 	    bool divide_n);
-      void pca_fast(MatrixXd &X,
+      void pca_fast(MatrixXd &X, unsigned int block_size,
 	    int method, bool transpose,
 	    unsigned int ndim, unsigned int nextra,
 	    unsigned int maxiter, double tol, long seed,
@@ -74,7 +74,7 @@ class RandomPCA {
 	    unsigned int rbf_sample, bool save_kernel,
 	    bool do_orth, bool do_loadings, int mem,
 	    bool divide_n);
-      void pca_fast(Data &dat,
+      void pca_fast(Data &dat, unsigned int block_size,
 	    int method, bool transpose,
 	    unsigned int ndim, unsigned int nextra,
 	    unsigned int maxiter, double tol, long seed,

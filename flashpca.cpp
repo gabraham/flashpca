@@ -47,6 +47,7 @@ int main(int argc, char * argv[])
       ("ucca", "perform per-SNP canonical correlation analysis")
       ("online", "don't load all genotypes into RAM at once")
       ("fast", "use the fast Spectra algorithm")
+      ("blocksize", po::value<int>(), "size of block for online algorith")
       ("numthreads", po::value<int>(), "set number of OpenMP threads")
       ("seed", po::value<long>(), "set random seed")
       ("bed", po::value<std::string>(), "PLINK bed file")
@@ -129,6 +130,19 @@ int main(int argc, char * argv[])
 
    int mem_mode = vm.count("online") ? MEM_MODE_ONLINE : MEM_MODE_OFFLINE;
    bool fast_mode = vm.count("fast");
+
+   int block_size = 100;
+   if(vm.count("blocksize"))
+   {
+      block_size = vm["blocksize"].as<int>();
+      if(block_size <= 1)
+      {
+	 std::cerr
+	    << "Error: blocksize must be >=1 and <= num_snps"
+	    << std::endl;
+	 return EXIT_FAILURE;
+      }
+   }
 
    int num_threads = 1;
    if(vm.count("numthreads"))
@@ -537,7 +551,7 @@ int main(int argc, char * argv[])
       {
 	 if(fast_mode)
 	 {
-	    rpca.pca_fast(data.X, method, transpose, n_dim, n_extra, maxiter,
+	    rpca.pca_fast(data.X, block_size, method, transpose, n_dim, n_extra, maxiter,
 	       tol, seed, kernel, sigma, rbf_center, rbf_sample, save_kernel,
 	       do_orth, do_loadings, mem, divide_n);
 	 }
@@ -552,7 +566,7 @@ int main(int argc, char * argv[])
       {
 	 if(fast_mode)
 	 {
-	    rpca.pca_fast(data, method, transpose, n_dim, n_extra, maxiter,
+	    rpca.pca_fast(data, block_size, method, transpose, n_dim, n_extra, maxiter,
 	       tol, seed, kernel, sigma, rbf_center, rbf_sample, save_kernel,
 	       do_orth, do_loadings, mem, divide_n);
 	 }
