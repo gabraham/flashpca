@@ -46,6 +46,7 @@ int main(int argc, char * argv[])
       ("scca", "perform sparse canonical correlation analysis (SCCA)")
       ("ucca", "perform per-SNP canonical correlation analysis")
       ("online", "don't load all genotypes into RAM at once")
+      ("fast", "use the fast Spectra algorithm")
       ("numthreads", po::value<int>(), "set number of OpenMP threads")
       ("seed", po::value<long>(), "set random seed")
       ("bed", po::value<std::string>(), "PLINK bed file")
@@ -76,7 +77,7 @@ int main(int argc, char * argv[])
       ("outmeansd", po::value<std::string>(), "Mean+SD (used to standardize SNPs) output file")
       ("whiten", "whiten the data")
       ("outwhite", po::value<std::string>(), "whitened data output file")
-      ("verbose,v", "verbose")
+      ("verbose", "verbose")
       ("maxiter", po::value<int>(), "maximum number of randomized PCA iterations")
       ("tol", po::value<double>(), "tolerance for randomized PCA iterations")
       ("transpose", "force a transpose of the data, if possible")
@@ -127,6 +128,7 @@ int main(int argc, char * argv[])
       mode = MODE_UCCA;
 
    int mem_mode = vm.count("online") ? MEM_MODE_ONLINE : MEM_MODE_OFFLINE;
+   bool fast_mode = vm.count("fast");
 
    int num_threads = 1;
    if(vm.count("numthreads"))
@@ -181,7 +183,7 @@ int main(int argc, char * argv[])
       return EXIT_FAILURE;
    }
 
-   int n_dim = 0;
+   int n_dim = 10;
    if(vm.count("ndim"))
    {
       n_dim = vm["ndim"].as<int>();
@@ -329,7 +331,7 @@ int main(int argc, char * argv[])
    }
 
    bool whiten = vm.count("whiten");
-   bool verbose = vm.count("v");
+   bool verbose = vm.count("verbose");
    bool transpose = vm.count("transpose");
 
    bool do_orth = true;
@@ -532,13 +534,35 @@ int main(int argc, char * argv[])
       std::cout << timestamp() << " PCA begin" << std::endl;
 
       if(mem_mode == MEM_MODE_OFFLINE)
-	 rpca.pca(data.X, method, transpose, n_dim, n_extra, maxiter,
-	    tol, seed, kernel, sigma, rbf_center, rbf_sample, save_kernel,
-	    do_orth, do_loadings, mem, divide_n);
+      {
+	 if(fast_mode)
+	 {
+	    rpca.pca_fast(data.X, method, transpose, n_dim, n_extra, maxiter,
+	       tol, seed, kernel, sigma, rbf_center, rbf_sample, save_kernel,
+	       do_orth, do_loadings, mem, divide_n);
+	 }
+	 else
+	 {
+	    rpca.pca(data.X, method, transpose, n_dim, n_extra, maxiter,
+	       tol, seed, kernel, sigma, rbf_center, rbf_sample, save_kernel,
+	       do_orth, do_loadings, mem, divide_n);
+	 }
+      }
       else
-	 rpca.pca(data, method, transpose, n_dim, n_extra, maxiter,
-	    tol, seed, kernel, sigma, rbf_center, rbf_sample, save_kernel,
-	    do_orth, do_loadings, mem, divide_n);
+      {
+	 if(fast_mode)
+	 {
+	    rpca.pca_fast(data, method, transpose, n_dim, n_extra, maxiter,
+	       tol, seed, kernel, sigma, rbf_center, rbf_sample, save_kernel,
+	       do_orth, do_loadings, mem, divide_n);
+	 }
+	 else
+	 {
+	    rpca.pca(data, method, transpose, n_dim, n_extra, maxiter,
+	       tol, seed, kernel, sigma, rbf_center, rbf_sample, save_kernel,
+	       do_orth, do_loadings, mem, divide_n);
+	 }
+      }
       std::cout << timestamp() << " PCA done" << std::endl;
    }
    //else if(mode == MODE_CCA)

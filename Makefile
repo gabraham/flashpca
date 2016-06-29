@@ -6,6 +6,7 @@ VERSION=1.2.6
 EIGEN_INC=/usr/local/include/eigen
 BOOST_INC=/usr/local/include/boost
 BOOST_LIB=/usr/local/lib
+SPECTRA_INC=spectra
 
 all: flashpca predict
 static: flashpca_x86-64
@@ -21,7 +22,7 @@ OBJ2 = \
    data.o \
    util.o
 
-CXXFLAGS = -I${BOOST_INC} -I${EIGEN_INC}
+CXXFLAGS = -I${SPECTRA_INC} -I${BOOST_INC} -I${EIGEN_INC}
 
 UNAME := $(shell uname)
 ifeq ($(UNAME), Darwin)

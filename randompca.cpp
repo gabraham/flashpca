@@ -11,6 +11,68 @@
 #include "randompca.hpp"
 #include "util.hpp"
 
+
+///////////////////////
+//
+// A'A or A A'??
+//
+//////////////////////
+class SVDWide
+{
+   private:
+      const MatrixXd& mat;
+      const unsigned int n;
+
+   public:
+      SVDWide(const MatrixXd& mat_): mat(mat_), n(mat_.rows()) {}
+
+      inline unsigned int rows() const { return n; }
+      inline unsigned int cols() const { return n; }
+
+      void perform_op(double *x_in, double* y_out)
+      {
+	 Map<VectorXd> x(x_in, n);
+	 Map<VectorXd> y(y_out, n);
+	 //y.noalias() = mat.transpose() * (mat * x);
+	 y.noalias() = mat * (mat.transpose() * x);
+      }
+};
+
+class SVDWideOnline
+{
+   private:
+      Data& dat;
+      const unsigned int n, p;
+      const unsigned int block_size = 1;
+
+   public:
+      SVDWideOnline(Data& dat_): dat(dat_), n(dat_.N), p(dat_.nsnps)
+      {
+	 
+      }
+
+      inline unsigned int rows() const { return n; }
+      inline unsigned int cols() const { return n; }
+
+      void perform_op(double *x_in, double* y_out)
+      {
+	 Map<VectorXd> x(x_in, n);
+	 Map<VectorXd> y(y_out, n);
+
+	 dat.read_snp_block(0, 0, false);
+	 y.noalias() = dat.X.col(0) * (dat.X.col(0).transpose() * x);
+
+	 for(unsigned int j = 1 ; j < p ; j++)
+	 {
+	    dat.read_snp_block(j, j, false);
+	    //d = dat.X.col(0) * (dat.X.col(0).transpose() * x);
+	    //y = y + d;
+	    y.noalias() = y + dat.X.col(0) * (dat.X.col(0).transpose() * x);
+	 }
+
+      }
+};
+
 MatrixXd make_gaussian(unsigned int rows, unsigned int cols, long seed)
 {
    boost::random::mt19937 rng;
@@ -192,6 +254,54 @@ ArrayXXd wilks(const ArrayXd& r2, unsigned int n, unsigned int k)
    return res;
 }
 
+void RandomPCA::pca_fast(MatrixXd& X, int method, bool transpose,
+   unsigned int ndim, unsigned int nextra, unsigned int maxiter, double tol,
+   long seed, int kernel, double sigma, bool rbf_center,
+   unsigned int rbf_sample, bool save_kernel, bool do_orth, bool do_loadings,
+   int mem, bool divide_n)
+{
+   SVDWide op(X);
+   Spectra::SymEigsSolver<double, Spectra::LARGEST_ALGE, SVDWide> eigs(&op, ndim, ndim * 2 + 1);
+
+   eigs.init();
+   eigs.compute();
+
+   if(eigs.info() == Spectra::SUCCESSFUL)
+   {
+      U = eigs.eigenvectors();
+      d = eigs.eigenvalues().cwiseSqrt();
+   }
+   else
+   {
+      std::cerr << "Spectra eigen-decomposition was not successful, status: " 
+	 << eigs.info() << std::endl;
+   }
+}
+
+void RandomPCA::pca_fast(Data& dat, int method, bool transpose,
+   unsigned int ndim, unsigned int nextra, unsigned int maxiter, double tol,
+   long seed, int kernel, double sigma, bool rbf_center,
+   unsigned int rbf_sample, bool save_kernel, bool do_orth, bool do_loadings,
+   int mem, bool divide_n)
+{
+   SVDWideOnline op(dat);
+   Spectra::SymEigsSolver<double, Spectra::LARGEST_ALGE, SVDWideOnline> eigs(&op, ndim, ndim * 2 + 1);
+
+   eigs.init();
+   eigs.compute();
+
+   if(eigs.info() == Spectra::SUCCESSFUL)
+   {
+      U = eigs.eigenvectors();
+      d = eigs.eigenvalues().cwiseSqrt();
+   }
+   else
+   {
+      std::cerr << "Spectra eigen-decomposition was not successful, status: " 
+	 << eigs.info() << std::endl;
+   }
+}
+
 // stub for now
 void RandomPCA::pca(Data& dat, int method, bool transpose,
    unsigned int ndim, unsigned int nextra, unsigned int maxiter, double tol,
@@ -199,7 +309,16 @@ void RandomPCA::pca(Data& dat, int method, bool transpose,
    unsigned int rbf_sample, bool save_kernel, bool do_orth, bool do_loadings,
    int mem, bool divide_n)
 {
-   
+   //Spectra::DenseGenMatProd<double> op(dat.X);
+   //Spectra::GenEigsSolver< double, Spectra::LARGEST_ALGE, Spectra::DenseGenMatProd<double> > eigs(&op, ndim, 2 * ndim + 1);
+   //eigs.init();
+   //int nconv = eigs.compute();
+
+   //if(eigs.info() == Spectra::SUCCESSFUL)
+   //{
+   //   U = eigs.eigenvectors();
+   //   d = eigs.eigenvalues().array().sqrt();
+   //}
 }
 
 void RandomPCA::pca(MatrixXd &X, int method, bool transpose,

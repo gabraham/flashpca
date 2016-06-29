@@ -20,6 +20,9 @@
 #include <boost/math/distributions.hpp>
 #include <boost/math/distributions/fisher_f.hpp>
 
+#include "spectra/SymEigsSolver.h"
+
+
 #include "data.hpp"
 
 using namespace Eigen;
@@ -56,6 +59,22 @@ class RandomPCA {
       bool debug;
 
       void pca(MatrixXd &X,
+	    int method, bool transpose,
+	    unsigned int ndim, unsigned int nextra,
+	    unsigned int maxiter, double tol, long seed,
+	    int kernel, double sigma, bool rbf_center,
+	    unsigned int rbf_sample, bool save_kernel,
+	    bool do_orth, bool do_loadings, int mem,
+	    bool divide_n);
+      void pca_fast(MatrixXd &X,
+	    int method, bool transpose,
+	    unsigned int ndim, unsigned int nextra,
+	    unsigned int maxiter, double tol, long seed,
+	    int kernel, double sigma, bool rbf_center,
+	    unsigned int rbf_sample, bool save_kernel,
+	    bool do_orth, bool do_loadings, int mem,
+	    bool divide_n);
+      void pca_fast(Data &dat,
 	    int method, bool transpose,
 	    unsigned int ndim, unsigned int nextra,
 	    unsigned int maxiter, double tol, long seed,
