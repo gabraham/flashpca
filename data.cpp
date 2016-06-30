@@ -19,10 +19,17 @@ Data::Data(long seed)
    nsnps = 0;
    this->seed = seed;
    srand48(seed);
+   visited = NULL;
 }
 
 Data::~Data()
 {
+   if(visited)
+      delete[] visited;
+   delete[] tmp;
+   delete[] tmp2;
+   delete[] avg;
+   in.close();
 }
 
 /* 
@@ -142,20 +149,12 @@ void Data::prepare()
 
    tmpx = VectorXd(N);
 
+   visited = new bool[nsnps];
+
    std::cout << timestamp() << " Detected BED file: "
       << geno_filename << " with " << (len + 3)
       << " bytes, " << N << " samples, " << nsnps 
       << " SNPs." << std::endl;
-}
-
-// Close 
-void Data::finish()
-{
-   delete[] tmp;
-   delete[] tmp2;
-   delete[] avg;
-
-   in.close();
 }
 
 // Reads a _contiguous_ block of SNPs [start, stop] at a time
@@ -166,12 +165,17 @@ void Data::read_snp_block(unsigned int start_idx, unsigned int stop_idx,
 
    unsigned int m = stop_idx - start_idx + 1;
 
+   // Resize matrix, e.g., with final block that may be smaller than
+   // $blocksize$
    if(transpose)
-      X = MatrixXd(m, N);
-   else
+   {
+      if(X.rows() != m)
+	 X = MatrixXd(m, N);
+   }
+   else if(X.cols() != m)
       X = MatrixXd(N, m);
 
-   for(unsigned int i = 0; i < m; i++)
+   for(unsigned int j = 0; j < m; j++)
    {
       // read raw genotypes
       in.read((char*)tmp, sizeof(char) * np);
@@ -180,35 +184,57 @@ void Data::read_snp_block(unsigned int start_idx, unsigned int stop_idx,
       decode_plink(tmp2, tmp, np);
 
       // Compute average per SNP, excluding missing values
-      avg[start_idx + i] = 0;
+      avg[start_idx + j] = 0;
       unsigned int ngood = 0;
 
-      for(unsigned int j = 0 ; j < N ; j++)
+      // We've seen this SNP, don't need to compute its average again
+      if(!visited[start_idx + j])
       {
-	 double s = (double)tmp2[j];
-	 if(s != PLINK_NA)
-	 {
-	    avg[start_idx + i] += s;
-	    ngood++;
-	 }
+	 for(unsigned int i = 0 ; i < N ; i++)
+      	 {
+      	    double s = (double)tmp2[i];
+      	    if(s != PLINK_NA)
+      	    {
+      	       avg[start_idx + j] += s;
+      	       ngood++;
+      	    }
+      	 }
+      	 avg[start_idx + j] /= ngood;
+	 visited[start_idx + j] = true;
       }
-      avg[start_idx + i] /= ngood;
+
+//      // Impute using average per SNP
+//      for(unsigned int j = 0 ; j < N ; j++)
+//      {
+//	 double s = (double)tmp2[j];
+//	 if(s != PLINK_NA)
+//	    tmpx(j) = s;
+//	 else
+//	    tmpx(j) = avg[start_idx + i];
+//      }
+//
+//      if(transpose)
+//	 X.row(i) = tmpx;
+//      else
+//	 X.col(i) = tmpx;
 
       // Impute using average per SNP
-      for(unsigned int j = 0 ; j < N ; j++)
+      if(transpose)
       {
-	 double s = (double)tmp2[j];
-	 if(s != PLINK_NA)
-	    tmpx(j) = s;
-	 else
-	    tmpx(j) = avg[start_idx + i];
+	 throw new std::runtime_error("blah");
+      }
+      else
+      {
+	 for(unsigned int i = 0 ; i < N ; i++)
+      	 {
+      	    double s = (double)tmp2[i];
+      	    if(s != PLINK_NA)
+      	       X(i, j) = s;
+      	    else
+      	       X(i, j) = avg[start_idx + j];
+      	 }
       }
 
-      if(transpose)
-	 X.row(i) = tmpx;
-      else
-	 X.col(i) = tmpx;
-      //idx++;
    }
 }
 

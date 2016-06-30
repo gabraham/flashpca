@@ -537,7 +537,6 @@ int main(int argc, char * argv[])
    {
       data.prepare();
       data.read_bed(transpose);
-      data.finish();
    }
    else if(mem_mode == MEM_MODE_ONLINE)
    {
@@ -624,7 +623,6 @@ int main(int argc, char * argv[])
    //  Close open files if in online mode
    if(mem_mode == MEM_MODE_ONLINE)
    {
-      data.finish();
    }
 
    ////////////////////////////////////////////////////////////////////////////////

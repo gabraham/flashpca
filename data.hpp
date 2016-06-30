@@ -69,7 +69,6 @@ class Data {
       Data(long seed);
       ~Data();
       void prepare();
-      void finish();
       void read_bed(bool transpose);
       void read_snp_block(unsigned int start_idx, unsigned int stop_idx,
 	 bool transpose);
@@ -85,6 +84,7 @@ class Data {
       std::ifstream in;
       double* avg;
       VectorXd tmpx;
+      bool* visited;
 };
 
 
