@@ -45,8 +45,8 @@ int main(int argc, char * argv[])
       ("help", "produce help message")
       ("scca", "perform sparse canonical correlation analysis (SCCA)")
       ("ucca", "perform per-SNP canonical correlation analysis")
-      ("online", "don't load all genotypes into RAM at once")
-      ("fast", "use the fast Spectra algorithm")
+      ("online,o", "don't load all genotypes into RAM at once")
+      ("fast,f", "use the fast Spectra algorithm")
       ("blocksize", po::value<int>(), "size of block for online algorith")
       ("numthreads", po::value<int>(), "set number of OpenMP threads")
       ("seed", po::value<long>(), "set random seed")
@@ -58,14 +58,14 @@ int main(int argc, char * argv[])
       ("ndim", po::value<int>(), "number of PCs to output")
       ("nextra", po::value<int>(),
 	 "number of extra dimensions to use in randomized PCA")
-      ("standx,stand", po::value<std::string>(),
-	 "standardization method for genotypes [binom | binom2 | none | sd | center] (alias: stand)")
+      ("standx,s", po::value<std::string>(),
+	 "standardization method for genotypes [binom | binom2 | none | sd | center]")
       ("standy", po::value<std::string>(),
 	 "standardization method for phenotypes [binom | binom2 | none | sd | center]")
       ("method", po::value<std::string>(), "PCA method [eigen | svd]")
       ("orth", po::value<std::string>(), "use orthornormalization [yes | no]")
       ("mem", po::value<std::string>(), "SCCA/PCA method [low | high]")
-      ("no_divide_n", "whether to divide X'X by n - 1")
+      ("div", po::value<std::string>(), "whether to divide X'X by n - 1, p - 1, or nothing [n1 | p1 | none|")
       ("outpc", po::value<std::string>(), "PC output file")
       ("outpcx", po::value<std::string>(), "X PC output file, for CCA")
       ("outpcy", po::value<std::string>(), "Y PC output file, for CCA")
@@ -91,7 +91,7 @@ int main(int argc, char * argv[])
       ("lambda2", po::value<double>(), "2nd penalty for CCA/SCCA")
       ("debug", "debug, dumps all intermdiate data (WARNING: slow, call only on small data)")
       ("suffix", po::value<std::string>(), "suffix for all output files")
-      ("version", "version")
+      ("version,v", "version")
    ;
 
    po::variables_map vm;
@@ -135,7 +135,7 @@ int main(int argc, char * argv[])
    if(vm.count("blocksize"))
    {
       block_size = vm["blocksize"].as<int>();
-      if(block_size <= 1)
+      if(block_size < 1)
       {
 	 std::cerr
 	    << "Error: blocksize must be >=1 and <= num_snps"
@@ -487,7 +487,23 @@ int main(int argc, char * argv[])
       }
    }
 
-   bool divide_n = !vm.count("no_divide_n");
+   int divisor = DIVISOR_N1;
+   if(vm.count("div"))
+   {
+      std::string m = vm["div"].as<std::string>();
+      if(m == "none")
+	 divisor = DIVISOR_NONE;
+      else if(m == "n1")
+	 divisor = DIVISOR_N1;
+      else if(m == "p1")
+	 divisor = DIVISOR_P1;
+      else
+      {
+	 std::cerr << "Error: unknown divisor (--div): "
+	    << m << std::endl;
+	 return EXIT_FAILURE;
+      }
+   }
 
    ////////////////////////////////////////////////////////////////////////////////
    // End command line parsing
@@ -533,6 +549,7 @@ int main(int argc, char * argv[])
    rpca.debug = debug;
    rpca.stand_method_x = stand_method_x;
    rpca.stand_method_y = stand_method_y;
+   rpca.divisor = divisor;
    unsigned int max_dim = fminl(data.X.rows(), data.X.cols());
    
    if(n_dim == 0)
@@ -553,13 +570,13 @@ int main(int argc, char * argv[])
 	 {
 	    rpca.pca_fast(data.X, block_size, method, transpose, n_dim, n_extra, maxiter,
 	       tol, seed, kernel, sigma, rbf_center, rbf_sample, save_kernel,
-	       do_orth, do_loadings, mem, divide_n);
+	       do_orth, do_loadings, mem);
 	 }
 	 else
 	 {
 	    rpca.pca(data.X, method, transpose, n_dim, n_extra, maxiter,
 	       tol, seed, kernel, sigma, rbf_center, rbf_sample, save_kernel,
-	       do_orth, do_loadings, mem, divide_n);
+	       do_orth, do_loadings, mem);
 	 }
       }
       else
@@ -568,13 +585,13 @@ int main(int argc, char * argv[])
 	 {
 	    rpca.pca_fast(data, block_size, method, transpose, n_dim, n_extra, maxiter,
 	       tol, seed, kernel, sigma, rbf_center, rbf_sample, save_kernel,
-	       do_orth, do_loadings, mem, divide_n);
+	       do_orth, do_loadings, mem);
 	 }
 	 else
 	 {
 	    rpca.pca(data, method, transpose, n_dim, n_extra, maxiter,
 	       tol, seed, kernel, sigma, rbf_center, rbf_sample, save_kernel,
-	       do_orth, do_loadings, mem, divide_n);
+	       do_orth, do_loadings, mem);
 	 }
       }
       std::cout << timestamp() << " PCA done" << std::endl;

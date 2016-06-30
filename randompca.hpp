@@ -44,6 +44,10 @@ using namespace Eigen;
 #define LOWMEM 1
 #define HIGHMEM 2
 
+#define DIVISOR_NONE 0
+#define DIVISOR_N1 1
+#define DIVISOR_P1 2
+
 class RandomPCA {
    public:
       MatrixXd U, V, W, Px, Py;
@@ -57,6 +61,7 @@ class RandomPCA {
       long seed;
       bool verbose;
       bool debug;
+      int divisor;
 
       void pca(MatrixXd &X,
 	    int method, bool transpose,
@@ -64,32 +69,28 @@ class RandomPCA {
 	    unsigned int maxiter, double tol, long seed,
 	    int kernel, double sigma, bool rbf_center,
 	    unsigned int rbf_sample, bool save_kernel,
-	    bool do_orth, bool do_loadings, int mem,
-	    bool divide_n);
+	    bool do_orth, bool do_loadings, int mem);
       void pca_fast(MatrixXd &X, unsigned int block_size,
 	    int method, bool transpose,
 	    unsigned int ndim, unsigned int nextra,
 	    unsigned int maxiter, double tol, long seed,
 	    int kernel, double sigma, bool rbf_center,
 	    unsigned int rbf_sample, bool save_kernel,
-	    bool do_orth, bool do_loadings, int mem,
-	    bool divide_n);
+	    bool do_orth, bool do_loadings, int mem);
       void pca_fast(Data &dat, unsigned int block_size,
 	    int method, bool transpose,
 	    unsigned int ndim, unsigned int nextra,
 	    unsigned int maxiter, double tol, long seed,
 	    int kernel, double sigma, bool rbf_center,
 	    unsigned int rbf_sample, bool save_kernel,
-	    bool do_orth, bool do_loadings, int mem,
-	    bool divide_n);
+	    bool do_orth, bool do_loadings, int mem);
       void pca(Data &dat,
 	    int method, bool transpose,
 	    unsigned int ndim, unsigned int nextra,
 	    unsigned int maxiter, double tol, long seed,
 	    int kernel, double sigma, bool rbf_center,
 	    unsigned int rbf_sample, bool save_kernel,
-	    bool do_orth, bool do_loadings, int mem,
-	    bool divide_n);
+	    bool do_orth, bool do_loadings, int mem);
       void scca(MatrixXd &X, MatrixXd &Y, double lambda1, double lambda2,
 	    long seed, unsigned int ndim, int mem,
 	    unsigned int maxiter, double tol);

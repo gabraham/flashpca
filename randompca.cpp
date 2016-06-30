@@ -273,21 +273,23 @@ void RandomPCA::pca_fast(MatrixXd& X, unsigned int block_size, int method, bool 
    unsigned int ndim, unsigned int nextra, unsigned int maxiter, double tol,
    long seed, int kernel, double sigma, bool rbf_center,
    unsigned int rbf_sample, bool save_kernel, bool do_orth, bool do_loadings,
-   int mem, bool divide_n)
+   int mem)
 {
-   unsigned int N;
+   unsigned int N, p;
 
    if(transpose)
    {
       if(stand_method_x != STANDARDIZE_NONE)
 	  X_meansd = standardize_transpose(X, stand_method_x, verbose);
       N = X.cols();
+      p = X.cols();
    }
    else
    {
       if(stand_method_x != STANDARDIZE_NONE)
 	 X_meansd = standardize(X, stand_method_x, verbose);
       N = X.rows();
+      p = X.cols();
    }
 
    SVDWide op(X);
@@ -297,11 +299,17 @@ void RandomPCA::pca_fast(MatrixXd& X, unsigned int block_size, int method, bool 
    eigs.init();
    eigs.compute(maxiter, tol);
 
+   double div = 1;
+   if(divisor == DIVISOR_N1)
+      div = N - 1;
+   else if(divisor == DIVISOR_P1)
+      div = p - 1;
+
    if(eigs.info() == Spectra::SUCCESSFUL)
    {
       U = eigs.eigenvectors();
       //d = eigs.eigenvalues().array().sqrt();
-      d = eigs.eigenvalues().array() / (N - 1);
+      d = eigs.eigenvalues().array() / div;
    }
    else
    {
@@ -314,9 +322,9 @@ void RandomPCA::pca_fast(Data& dat, unsigned int block_size, int method, bool tr
    unsigned int ndim, unsigned int nextra, unsigned int maxiter, double tol,
    long seed, int kernel, double sigma, bool rbf_center,
    unsigned int rbf_sample, bool save_kernel, bool do_orth, bool do_loadings,
-   int mem, bool divide_n)
+   int mem)
 {
-   unsigned int N = dat.N;
+   unsigned int N = dat.N, p = dat.nsnps;
    SVDWideOnline op(dat, block_size, stand_method_x);
    Spectra::SymEigsSolver<double, Spectra::LARGEST_ALGE,
       SVDWideOnline> eigs(&op, ndim, ndim * 2 + 1);
@@ -324,10 +332,16 @@ void RandomPCA::pca_fast(Data& dat, unsigned int block_size, int method, bool tr
    eigs.init();
    eigs.compute(maxiter, tol);
 
+   double div = 1;
+   if(divisor == DIVISOR_N1)
+      div = N - 1;
+   else if(divisor == DIVISOR_P1)
+      div = p - 1;
+
    if(eigs.info() == Spectra::SUCCESSFUL)
    {
       U = eigs.eigenvectors();
-      d = eigs.eigenvalues().array() / (N - 1);
+      d = eigs.eigenvalues().array() / div;
    }
    else
    {
@@ -341,7 +355,7 @@ void RandomPCA::pca(Data& dat, int method, bool transpose,
    unsigned int ndim, unsigned int nextra, unsigned int maxiter, double tol,
    long seed, int kernel, double sigma, bool rbf_center,
    unsigned int rbf_sample, bool save_kernel, bool do_orth, bool do_loadings,
-   int mem, bool divide_n)
+   int mem)
 {
    //Spectra::DenseGenMatProd<double> op(dat.X);
    //Spectra::GenEigsSolver< double, Spectra::LARGEST_ALGE, Spectra::DenseGenMatProd<double> > eigs(&op, ndim, 2 * ndim + 1);
@@ -359,9 +373,9 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
    unsigned int ndim, unsigned int nextra, unsigned int maxiter, double tol,
    long seed, int kernel, double sigma, bool rbf_center,
    unsigned int rbf_sample, bool save_kernel, bool do_orth, bool do_loadings,
-   int mem, bool divide_n)
+   int mem)
 {
-   unsigned int N;
+   unsigned int N, p;
 
    if(kernel != KERNEL_LINEAR)
    {
@@ -379,12 +393,14 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
       if(stand_method_x != STANDARDIZE_NONE)
 	  X_meansd = standardize_transpose(X, stand_method_x, verbose);
       N = X.cols();
+      p = X.rows();
    }
    else
    {
       if(stand_method_x != STANDARDIZE_NONE)
 	 X_meansd = standardize(X, stand_method_x, verbose);
       N = X.rows();
+      p = X.cols();
    }
 
    unsigned int total_dim = ndim + nextra;
@@ -397,6 +413,12 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
    MatrixXd Yn;
 
    verbose && STDOUT << timestamp() << " dim(X): " << dim(X) << std::endl;
+
+   double div = 1;
+   if(divisor == DIVISOR_N1)
+      div = N - 1;
+   else if(divisor == DIVISOR_P1)
+      div = p - 1;
 
    MatrixXd K; 
    if(mem == HIGHMEM && kernel == KERNEL_RBF)
@@ -417,10 +439,7 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
    {
       verbose && STDOUT << timestamp() << " Using linear kernel" << std::endl;
 
-      if(divide_n)
-	 K.noalias() = X * X.transpose() / (N - 1);
-      else
-	 K.noalias() = X * X.transpose();
+      K.noalias() = X * X.transpose() / div;
    }
 
    //trace = K.diagonal().array().sum() / (N - 1);
@@ -432,8 +451,7 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
       trace = K.diagonal().array().sum();
    }
    
-   if(divide_n)
-      trace /= (N - 1);
+   trace /= div;
 
    verbose && STDOUT << timestamp() << " Trace(K): " << trace 
       << " (N: " << N << ")" << std::endl;
@@ -498,8 +516,7 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
 
    verbose && STDOUT << timestamp() << " dim(Et): " << dim(Et) << std::endl;
 
-   if(divide_n)
-      d = d.array() / (N - 1);
+   d = d.array() / div;
 
    // TODO: unlike Scholkopf, when we do kernel PCA we don't divide the
    // eigenvectors by the sqrt of each eigenvalue
@@ -511,10 +528,7 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
       // by it (but B has)
       Px.noalias() = X.transpose() * V;
       VectorXd s;
-      if(divide_n)
-	 s = 1 / (d.array().sqrt() * sqrt(N - 1));
-      else
-	 s = 1 / (d.array().sqrt());
+      s = 1 / (d.array().sqrt() * sqrt(div));
 
       MatrixXd Dinv = s.asDiagonal();
       U = Px * Dinv;
@@ -528,10 +542,7 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
       if(do_loadings)
       {
 	 VectorXd s;
-	 if(divide_n)
-	    s = 1 / (d.array().sqrt() * sqrt(N - 1));
-	 else
-	    s = 1 / (d.array().sqrt());
+	 s = 1 / (d.array().sqrt() * sqrt(div));
 	 MatrixXd Dinv = s.asDiagonal();
 	 V = X.transpose() * U * Dinv;
       }
