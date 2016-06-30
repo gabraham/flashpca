@@ -38,12 +38,13 @@ class SVDWideOnline
       const unsigned int n, p;
       unsigned int nblocks;
       unsigned int *start, *stop;
+      int stand_method;
 
    public:
-      SVDWideOnline(Data& dat_,
-	 unsigned int block_size=1000): dat(dat_), n(dat_.N), p(dat_.nsnps)
+      SVDWideOnline(Data& dat_, unsigned int block_size, int stand_method_):
+	 dat(dat_), n(dat_.N), p(dat_.nsnps)
       {
-	 block_size = block_size >= p ? p : block_size;
+	 stand_method = stand_method_;
 	 nblocks = (unsigned int)ceil((double)p / block_size);
 	 std::cout << "Using blocksize " << block_size << ", " <<
 	    nblocks << " blocks"<< std::endl;
@@ -71,20 +72,16 @@ class SVDWideOnline
 	 Map<VectorXd> x(x_in, n);
 	 Map<VectorXd> y(y_out, n);
 
-	 //dat.read_snp_block(0, 0, false);
-	 //y.noalias() = dat.X.col(0) * (dat.X.col(0).transpose() * x);
-	 //for(unsigned int j = 1 ; j < p ; j++)
-	 //{
-	 //   dat.read_snp_block(j, j, false);
-	 //   y.noalias() = y + dat.X.col(0) * (dat.X.col(0).transpose() * x);
-	 //}
-
 	 dat.read_snp_block(start[0], stop[0], false);
+	 if(stand_method != STANDARDIZE_NONE)
+	    standardize(dat.X, stand_method, false);
 	 y.noalias() = dat.X * (dat.X.transpose() * x);
 
 	 for(unsigned int k = 1 ; k < nblocks ; k++)
 	 {
 	    dat.read_snp_block(start[k], stop[k], false);
+	    if(stand_method != STANDARDIZE_NONE)
+	       standardize(dat.X, stand_method, false);
 	    y.noalias() = y + dat.X * (dat.X.transpose() * x);
 	 }
 
@@ -278,16 +275,33 @@ void RandomPCA::pca_fast(MatrixXd& X, unsigned int block_size, int method, bool 
    unsigned int rbf_sample, bool save_kernel, bool do_orth, bool do_loadings,
    int mem, bool divide_n)
 {
+   unsigned int N;
+
+   if(transpose)
+   {
+      if(stand_method_x != STANDARDIZE_NONE)
+	  X_meansd = standardize_transpose(X, stand_method_x, verbose);
+      N = X.cols();
+   }
+   else
+   {
+      if(stand_method_x != STANDARDIZE_NONE)
+	 X_meansd = standardize(X, stand_method_x, verbose);
+      N = X.rows();
+   }
+
    SVDWide op(X);
-   Spectra::SymEigsSolver<double, Spectra::LARGEST_ALGE, SVDWide> eigs(&op, ndim, ndim * 2 + 1);
+   Spectra::SymEigsSolver<double,
+      Spectra::LARGEST_ALGE, SVDWide> eigs(&op, ndim, ndim * 2 + 1);
 
    eigs.init();
-   eigs.compute();
+   eigs.compute(maxiter, tol);
 
    if(eigs.info() == Spectra::SUCCESSFUL)
    {
       U = eigs.eigenvectors();
-      d = eigs.eigenvalues().cwiseSqrt();
+      //d = eigs.eigenvalues().array().sqrt();
+      d = eigs.eigenvalues().array() / (N - 1);
    }
    else
    {
@@ -302,17 +316,18 @@ void RandomPCA::pca_fast(Data& dat, unsigned int block_size, int method, bool tr
    unsigned int rbf_sample, bool save_kernel, bool do_orth, bool do_loadings,
    int mem, bool divide_n)
 {
-   SVDWideOnline op(dat, block_size);
+   unsigned int N = dat.N;
+   SVDWideOnline op(dat, block_size, stand_method_x);
    Spectra::SymEigsSolver<double, Spectra::LARGEST_ALGE,
       SVDWideOnline> eigs(&op, ndim, ndim * 2 + 1);
 
    eigs.init();
-   eigs.compute();
+   eigs.compute(maxiter, tol);
 
    if(eigs.info() == Spectra::SUCCESSFUL)
    {
       U = eigs.eigenvectors();
-      d = eigs.eigenvalues().cwiseSqrt();
+      d = eigs.eigenvalues().array() / (N - 1);
    }
    else
    {
