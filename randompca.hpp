@@ -46,7 +46,7 @@ using namespace Eigen;
 
 #define DIVISOR_NONE 0
 #define DIVISOR_N1 1
-#define DIVISOR_P1 2
+#define DIVISOR_P 2
 
 class RandomPCA {
    public:

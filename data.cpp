@@ -149,7 +149,9 @@ void Data::prepare()
 
    tmpx = VectorXd(N);
 
-   visited = new bool[nsnps];
+   visited = new bool[nsnps]();
+
+   scaled_geno_lookup = ArrayXXd(nsnps, 4);
 
    std::cout << timestamp() << " Detected BED file: "
       << geno_filename << " with " << (len + 3)
@@ -177,6 +179,8 @@ void Data::read_snp_block(unsigned int start_idx, unsigned int stop_idx,
 
    for(unsigned int j = 0; j < m; j++)
    {
+      unsigned int k = start_idx + j;
+
       // read raw genotypes
       in.read((char*)tmp, sizeof(char) * np);
 
@@ -184,56 +188,57 @@ void Data::read_snp_block(unsigned int start_idx, unsigned int stop_idx,
       decode_plink(tmp2, tmp, np);
 
       // Compute average per SNP, excluding missing values
-      avg[start_idx + j] = 0;
+      //avg[k] = 0;
+      double snp_avg = 0;
       unsigned int ngood = 0;
 
       // We've seen this SNP, don't need to compute its average again
-      if(!visited[start_idx + j])
+      if(!visited[k])
       {
 	 for(unsigned int i = 0 ; i < N ; i++)
       	 {
       	    double s = (double)tmp2[i];
       	    if(s != PLINK_NA)
       	    {
-      	       avg[start_idx + j] += s;
+      	       //avg[k] += s;
+      	       snp_avg += s;
       	       ngood++;
       	    }
       	 }
-      	 avg[start_idx + j] /= ngood;
-	 visited[start_idx + j] = true;
+      	 //avg[k] /= ngood;
+      	 snp_avg /= ngood;
+
+	 // Store the 4 possible standardized genotypes for each SNP
+	 double P = snp_avg / 2.0;
+	 double sd = sqrt(2.0 * P * (1 - P));
+	 scaled_geno_lookup(k, 0) = (0 - snp_avg) / sd;
+	 scaled_geno_lookup(k, 1) = (1 - snp_avg) / sd;
+	 scaled_geno_lookup(k, 2) = (2 - snp_avg) / sd;
+	 scaled_geno_lookup(k, 3) = 0; // Assumes PLINK NA = 3
+	 visited[k] = true;
       }
 
-//      // Impute using average per SNP
-//      for(unsigned int j = 0 ; j < N ; j++)
-//      {
-//	 double s = (double)tmp2[j];
-//	 if(s != PLINK_NA)
-//	    tmpx(j) = s;
-//	 else
-//	    tmpx(j) = avg[start_idx + i];
-//      }
-//
-//      if(transpose)
-//	 X.row(i) = tmpx;
-//      else
-//	 X.col(i) = tmpx;
+      for(unsigned int i = 0 ; i < N ; i++)
+      {
+	 X(i, j) = scaled_geno_lookup(k, tmp2[i]);
+      }
 
-      // Impute using average per SNP
-      if(transpose)
-      {
-	 throw new std::runtime_error("blah");
-      }
-      else
-      {
-	 for(unsigned int i = 0 ; i < N ; i++)
-      	 {
-      	    double s = (double)tmp2[i];
-      	    if(s != PLINK_NA)
-      	       X(i, j) = s;
-      	    else
-      	       X(i, j) = avg[start_idx + j];
-      	 }
-      }
+      //// Impute using average per SNP
+      //if(transpose)
+      //{
+      //   throw new std::runtime_error("blah");
+      //}
+      //else
+      //{
+      //   for(unsigned int i = 0 ; i < N ; i++)
+      //	 {
+      //	    double s = (double)tmp2[i];
+      //	    if(s != PLINK_NA)
+      //	       X(i, j) = s;
+      //	    else
+      //	       X(i, j) = avg[k];
+      //	 }
+      //}
 
    }
 }

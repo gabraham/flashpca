@@ -65,7 +65,7 @@ int main(int argc, char * argv[])
       ("method", po::value<std::string>(), "PCA method [eigen | svd]")
       ("orth", po::value<std::string>(), "use orthornormalization [yes | no]")
       ("mem", po::value<std::string>(), "SCCA/PCA method [low | high]")
-      ("div", po::value<std::string>(), "whether to divide the eigenvalues by n - 1, p - 1, or nothing [n1 | p1 | none]")
+      ("div", po::value<std::string>(), "whether to divide the eigenvalues by n - 1, p - 1, or nothing [n1 | p | none]")
       ("outpc", po::value<std::string>(), "PC output file")
       ("outpcx", po::value<std::string>(), "X PC output file, for CCA")
       ("outpcy", po::value<std::string>(), "Y PC output file, for CCA")
@@ -495,8 +495,8 @@ int main(int argc, char * argv[])
 	 divisor = DIVISOR_NONE;
       else if(m == "n1")
 	 divisor = DIVISOR_N1;
-      else if(m == "p1")
-	 divisor = DIVISOR_P1;
+      else if(m == "p")
+	 divisor = DIVISOR_P;
       else
       {
 	 std::cerr << "Error: unknown divisor (--div): "
