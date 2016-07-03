@@ -28,7 +28,7 @@ UNAME := $(shell uname)
 ifeq ($(UNAME), Darwin)
    CXXFLAGS += -msse2 -DEIGEN_DONT_PARALLELIZE
 else
-   CXXFLAGS += -march=native -fopenmp
+   CXXFLAGS += -march=native -fopenmp -std=c++0x
 endif
 
 BOOST = -L${BOOST_LIB} \

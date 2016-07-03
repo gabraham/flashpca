@@ -60,10 +60,11 @@ void decode_plink(unsigned char *out,
       const unsigned char *in, const unsigned int n)
 {
    unsigned int i, k;
-   unsigned char tmp, geno;
+   unsigned char tmp, geno1, geno2, geno3, geno4;
    unsigned int a1, a2;
 
-   for(i = 0 ; i < n ; ++i)
+   //for(i = 0 ; i < n ; ++i)
+   for(i = 0 ; i < n ; i++)
    {
       tmp = in[i];
       k = PACK_DENSITY * i;
@@ -147,7 +148,7 @@ void Data::prepare()
 
    avg = new double[nsnps]; 
 
-   tmpx = VectorXd(N);
+   //tmpx = VectorXd(N);
 
    visited = new bool[nsnps]();
 
@@ -284,7 +285,7 @@ void Data::read_bed(bool transpose)
    unsigned int md = nsnps / 50;
 
    // iterate over all SNPs, only decode those that are included in analysis
-   for(unsigned int i = 0 ; i < nsnps; i++)
+   for(unsigned int j = 0 ; j < nsnps; j++)
    {
       // read raw genotypes
       in.read((char*)tmp, sizeof(char) * np);
@@ -295,9 +296,9 @@ void Data::read_bed(bool transpose)
       // Compute average per SNP, excluding missing values
       avg[idx] = 0;
       unsigned int ngood = 0;
-      for(unsigned int j = 0 ; j < N ; j++)
+      for(unsigned int i = 0 ; i < N ; i++)
       {
-	 double s = (double)tmp2[j];
+	 double s = (double)tmp2[i];
 	 if(s != PLINK_NA)
 	 {
 	    avg[idx] += s;
@@ -307,24 +308,24 @@ void Data::read_bed(bool transpose)
       avg[idx] /= ngood;
 
       // Impute using average per SNP
-      for(unsigned int j = 0 ; j < N ; j++)
+      for(unsigned int i = 0 ; i < N ; i++)
       {
-	 double s = (double)tmp2[j];
+	 double s = (double)tmp2[i];
 	 if(s != PLINK_NA)
-	    tmpx(j) = s;
+	    X(i, idx) = s;
 	 else
-	    tmpx(j) = avg[idx];
+	    X(idx, i) = avg[idx];
       }
 
-      if(transpose)
-	 X.row(idx) = tmpx;
-      else
-	 X.col(idx) = tmpx;
+//      if(transpose)
+//	 X.row(idx) = tmpx;
+//      else
+//	 X.col(idx) = tmpx;
       idx++;
 
-      if(verbose && i % md == md - 1)
+      if(verbose && j % md == md - 1)
 	 std::cout << timestamp() << " Reading genotypes, "
-	    << roundl(((double)i / nsnps) * 100) << "% done" 
+	    << roundl(((double)j / nsnps) * 100) << "% done" 
 	    << std::endl;
    }
 

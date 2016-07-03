@@ -83,7 +83,7 @@ class Data {
       unsigned char *tmp, *tmp2;
       std::ifstream in;
       double* avg;
-      VectorXd tmpx;
+      //VectorXd tmpx;
       bool* visited;
 
       // the standardized values for the 3 genotypes + NA, for each SNP
