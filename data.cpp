@@ -143,13 +143,9 @@ void Data::prepare()
    tmp = new unsigned char[np];
 
    // Allocate more than the sample size since data must take up whole bytes
-   std::cout << "np: " << np <<std::endl;
    tmp2 = new unsigned char[np * PACK_DENSITY];
 
-   avg = new double[nsnps]; 
-
-   //tmpx = VectorXd(N);
-
+   avg = new double[nsnps](); 
    visited = new bool[nsnps]();
 
    scaled_geno_lookup = ArrayXXd(nsnps, 4);
@@ -160,7 +156,9 @@ void Data::prepare()
       << " SNPs." << std::endl;
 }
 
-// Reads a _contiguous_ block of SNPs [start, stop] at a time
+// Reads a _contiguous_ block of SNPs [start, stop] at a time.
+// The block will contain standardised genotypes already, no need to
+// standardise them again.
 void Data::read_snp_block(unsigned int start_idx, unsigned int stop_idx,
    bool transpose)
 {
@@ -189,7 +187,6 @@ void Data::read_snp_block(unsigned int start_idx, unsigned int stop_idx,
       decode_plink(tmp2, tmp, np);
 
       // Compute average per SNP, excluding missing values
-      //avg[k] = 0;
       double snp_avg = 0;
       unsigned int ngood = 0;
 
@@ -199,14 +196,12 @@ void Data::read_snp_block(unsigned int start_idx, unsigned int stop_idx,
 	 for(unsigned int i = 0 ; i < N ; i++)
       	 {
       	    double s = (double)tmp2[i];
-      	    if(s != PLINK_NA)
+      	    if(s != PLINK_NA) // maybe integer equality is faster?
       	    {
-      	       //avg[k] += s;
       	       snp_avg += s;
       	       ngood++;
       	    }
       	 }
-      	 //avg[k] /= ngood;
       	 snp_avg /= ngood;
 
 	 // Store the 4 possible standardized genotypes for each SNP
@@ -223,24 +218,6 @@ void Data::read_snp_block(unsigned int start_idx, unsigned int stop_idx,
       {
 	 X(i, j) = scaled_geno_lookup(k, tmp2[i]);
       }
-
-      //// Impute using average per SNP
-      //if(transpose)
-      //{
-      //   throw new std::runtime_error("blah");
-      //}
-      //else
-      //{
-      //   for(unsigned int i = 0 ; i < N ; i++)
-      //	 {
-      //	    double s = (double)tmp2[i];
-      //	    if(s != PLINK_NA)
-      //	       X(i, j) = s;
-      //	    else
-      //	       X(i, j) = avg[k];
-      //	 }
-      //}
-
    }
 }
 
@@ -248,26 +225,6 @@ void Data::read_snp_block(unsigned int start_idx, unsigned int stop_idx,
 // Expects PLINK bed in SNP-major format
 void Data::read_bed(bool transpose)
 {
-   //std::cout << timestamp() << " Reading BED file '" 
-   //   << geno_filename << "'" << std::endl;
-   //std::ifstream in(geno_filename, std::ios::in | std::ios::binary);
-   //in.seekg(3, std::ifstream::beg);
-
-   //if(!in)
-   //{
-   //   std::cerr << "[Data::read_bed] Error reading file "
-   //      << geno_filename << std::endl;
-   //   throw std::runtime_error("io error");
-   //}
-   //
-   //if(nsnps < 1)
-   //   throw std::string("Number of SNPs not known, can't read_bed");
-
-   //unsigned char* tmp = new unsigned char[np];
-
-   //// Allocate more than the sample size since data must take up whole bytes
-   //unsigned char* tmp2 = new unsigned char[np * PACK_DENSITY];
-
    if(transpose)
       X = MatrixXd(nsnps, N);
    else
@@ -278,13 +235,9 @@ void Data::read_bed(bool transpose)
       << " bytes, " << N << " samples, " << nsnps 
       << " SNPs." << std::endl;
 
-   //avg = new double[nsnps]; 
-   unsigned int idx = 0;
-   //VectorXd tmpx(N);
-
    unsigned int md = nsnps / 50;
 
-   // iterate over all SNPs, only decode those that are included in analysis
+   // iterate over all SNPs
    for(unsigned int j = 0 ; j < nsnps; j++)
    {
       // read raw genotypes
@@ -294,34 +247,40 @@ void Data::read_bed(bool transpose)
       decode_plink(tmp2, tmp, np);
 
       // Compute average per SNP, excluding missing values
-      avg[idx] = 0;
+      avg[j] = 0;
       unsigned int ngood = 0;
       for(unsigned int i = 0 ; i < N ; i++)
       {
 	 double s = (double)tmp2[i];
 	 if(s != PLINK_NA)
 	 {
-	    avg[idx] += s;
+	    avg[j] += s;
 	    ngood++;
 	 }
       }
-      avg[idx] /= ngood;
+      avg[j] /= ngood;
 
       // Impute using average per SNP
       for(unsigned int i = 0 ; i < N ; i++)
       {
 	 double s = (double)tmp2[i];
-	 if(s != PLINK_NA)
-	    X(i, idx) = s;
-	 else
-	    X(idx, i) = avg[idx];
+	 {
+	    if(transpose)
+	    {
+	       if(s != PLINK_NA)
+		  X(j, i) = s;
+	       else
+		  X(j, i) = avg[j];
+	    }
+	    else
+	    {
+	       if(s != PLINK_NA)
+		  X(i, j) = s;
+	       else
+		  X(i, j) = avg[j];
+	    }
+	 }
       }
-
-//      if(transpose)
-//	 X.row(idx) = tmpx;
-//      else
-//	 X.col(idx) = tmpx;
-      idx++;
 
       if(verbose && j % md == md - 1)
 	 std::cout << timestamp() << " Reading genotypes, "
@@ -336,12 +295,6 @@ void Data::read_bed(bool transpose)
 
    std::cout << timestamp() << " Loaded genotypes: "
       << N << " samples, " << p << " SNPs" << std::endl;
-
-   //delete[] tmp;
-   //delete[] tmp2;
-   //delete[] avg;
-
-   //in.close();
 }
 
 void Data::read_pheno(const char *filename, unsigned int firstcol)

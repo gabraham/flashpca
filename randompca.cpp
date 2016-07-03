@@ -44,9 +44,8 @@ class SVDWideOnline
       SVDWideOnline(Data& dat_, unsigned int block_size, int stand_method_):
 	 dat(dat_), n(dat_.N), p(dat_.nsnps)
       {
-	 //stand_method = stand_method_;
 	 nblocks = (unsigned int)ceil((double)p / block_size);
-	 std::cout << "Using blocksize " << block_size << ", " <<
+	 STDOUT << "Using blocksize " << block_size << ", " <<
 	    nblocks << " blocks"<< std::endl;
 	 start = new unsigned int[nblocks];
 	 stop = new unsigned int[nblocks];
@@ -73,18 +72,13 @@ class SVDWideOnline
 	 Map<VectorXd> y(y_out, n);
 
 	 dat.read_snp_block(start[0], stop[0], false);
-	 //if(stand_method != STANDARDIZE_NONE)
-	    //standardize(dat.X, stand_method, false);
 	 y.noalias() = dat.X * (dat.X.transpose() * x);
 
 	 for(unsigned int k = 1 ; k < nblocks ; k++)
 	 {
 	    dat.read_snp_block(start[k], stop[k], false);
-	    //if(stand_method != STANDARDIZE_NONE)
-	      // standardize(dat.X, stand_method, false);
 	    y.noalias() = y + dat.X * (dat.X.transpose() * x);
 	 }
-
       }
 };
 
