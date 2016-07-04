@@ -531,7 +531,10 @@ int main(int argc, char * argv[])
       
    data.geno_filename = geno_file.c_str();
    data.get_size();
-   transpose = mode == MODE_PCA && (transpose || data.N > data.nsnps);
+   //transpose = mode == MODE_PCA && (transpose || data.N > data.nsnps);
+   transpose = false;
+
+   std::cout << "warning: transpose disabled" << std::endl;
 
    if(mem_mode == MEM_MODE_OFFLINE)
    {

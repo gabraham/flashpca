@@ -16,9 +16,15 @@ class SVDWide
    private:
       const MatrixXd& mat;
       const unsigned int n;
+      bool verbose;
+      unsigned int nops;
 
    public:
-      SVDWide(const MatrixXd& mat_): mat(mat_), n(mat_.rows()) {}
+      SVDWide(const MatrixXd& mat_, bool verbose_=false): mat(mat_), n(mat_.rows())
+      {
+	 verbose = verbose_;
+	 nops = 1;
+      }
 
       inline unsigned int rows() const { return n; }
       inline unsigned int cols() const { return n; }
@@ -27,7 +33,10 @@ class SVDWide
       {
 	 Map<VectorXd> x(x_in, n);
 	 Map<VectorXd> y(y_out, n);
+	 verbose && STDOUT << timestamp() << " Matrix operation "
+	    << nops << std::endl;
 	 y.noalias() = mat * (mat.transpose() * x);
+	 nops++;
       }
 };
 
@@ -39,11 +48,16 @@ class SVDWideOnline
       unsigned int nblocks;
       unsigned int *start, *stop;
       int stand_method;
+      bool verbose;
+      unsigned int nops;
+      unsigned int block_size, actual_block_size;
 
    public:
-      SVDWideOnline(Data& dat_, unsigned int block_size, int stand_method_):
-	 dat(dat_), n(dat_.N), p(dat_.nsnps)
+      SVDWideOnline(Data& dat_, unsigned int block_size_, int stand_method_,
+	 bool verbose_): dat(dat_), n(dat_.N), p(dat_.nsnps)
       {
+	 verbose = verbose_;
+	 block_size = block_size_;
 	 nblocks = (unsigned int)ceil((double)p / block_size);
 	 STDOUT << "Using blocksize " << block_size << ", " <<
 	    nblocks << " blocks"<< std::endl;
@@ -55,6 +69,8 @@ class SVDWideOnline
 	    stop[i] = start[i] + block_size - 1;
 	    stop[i] = stop[i] >= p ? p - 1 : stop[i];
 	 }
+
+	 nops = 1;
       }
 
       ~SVDWideOnline()
@@ -70,15 +86,25 @@ class SVDWideOnline
       {
 	 Map<VectorXd> x(x_in, n);
 	 Map<VectorXd> y(y_out, n);
+	 unsigned int actual_block_size;
 
-	 dat.read_snp_block(start[0], stop[0], false);
-	 y.noalias() = dat.X * (dat.X.transpose() * x);
+	 verbose && STDOUT << timestamp() << " Matrix operation " << nops << std::endl;
+	 verbose && STDOUT << timestamp() << "   Reading block 0" << std::endl;
+	 actual_block_size = stop[0] - start[0] + 1;
+	 dat.read_snp_block(start[0], stop[0], false, false);
+	 y.noalias() = dat.X.leftCols(actual_block_size) *
+	    (dat.X.leftCols(actual_block_size).transpose() * x);
 
 	 for(unsigned int k = 1 ; k < nblocks ; k++)
 	 {
-	    dat.read_snp_block(start[k], stop[k], false);
-	    y.noalias() = y + dat.X * (dat.X.transpose() * x);
+	    verbose && STDOUT << timestamp() << "   Reading block " << k << std::endl;
+	    actual_block_size = stop[k] - start[k] + 1;
+	    dat.read_snp_block(start[k], stop[k], false, false);
+	    y.noalias() = y + dat.X.leftCols(actual_block_size) *
+	       (dat.X.leftCols(actual_block_size).transpose() * x);
 	 }
+
+	 nops++;
       }
 };
 
@@ -286,7 +312,7 @@ void RandomPCA::pca_fast(MatrixXd& X, unsigned int block_size, int method, bool 
       p = X.cols();
    }
 
-   SVDWide op(X);
+   SVDWide op(X, verbose);
    Spectra::SymEigsSolver<double,
       Spectra::LARGEST_ALGE, SVDWide> eigs(&op, ndim, ndim * 2 + 1);
 
@@ -302,7 +328,6 @@ void RandomPCA::pca_fast(MatrixXd& X, unsigned int block_size, int method, bool 
    if(eigs.info() == Spectra::SUCCESSFUL)
    {
       U = eigs.eigenvectors();
-      //d = eigs.eigenvalues().array().sqrt();
       d = eigs.eigenvalues().array() / div;
    }
    else
@@ -319,7 +344,7 @@ void RandomPCA::pca_fast(Data& dat, unsigned int block_size, int method, bool tr
    int mem)
 {
    unsigned int N = dat.N, p = dat.nsnps;
-   SVDWideOnline op(dat, block_size, stand_method_x);
+   SVDWideOnline op(dat, block_size, stand_method_x, verbose);
    Spectra::SymEigsSolver<double, Spectra::LARGEST_ALGE,
       SVDWideOnline> eigs(&op, ndim, ndim * 2 + 1);
 
@@ -837,7 +862,7 @@ void RandomPCA::ucca(Data& data)
 
    for(unsigned int j = 0 ; j < p ; j++)
    {
-      data.read_snp_block(j, j, false);
+      data.read_snp_block(j, j, false, true);
       if(stand_method_x != STANDARDIZE_NONE)
 	 X_meansd = standardize(data.X, stand_method_x);
       varx = var(data.X.col(0));

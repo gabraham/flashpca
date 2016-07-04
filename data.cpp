@@ -63,7 +63,6 @@ void decode_plink(unsigned char *out,
    unsigned char tmp, geno1, geno2, geno3, geno4;
    unsigned int a1, a2;
 
-   //for(i = 0 ; i < n ; ++i)
    for(i = 0 ; i < n ; i++)
    {
       tmp = in[i];
@@ -73,28 +72,25 @@ void decode_plink(unsigned char *out,
        * allele 2. The final genotype is the sum of the alleles, except for 01
        * which denotes missing.
        */
-      geno = (tmp & MASK0);
-      a1 = !(geno & 1);
-      a2 = !(geno >> 1);
-      out[k] = (geno == 1) ? 3 : a1 + a2;
-      k++;
+      geno1 = (tmp & MASK0);
+      a1 = !(geno1 & 1);
+      a2 = !(geno1 >> 1);
+      out[k] = (geno1 == 1) ? 3 : a1 + a2;
 
-      geno = (tmp & MASK1) >> 2; 
-      a1 = !(geno & 1);
-      a2 = !(geno >> 1);
-      out[k] = (geno == 1) ? 3 : a1 + a2;
-      k++;
+      geno2 = (tmp & MASK1) >> 2; 
+      a1 = !(geno2 & 1);
+      a2 = !(geno2 >> 1);
+      out[k+1] = (geno2 == 1) ? 3 : a1 + a2;
 
-      geno = (tmp & MASK2) >> 4; 
-      a1 = !(geno & 1);
-      a2 = !(geno >> 1);
-      out[k] = (geno == 1) ? 3 : a1 + a2;
-      k++;
+      geno3 = (tmp & MASK2) >> 4; 
+      a1 = !(geno3 & 1);
+      a2 = !(geno3 >> 1);
+      out[k+2] = (geno3 == 1) ? 3 : a1 + a2;
 
-      geno = (tmp & MASK3) >> 6; 
-      a1 = !(geno & 1);
-      a2 = !(geno >> 1);
-      out[k] = (geno == 1) ? 3 : a1 + a2;
+      geno4 = (tmp & MASK3) >> 6; 
+      a1 = !(geno4 & 1);
+      a2 = !(geno4 >> 1);
+      out[k+3] = (geno4 == 1) ? 3 : a1 + a2;
    }
 }
 
@@ -159,8 +155,12 @@ void Data::prepare()
 // Reads a _contiguous_ block of SNPs [start, stop] at a time.
 // The block will contain standardised genotypes already, no need to
 // standardise them again.
+//
+// If resize is false, then the calling code is responsible for ensuring that
+// X is handled accordingly with the block size (X may be bigger than the
+// block).
 void Data::read_snp_block(unsigned int start_idx, unsigned int stop_idx,
-   bool transpose)
+   bool transpose, bool resize)
 {
    in.seekg(3 + np * start_idx);
 
@@ -170,11 +170,20 @@ void Data::read_snp_block(unsigned int start_idx, unsigned int stop_idx,
    // $blocksize$
    if(transpose)
    {
-      if(X.rows() != m)
-	 X = MatrixXd(m, N);
+      if(X.rows() == 0 || (resize && X.rows() != m))
+      {
+         std::cout << "reallocating memory: " << X.rows() << " -> " << m <<
+            std::endl;
+         if(X.rows() > m)
+            X = MatrixXd(m, N);
+      }
    }
-   else if(X.cols() != m)
+   else if(X.cols() == 0 || (resize && X.cols() != m))
+   {
+      std::cout << "reallocating memory: " << X.cols() << " -> " << m <<
+            std::endl;
       X = MatrixXd(N, m);
+   }
 
    for(unsigned int j = 0; j < m; j++)
    {
@@ -196,7 +205,7 @@ void Data::read_snp_block(unsigned int start_idx, unsigned int stop_idx,
 	 for(unsigned int i = 0 ; i < N ; i++)
       	 {
       	    double s = (double)tmp2[i];
-      	    if(s != PLINK_NA) // maybe integer equality is faster?
+      	    if(tmp2[i] != PLINK_NA)
       	    {
       	       snp_avg += s;
       	       ngood++;
@@ -230,10 +239,10 @@ void Data::read_bed(bool transpose)
    else
       X = MatrixXd(N, nsnps);
 
-   std::cout << timestamp() << " Detected BED file: "
-      << geno_filename << " with " << (len + 3)
-      << " bytes, " << N << " samples, " << nsnps 
-      << " SNPs." << std::endl;
+   //std::cout << timestamp() << " Detected BED file: "
+   //   << geno_filename << " with " << (len + 3)
+   //   << " bytes, " << N << " samples, " << nsnps 
+   //   << " SNPs." << std::endl;
 
    unsigned int md = nsnps / 50;
 
@@ -252,7 +261,7 @@ void Data::read_bed(bool transpose)
       for(unsigned int i = 0 ; i < N ; i++)
       {
 	 double s = (double)tmp2[i];
-	 if(s != PLINK_NA)
+	 if(tmp2[i] != PLINK_NA)
 	 {
 	    avg[j] += s;
 	    ngood++;

@@ -71,7 +71,7 @@ class Data {
       void prepare();
       void read_bed(bool transpose);
       void read_snp_block(unsigned int start_idx, unsigned int stop_idx,
-	 bool transpose);
+	 bool transpose, bool resize);
       void get_size();
       void read_pheno(const char *filename, unsigned int firstcol);
       void read_plink_bim(const char *filename);
