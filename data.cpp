@@ -144,7 +144,7 @@ void Data::prepare()
    avg = new double[nsnps](); 
    visited = new bool[nsnps]();
 
-   scaled_geno_lookup = ArrayXXd(nsnps, 4);
+   scaled_geno_lookup = ArrayXXd::Zero(nsnps, 4);
 
    std::cout << timestamp() << " Detected BED file: "
       << geno_filename << " with " << (len + 3)
@@ -164,28 +164,28 @@ void Data::read_snp_block(unsigned int start_idx, unsigned int stop_idx,
 {
    in.seekg(3 + np * start_idx);
 
-   unsigned int m = stop_idx - start_idx + 1;
+   unsigned int actual_block_size = stop_idx - start_idx + 1;
 
    // Resize matrix, e.g., with final block that may be smaller than
    // $blocksize$
    if(transpose)
    {
-      if(X.rows() == 0 || (resize && X.rows() != m))
+      if(X.rows() == 0 || (resize && X.rows() != actual_block_size))
       {
-         std::cout << "reallocating memory: " << X.rows() << " -> " << m <<
-            std::endl;
-         if(X.rows() > m)
-            X = MatrixXd(m, N);
+         std::cout << "reallocating memory: " << X.rows() << " -> " <<
+	    actual_block_size << std::endl;
+         if(X.rows() > actual_block_size)
+            X = MatrixXd(actual_block_size, N);
       }
    }
-   else if(X.cols() == 0 || (resize && X.cols() != m))
+   else if(X.cols() == 0 || (resize && X.cols() != actual_block_size))
    {
-      std::cout << "reallocating memory: " << X.cols() << " -> " << m <<
-            std::endl;
-      X = MatrixXd(N, m);
+      std::cout << "reallocating memory: " << X.cols() << " -> " <<
+	 actual_block_size << std::endl;
+      X = MatrixXd(N, actual_block_size);
    }
 
-   for(unsigned int j = 0; j < m; j++)
+   for(unsigned int j = 0; j < actual_block_size; j++)
    {
       unsigned int k = start_idx + j;
 
@@ -216,10 +216,13 @@ void Data::read_snp_block(unsigned int start_idx, unsigned int stop_idx,
 	 // Store the 4 possible standardized genotypes for each SNP
 	 double P = snp_avg / 2.0;
 	 double sd = sqrt(2.0 * P * (1 - P));
-	 scaled_geno_lookup(k, 0) = (0 - snp_avg) / sd;
-	 scaled_geno_lookup(k, 1) = (1 - snp_avg) / sd;
-	 scaled_geno_lookup(k, 2) = (2 - snp_avg) / sd;
-	 scaled_geno_lookup(k, 3) = 0; // Assumes PLINK NA = 3
+	 if(sd > VAR_TOL)
+	 {
+	    scaled_geno_lookup(k, 0) = (0 - snp_avg) / sd;
+	    scaled_geno_lookup(k, 1) = (1 - snp_avg) / sd;
+	    scaled_geno_lookup(k, 2) = (2 - snp_avg) / sd;
+	    scaled_geno_lookup(k, 3) = 0; // Assumes PLINK NA = 3
+	 }
 	 visited[k] = true;
       }
 
