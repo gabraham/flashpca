@@ -91,3 +91,7 @@ class Data {
 };
 
 
+void decode_plink(unsigned char * __restrict__ out,
+   const unsigned char * __restrict__ in,
+   const unsigned int n);
+
