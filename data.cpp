@@ -73,25 +73,65 @@ void decode_plink(unsigned char * __restrict__ out,
        * allele 2. The final genotype is the sum of the alleles, except for 01
        * which denotes missing.
        */
+      //geno1 = (tmp & MASK0);
+      //a1 = !(geno1 & 1);
+      //a2 = !(geno1 >> 1);
+      //out[k] = (geno1 == 1) ? 3 : a1 + a2;
+
+      //geno2 = (tmp & MASK1) >> 2; 
+      //a1 = !(geno2 & 1);
+      //a2 = !(geno2 >> 1);
+      //out[k+1] = (geno2 == 1) ? 3 : a1 + a2;
+
+      //geno3 = (tmp & MASK2) >> 4; 
+      //a1 = !(geno3 & 1);
+      //a2 = !(geno3 >> 1);
+      //out[k+2] = (geno3 == 1) ? 3 : a1 + a2;
+
+      //geno4 = (tmp & MASK3) >> 6; 
+      //a1 = !(geno4 & 1);
+      //a2 = !(geno4 >> 1);
+      //out[k+3] = (geno4 == 1) ? 3 : a1 + a2;
+
       geno1 = (tmp & MASK0);
-      a1 = !(geno1 & 1);
-      a2 = !(geno1 >> 1);
-      out[k] = (geno1 == 1) ? 3 : a1 + a2;
+      if(geno1 == 1)
+	 out[k] = 3;
+      else
+      {
+	 a1 = !(geno1 & 1);
+	 a2 = !(geno1 >> 1);
+	 out[k] = a1 + a2;
+      }
 
-      geno2 = (tmp & MASK1) >> 2; 
-      a1 = !(geno2 & 1);
-      a2 = !(geno2 >> 1);
-      out[k+1] = (geno2 == 1) ? 3 : a1 + a2;
+      geno2 = (tmp & MASK1) >> 2;
+      if(geno2 == 1)
+	 out[k+1] = 3;
+      else
+      {
+	 a1 = !(geno2 & 1);
+	 a2 = !(geno2 >> 1);
+	 out[k+1] = a1 + a2;
+      }
 
-      geno3 = (tmp & MASK2) >> 4; 
-      a1 = !(geno3 & 1);
-      a2 = !(geno3 >> 1);
-      out[k+2] = (geno3 == 1) ? 3 : a1 + a2;
+      geno3 = (tmp & MASK2) >> 4;
+      if(geno3 == 1)
+	 out[k] = 3;
+      else
+      {
+	 a1 = !(geno3 & 1);
+	 a2 = !(geno3 >> 1);
+	 out[k+2] = a1 + a2;
+      }
 
-      geno4 = (tmp & MASK3) >> 6; 
-      a1 = !(geno4 & 1);
-      a2 = !(geno4 >> 1);
-      out[k+3] = (geno4 == 1) ? 3 : a1 + a2;
+      geno4 = (tmp & MASK3) >> 6;
+      if(geno4 == 1)
+	 out[k] = 3;
+      else
+      {
+	 a1 = !(geno4 & 1);
+	 a2 = !(geno4 >> 1);
+	 out[k+3] = a1 + a2;
+      }
    }
 }
 
