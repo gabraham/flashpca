@@ -4,8 +4,8 @@
 \alias{scca}
 \title{Performs sparse canonical correlation analysis}
 \usage{
-scca(X, Y, lambda1 = 0, lambda2 = 0, stand = c("binom", "sd", "center",
-  "none"), ndim = 10, maxiter = 1000, tol = 1e-04, seed = 1L,
+scca(X, Y, lambda1 = 0, lambda2 = 0, stand = c("binom", "binom2", "sd",
+  "center", "none"), ndim = 10, maxiter = 1000, tol = 1e-04, seed = 1L,
   verbose = FALSE, num_threads = 1, mem = c("low", "high"),
   check_geno = TRUE, V = NULL)
 }
@@ -19,8 +19,9 @@ scca(X, Y, lambda1 = 0, lambda2 = 0, stand = c("binom", "sd", "center",
 \item{lambda2}{Numeric. Non-negative L1 penalty on canonical vectors of Y.}
 
 \item{stand}{Character. One of "binom" (zero mean, unit variance
-where variance is 2*p*(1-p), for SNP data),
-"sd" (zero-mean, unit variance), "center" (zero mean), or "none". Note
+where variance is p * (1 - p), for SNP data), "binom2" (zero mean, unit
+variance where variance is 2 * p * (1 - p),
+"sd" (zero-mean, unit Gaussian variance), "center" (zero mean), or "none". Note
 that if you use "binom" for non-SNP data you may get garbage. Note that
 currently the same standardization is applied to both X and Y. If you
 require different standardizations, it's best to standardize yourself

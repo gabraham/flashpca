@@ -42,9 +42,8 @@ using namespace Eigen;
 typedef Array<bool, Dynamic, Dynamic> ArrayXXb;
 typedef Array<bool, Dynamic, 1> ArrayXb;
 
-
 template <typename Derived>
-void save(const char *filename, const MatrixBase<Derived>& m)
+void save(const char *filename, const Eigen::MatrixBase<Derived>& m)
 {
    unsigned int rows = m.rows(), cols = m.cols();
    std::ofstream f(filename, std::ios::out | std::ios::binary);
@@ -55,7 +54,7 @@ void save(const char *filename, const MatrixBase<Derived>& m)
 }
 
 template <typename Derived>
-void load(const char *filename, MatrixBase<Derived>& m)
+void load(const char *filename, Eigen::MatrixBase<Derived>& m)
 {
    int nrows, ncols;
    std::ifstream f(filename, std::ios::binary);
@@ -66,7 +65,7 @@ void load(const char *filename, MatrixBase<Derived>& m)
 }
 
 template <typename Derived, typename A, typename B>
-bool save_text(MatrixBase<Derived>& m,
+bool save_text(Eigen::MatrixBase<Derived>& m,
    const std::vector<A>& colnames,
    const std::vector<B>& rownames,
    const char *filename,
@@ -108,7 +107,7 @@ bool save_text(MatrixBase<Derived>& m,
 }
 
 template <typename Derived>
-std::string dim(MatrixBase<Derived>& m)
+std::string dim(Eigen::MatrixBase<Derived>& m)
 {
    std::stringstream ss;
    ss << m.rows() << " x " << m.cols();
@@ -124,9 +123,9 @@ int sign(T x)
    return (T(0) < x) - (x < T(0));
 }
 
-MatrixXd read_bed(const char *filename, const unsigned int nrows);
-MatrixXd read_pheno(const char *filename, unsigned int firstcol);
-MatrixXd standardize(MatrixXd &X, int method, bool verbose=false);
-MatrixXd standardize_transpose(MatrixXd &X, int method,
+Eigen::MatrixXd read_bed(const char *filename, const unsigned int nrows);
+Eigen::MatrixXd read_pheno(const char *filename, unsigned int firstcol);
+Eigen::MatrixXd standardize(Eigen::MatrixXd &X, int method, bool verbose=false);
+Eigen::MatrixXd standardize_transpose(Eigen::MatrixXd &X, int method,
    bool verbose=false);
 

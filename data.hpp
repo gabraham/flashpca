@@ -19,8 +19,7 @@
 #include <Eigen/Dense>
 #include <Eigen/Eigen>
 
-#include <boost/filesystem.hpp>
-#include <boost/iostreams/device/mapped_file.hpp>
+//#include <boost/filesystem.hpp>
 
 #include "util.hpp"
 
@@ -61,7 +60,6 @@ class Data {
       unsigned long long len, np;
       unsigned int nsnps;
       const char *geno_filename;
-      boost::iostreams::mapped_file_source geno_fin;
       bool verbose;
       long seed;
       std::vector<std::string> snp_ids;

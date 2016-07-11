@@ -59,7 +59,7 @@ class SVDWideOnline
 	 verbose = verbose_;
 	 block_size = block_size_;
 	 nblocks = (unsigned int)ceil((double)p / block_size);
-	 STDOUT << "Using blocksize " << block_size << ", " <<
+	 verbose && STDOUT << "Using blocksize " << block_size << ", " <<
 	    nblocks << " blocks"<< std::endl;
 	 start = new unsigned int[nblocks];
 	 stop = new unsigned int[nblocks];
@@ -851,8 +851,9 @@ void RandomPCA::ucca(Data& data)
    double varx;
    RowVectorXd covXY;
 
-   std::cout << "ucca online mode, N=" << n << " p=" << p << std::endl;
+   STDOUT << "ucca online mode, N=" << n << " p=" << p << std::endl;
 
+   // QR might be faster here
    JacobiSVD<MatrixXd> svd(data.Y, ComputeThinU | ComputeThinV);
    VectorXd d = svd.singularValues() / sqrt(n - 1);
    VectorXd d2 = d.array().pow(-2);

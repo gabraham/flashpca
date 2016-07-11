@@ -9,3 +9,7 @@ scca_internal <- function(X, Y, lambda1, lambda2, ndim, stand, mem, seed, maxite
     .Call('flashpcaR_scca_internal', PACKAGE = 'flashpcaR', X, Y, lambda1, lambda2, ndim, stand, mem, seed, maxiter, tol, verbose, num_threads, useV, Vinit)
 }
 
+flashpca_plink_internal <- function(fn, stand_x, ndim, maxiter, tol, verbose) {
+    .Call('flashpcaR_flashpca_plink_internal', PACKAGE = 'flashpcaR', fn, stand_x, ndim, maxiter, tol, verbose)
+}
+

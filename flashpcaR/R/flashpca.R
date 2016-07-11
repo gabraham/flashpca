@@ -150,21 +150,21 @@ flashpca <- function(X, method=c("eigen", "svd"),
    kernel <- match.arg(kernel)
    mem <- match.arg(mem)
    
-   if(!is.numeric(X)) {
-      stop("X must both a numeric matrix")
-   }
-
-   if(any(is.na(X))) {
-      stop("X cannot contain any missing values")
-   }
-
-   if(stand %in% c("binom", "binom2") && check_geno) {
-      wx <- X %in% 0:2
-      if(sum(wx) != length(X)) {
-	 stop(
-	    "Your data contains values other than {0, 1, 2}, ",
-	    "stand='binom'/'binom2' can't be used here")
+   if(is.numeric(X)) {
+      if(any(is.na(X))) {
+	 stop("X cannot contain any missing values")
       }
+
+      if(stand %in% c("binom", "binom2") && check_geno) {
+	 wx <- X %in% 0:2
+      	 if(sum(wx) != length(X)) {
+      	    stop(
+      	       "Your data contains values other than {0, 1, 2}, ",
+      	       "stand='binom'/'binom2' can't be used here")
+      	 }
+      }
+   } else if(!is.character(X)) {
+      stop("X must be a numeric matrix or a string naming a PLINK fileset")
    }
 
    if(!is.logical(divide_n)) {
@@ -199,14 +199,17 @@ flashpca <- function(X, method=c("eigen", "svd"),
    if(is.null(transpose)) {
       transpose <- FALSE
    }
-   maxdim <- min(dim(X))
-   ndim <- min(maxdim, ndim)
-   nextra <- min(maxdim - ndim, nextra)
-   if(is.null(sigma)) {
-      sigma <- 0 # will be estimated from data
-   }
 
-   rbf_sample <- min(nrow(X), rbf_sample)
+   if(is.numeric(X)) {
+      maxdim <- min(dim(X))
+      ndim <- min(maxdim, ndim)
+      nextra <- min(maxdim - ndim, nextra)
+      if(is.null(sigma)) {
+         sigma <- 0 # will be estimated from data
+      }
+
+      rbf_sample <- min(nrow(X), rbf_sample)
+   }
 
    if(mem == "high") {
       mem_i <- 2L
@@ -215,12 +218,18 @@ flashpca <- function(X, method=c("eigen", "svd"),
    }
 
    # otherwise Rcpp will throw an exception
-   storage.mode(X) <- "numeric"
+   if(is.numeric(X)) {
+      storage.mode(X) <- "numeric"
+   }
 
    res <- try(
-      flashpca_internal(X, method_i, stand_i, transpose, ndim, nextra, maxiter,
-      tol, seed, kernel_i, sigma, rbf_center, rbf_sample, save_kernel, do_orth,
-      verbose, do_loadings, mem_i, return_scale, num_threads, divide_n)
+      if(is.character(X)) {
+	 flashpca_plink_internal(X, stand_i, ndim, maxiter, tol, verbose)
+      } else {
+	 flashpca_internal(X, method_i, stand_i, transpose, ndim, nextra, maxiter,
+	    tol, seed, kernel_i, sigma, rbf_center, rbf_sample, save_kernel, do_orth,
+	    verbose, do_loadings, mem_i, return_scale, num_threads, divide_n)
+      }
    )
    if(is(res, "try-error")) {
       NULL
@@ -228,5 +237,4 @@ flashpca <- function(X, method=c("eigen", "svd"),
       res
    }
 }
-
 

@@ -4,13 +4,13 @@
 \alias{flashpca}
 \title{Principal Component Analysis using flashpca}
 \usage{
-flashpca(X, method = c("eigen", "svd"), stand = c("binom", "sd", "center",
-  "none"), transpose = NULL, ndim = 10, nextra = 10, maxiter = 100,
-  tol = 1e-04, seed = 1, kernel = c("linear", "rbf"), sigma = NULL,
-  rbf_center = TRUE, rbf_sample = 1000, save_kernel = FALSE,
-  do_orth = TRUE, verbose = FALSE, num_threads = 1, do_loadings = FALSE,
-  mem = c("low", "high"), check_geno = TRUE, return_scale = TRUE,
-  divide_n = TRUE)
+flashpca(X, method = c("eigen", "svd"), stand = c("binom", "binom2", "sd",
+  "center", "none"), transpose = NULL, ndim = 10, nextra = 10,
+  maxiter = 100, tol = 1e-04, seed = 1, kernel = c("linear", "rbf"),
+  sigma = NULL, rbf_center = TRUE, rbf_sample = 1000,
+  save_kernel = FALSE, do_orth = TRUE, verbose = FALSE, num_threads = 1,
+  do_loadings = FALSE, mem = c("low", "high"), check_geno = TRUE,
+  return_scale = TRUE, divide_n = TRUE)
 }
 \arguments{
 \item{X}{A numeric matrix to perform PCA on. X must not have any NAs.}

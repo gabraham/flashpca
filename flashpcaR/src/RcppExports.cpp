@@ -61,3 +61,19 @@ BEGIN_RCPP
     return __result;
 END_RCPP
 }
+// flashpca_plink_internal
+List flashpca_plink_internal(std::string fn, int stand_x, int ndim, int maxiter, double tol, bool verbose);
+RcppExport SEXP flashpcaR_flashpca_plink_internal(SEXP fnSEXP, SEXP stand_xSEXP, SEXP ndimSEXP, SEXP maxiterSEXP, SEXP tolSEXP, SEXP verboseSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< std::string >::type fn(fnSEXP);
+    Rcpp::traits::input_parameter< int >::type stand_x(stand_xSEXP);
+    Rcpp::traits::input_parameter< int >::type ndim(ndimSEXP);
+    Rcpp::traits::input_parameter< int >::type maxiter(maxiterSEXP);
+    Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
+    Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
+    __result = Rcpp::wrap(flashpca_plink_internal(fn, stand_x, ndim, maxiter, tol, verbose));
+    return __result;
+END_RCPP
+}

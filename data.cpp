@@ -143,7 +143,7 @@ void decode_plink(unsigned char * __restrict__ out,
 
 void Data::get_size()
 {
-   std::cout << timestamp() << " Analyzing BED file '" 
+   verbose && STDOUT << timestamp() << " Analyzing BED file '" 
       << geno_filename << "'";
    std::ifstream in(geno_filename, std::ios::in | std::ios::binary);
 
@@ -166,7 +166,7 @@ void Data::get_size()
    in.seekg(3, std::ifstream::beg);
    in.close();
 
-   std::cout << ", found " << (len + 3) << " bytes, "
+   verbose && STDOUT << ", found " << (len + 3) << " bytes, "
       << nsnps << " SNPs" << std::endl;
 }
 
@@ -193,7 +193,7 @@ void Data::prepare()
 
    scaled_geno_lookup = ArrayXXd::Zero(nsnps, 4);
 
-   std::cout << timestamp() << " Detected BED file: "
+   verbose && STDOUT << timestamp() << " Detected BED file: "
       << geno_filename << " with " << (len + 3)
       << " bytes, " << N << " samples, " << nsnps 
       << " SNPs." << std::endl;
@@ -219,7 +219,8 @@ void Data::read_snp_block(unsigned int start_idx, unsigned int stop_idx,
    {
       if(X.rows() == 0 || (resize && X.rows() != actual_block_size))
       {
-         std::cout << "reallocating memory: " << X.rows() << " -> " <<
+         verbose && STDOUT << timestamp()
+	    << " Reallocating memory: " << X.rows() << " -> " <<
 	    actual_block_size << std::endl;
          if(X.rows() > actual_block_size)
             X = MatrixXd(actual_block_size, N);
@@ -227,7 +228,8 @@ void Data::read_snp_block(unsigned int start_idx, unsigned int stop_idx,
    }
    else if(X.cols() == 0 || (resize && X.cols() != actual_block_size))
    {
-      std::cout << "reallocating memory: " << X.cols() << " -> " <<
+      verbose && STDOUT << timestamp()
+	 << " Reallocating memory: " << X.cols() << " -> " <<
 	 actual_block_size << std::endl;
       X = MatrixXd(N, actual_block_size);
    }
@@ -289,11 +291,6 @@ void Data::read_bed(bool transpose)
    else
       X = MatrixXd(N, nsnps);
 
-   //std::cout << timestamp() << " Detected BED file: "
-   //   << geno_filename << " with " << (len + 3)
-   //   << " bytes, " << N << " samples, " << nsnps 
-   //   << " SNPs." << std::endl;
-
    unsigned int md = nsnps / 50;
 
    // iterate over all SNPs
@@ -342,7 +339,7 @@ void Data::read_bed(bool transpose)
       }
 
       if(verbose && j % md == md - 1)
-	 std::cout << timestamp() << " Reading genotypes, "
+	 STDOUT << timestamp() << " Reading genotypes, "
 	    << roundl(((double)j / nsnps) * 100) << "% done" 
 	    << std::endl;
    }
@@ -352,7 +349,7 @@ void Data::read_bed(bool transpose)
    else
       p = X.cols();
 
-   std::cout << timestamp() << " Loaded genotypes: "
+   verbose && STDOUT << timestamp() << " Loaded genotypes: "
       << N << " samples, " << p << " SNPs" << std::endl;
 }
 
@@ -387,7 +384,7 @@ MatrixXd Data::read_plink_pheno(const char *filename, unsigned int firstcol)
 	 lines.push_back(line);
    }
 
-   std::cout << timestamp() << " Detected pheno file " <<
+   verbose && STDOUT << timestamp() << " Detected pheno file " <<
       filename << ", " << lines.size() << " samples" << std::endl;
 
    in.close();
@@ -441,7 +438,7 @@ void Data::read_plink_bim(const char *filename)
 	 lines.push_back(line);
    }
 
-   std::cout << timestamp() << " Detected bim file " <<
+   verbose && STDOUT << timestamp() << " Detected bim file " <<
       filename << ", " << lines.size() << " SNPs" << std::endl;
    in.close();
 

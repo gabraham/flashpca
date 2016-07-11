@@ -614,35 +614,35 @@ int main(int argc, char * argv[])
    
          if(mem_mode == MEM_MODE_OFFLINE)
          {
-   	 if(fast_mode)
-   	 {
-   	    rpca.pca_fast(data.X, block_size, method, transpose, n_dim, n_extra, maxiter,
-   	       tol, seed, kernel, sigma, rbf_center, rbf_sample, save_kernel,
-   	       do_orth, do_loadings, mem);
-   	 }
-   	 else
-   	 {
-   	    rpca.pca(data.X, method, transpose, n_dim, n_extra, maxiter,
-   	       tol, seed, kernel, sigma, rbf_center, rbf_sample, save_kernel,
-   	       do_orth, do_loadings, mem);
-   	 }
+	    if(fast_mode)
+   	    {
+   	       rpca.pca_fast(data.X, block_size, method, transpose, n_dim, n_extra, maxiter,
+   	          tol, seed, kernel, sigma, rbf_center, rbf_sample, save_kernel,
+   	          do_orth, do_loadings, mem);
+   	    }
+   	    else
+   	    {
+   	       rpca.pca(data.X, method, transpose, n_dim, n_extra, maxiter,
+   	          tol, seed, kernel, sigma, rbf_center, rbf_sample, save_kernel,
+   	          do_orth, do_loadings, mem);
+   	    }
          }
-         else
-         {
-   	 if(fast_mode)
-   	 {
-   	    rpca.pca_fast(data, block_size, method, transpose, n_dim, n_extra, maxiter,
-   	       tol, seed, kernel, sigma, rbf_center, rbf_sample, save_kernel,
-   	       do_orth, do_loadings, mem);
-   	 }
-   	 else
-   	 {
-   	    rpca.pca(data, method, transpose, n_dim, n_extra, maxiter,
-   	       tol, seed, kernel, sigma, rbf_center, rbf_sample, save_kernel,
-   	       do_orth, do_loadings, mem);
-   	 }
-         }
-         std::cout << timestamp() << " PCA done" << std::endl;
+	 else
+	 {
+	    if(fast_mode)
+	    {
+	       rpca.pca_fast(data, block_size, method, transpose, n_dim, n_extra, maxiter,
+		  tol, seed, kernel, sigma, rbf_center, rbf_sample, save_kernel,
+		  do_orth, do_loadings, mem);
+	    }
+	    else
+	    {
+	       rpca.pca(data, method, transpose, n_dim, n_extra, maxiter,
+		  tol, seed, kernel, sigma, rbf_center, rbf_sample, save_kernel,
+		  do_orth, do_loadings, mem);
+	    }
+	 }
+	 std::cout << timestamp() << " PCA done" << std::endl;
       }
       //else if(mode == MODE_CCA)
       //{
