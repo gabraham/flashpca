@@ -46,8 +46,8 @@ int main(int argc, char * argv[])
       ("scca", "perform sparse canonical correlation analysis (SCCA)")
       ("ucca", "perform per-SNP canonical correlation analysis")
       ("online,o", "don't load all genotypes into RAM at once")
-      ("fast,f", "use the fast Spectra algorithm")
-      ("blocksize,b", po::value<int>(), "size of block for online algorithm")
+      ("rand,r", "use the legacy randomised algorithm")
+      ("memory,m", po::value<int>(), "size of block for online algorithm, in GB")
       ("numthreads,t", po::value<int>(), "set number of OpenMP threads")
       ("seed", po::value<long>(), "set random seed")
       ("bed", po::value<std::string>(), "PLINK bed file")
@@ -65,7 +65,7 @@ int main(int argc, char * argv[])
       ("method", po::value<std::string>(), "PCA method [eigen | svd]")
       ("orth", po::value<std::string>(), "use orthornormalization [yes | no]")
       ("mem", po::value<std::string>(), "SCCA/PCA method [low | high]")
-      ("div", po::value<std::string>(), "whether to divide the eigenvalues by n - 1, p - 1, or nothing [n1 | p | none]")
+      ("div", po::value<std::string>(), "whether to divide the eigenvalues by p, n - 1, or don't divide [p | n1 | none]")
       ("outpc", po::value<std::string>(), "PC output file")
       ("outpcx", po::value<std::string>(), "X PC output file, for CCA")
       ("outpcy", po::value<std::string>(), "Y PC output file, for CCA")
@@ -139,7 +139,7 @@ int main(int argc, char * argv[])
       mode = MODE_UCCA;
 
    int mem_mode = vm.count("online") ? MEM_MODE_ONLINE : MEM_MODE_OFFLINE;
-   bool fast_mode = vm.count("fast");
+   bool fast_mode = !vm.count("rand");
    
    if(mem_mode == MEM_MODE_ONLINE && !fast_mode)
    {
@@ -149,14 +149,16 @@ int main(int argc, char * argv[])
       return EXIT_FAILURE;
    }
 
-   int block_size = 100;
-   if(vm.count("blocksize"))
+   unsigned long long const MAX_MEM = 8589934592; // 8GiB
+   int memory = 8;
+   
+   if(vm.count("memory"))
    {
-      block_size = vm["blocksize"].as<int>();
-      if(block_size < 1)
+      memory = vm["memory"].as<int>();
+      if(memory < 1)
       {
 	 std::cerr
-	    << "Error: blocksize must be >=1 and <= num_snps"
+	    << "Error: memory (GB) must be >=1"
 	    << std::endl;
 	 return EXIT_FAILURE;
       }
@@ -505,7 +507,7 @@ int main(int argc, char * argv[])
       }
    }
 
-   int divisor = DIVISOR_N1;
+   int divisor = DIVISOR_P;
    if(vm.count("div"))
    {
       std::string m = vm["div"].as<std::string>();
@@ -581,7 +583,7 @@ int main(int argc, char * argv[])
       // dimensions required for the computation.
       // see
       // http://yixuan.cos.name/spectra/doc/classSpectra_1_1SymEigsSolver.html
-      unsigned int max_dim = fminl(data.X.rows(), data.X.cols()) / 3.0;
+      unsigned int max_dim = fminl(data.N, data.nsnps) / 3.0;
       
       if(n_dim > max_dim)
       {
@@ -596,6 +598,13 @@ int main(int argc, char * argv[])
       // n_extra = 2 n_dim + 1
       if(n_extra == 0)
          n_extra = fminl(max_dim - n_dim, 200 - n_dim);
+
+      double mem = (double)memory * 1073741824;
+      int block_size = mem / ((double)data.N * 8.0);
+      block_size = fminl(block_size, data.nsnps);
+
+      std::cout << timestamp() << " blocksize: " << block_size 
+	 << " (" << (double)block_size * 8.0 * data.N << " bytes)" << std::endl;
    
       ////////////////////////////////////////////////////////////////////////////////
       // The main analysis

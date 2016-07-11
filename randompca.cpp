@@ -869,7 +869,7 @@ void RandomPCA::ucca(Data& data)
       covXY = cov(data.X.col(0), data.Y);
 
       // take absolute value to prevent numerical issues with negative numbers
-      // close to zero
+      // that are very close to zero
       r2(j) = fabs(1.0 / varx * covXY * covYinv * covXY.transpose());
    }
 
