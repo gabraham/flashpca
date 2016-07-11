@@ -20,15 +20,21 @@ Data::Data(long seed)
    this->seed = seed;
    srand48(seed);
    visited = NULL;
+   tmp = NULL;
+   tmp2 = NULL;
+   avg = NULL;
 }
 
 Data::~Data()
 {
    if(visited)
       delete[] visited;
-   delete[] tmp;
-   delete[] tmp2;
-   delete[] avg;
+   if(tmp)
+      delete[] tmp;
+   if(tmp2)
+      delete[] tmp2;
+   if(avg)
+      delete[] avg;
    in.close();
 }
 
