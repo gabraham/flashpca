@@ -50,7 +50,7 @@ class SVDWideOnline
       int stand_method;
       bool verbose;
       unsigned int nops;
-      unsigned int block_size, actual_block_size;
+      unsigned int block_size;
 
    public:
       SVDWideOnline(Data& dat_, unsigned int block_size_, int stand_method_,
@@ -58,6 +58,7 @@ class SVDWideOnline
       {
 	 verbose = verbose_;
 	 block_size = block_size_;
+	 stand_method = stand_method_;
 	 nblocks = (unsigned int)ceil((double)p / block_size);
 	 verbose && STDOUT << "Using blocksize " << block_size << ", " <<
 	    nblocks << " blocks"<< std::endl;
@@ -100,6 +101,7 @@ class SVDWideOnline
 	    verbose && STDOUT << timestamp() << "   Reading block " << k << std::endl;
 	    actual_block_size = stop[k] - start[k] + 1;
 	    dat.read_snp_block(start[k], stop[k], false, false);
+	    //TODO: Kahan summation better here?
 	    y.noalias() = y + dat.X.leftCols(actual_block_size) *
 	       (dat.X.leftCols(actual_block_size).transpose() * x);
 	 }
@@ -367,6 +369,8 @@ void RandomPCA::pca_fast(Data& dat, unsigned int block_size, int method, bool tr
       std::cerr << "Spectra eigen-decomposition was not successful, status: " 
 	 << eigs.info() << std::endl;
    }
+
+   //TODO: what about PVE??
 }
 
 // stub for now

@@ -79,25 +79,6 @@ void decode_plink(unsigned char * __restrict__ out,
        * allele 2. The final genotype is the sum of the alleles, except for 01
        * which denotes missing.
        */
-      //geno1 = (tmp & MASK0);
-      //a1 = !(geno1 & 1);
-      //a2 = !(geno1 >> 1);
-      //out[k] = (geno1 == 1) ? 3 : a1 + a2;
-
-      //geno2 = (tmp & MASK1) >> 2; 
-      //a1 = !(geno2 & 1);
-      //a2 = !(geno2 >> 1);
-      //out[k+1] = (geno2 == 1) ? 3 : a1 + a2;
-
-      //geno3 = (tmp & MASK2) >> 4; 
-      //a1 = !(geno3 & 1);
-      //a2 = !(geno3 >> 1);
-      //out[k+2] = (geno3 == 1) ? 3 : a1 + a2;
-
-      //geno4 = (tmp & MASK3) >> 6; 
-      //a1 = !(geno4 & 1);
-      //a2 = !(geno4 >> 1);
-      //out[k+3] = (geno4 == 1) ? 3 : a1 + a2;
 
       geno1 = (tmp & MASK0);
       if(geno1 == 1)
@@ -138,6 +119,28 @@ void decode_plink(unsigned char * __restrict__ out,
 	 a2 = !(geno4 >> 1);
 	 out[k+3] = a1 + a2;
       }
+   }
+}
+
+void decode_plink_simple(unsigned char * __restrict__ out,
+   const unsigned char * __restrict__ in,
+   const unsigned int n)
+{
+   unsigned int i, k;
+
+   for(i = 0 ; i < n ; i++)
+   {
+      k = PACK_DENSITY * i;
+
+      /* geno is interpreted as a char, however a1 and a2 are bits for allele 1 and
+       * allele 2. The final genotype is the sum of the alleles, except for 01
+       * which denotes missing.
+       */
+
+      out[k] =   (in[i] & MASK0);
+      out[k+1] = (in[i] & MASK1) >> 2;
+      out[k+2] = (in[i] & MASK2) >> 4;
+      out[k+3] = (in[i] & MASK3) >> 6;
    }
 }
 
@@ -191,7 +194,7 @@ void Data::prepare()
    avg = new double[nsnps](); 
    visited = new bool[nsnps]();
 
-   scaled_geno_lookup = ArrayXXd::Zero(nsnps, 4);
+   scaled_geno_lookup = ArrayXXd::Zero(4, nsnps);
 
    verbose && STDOUT << timestamp() << " Detected BED file: "
       << geno_filename << " with " << (len + 3)
@@ -241,9 +244,6 @@ void Data::read_snp_block(unsigned int start_idx, unsigned int stop_idx,
       // read raw genotypes
       in.read((char*)tmp, sizeof(char) * np);
 
-      // decode the genotypes
-      decode_plink(tmp2, tmp, np);
-
       // Compute average per SNP, excluding missing values
       double snp_avg = 0;
       unsigned int ngood = 0;
@@ -251,6 +251,9 @@ void Data::read_snp_block(unsigned int start_idx, unsigned int stop_idx,
       // We've seen this SNP, don't need to compute its average again
       if(!visited[k])
       {
+	 // decode the genotypes and convert to 0/1/2/NA
+	 decode_plink(tmp2, tmp, np);
+
 	 for(unsigned int i = 0 ; i < N ; i++)
       	 {
       	    double s = (double)tmp2[i];
@@ -265,19 +268,36 @@ void Data::read_snp_block(unsigned int start_idx, unsigned int stop_idx,
 	 // Store the 4 possible standardized genotypes for each SNP
 	 double P = snp_avg / 2.0;
 	 double sd = sqrt(2.0 * P * (1 - P));
+
+	 // scaled genotyped initialised to zero
 	 if(sd > VAR_TOL)
 	 {
-	    scaled_geno_lookup(k, 0) = (0 - snp_avg) / sd;
-	    scaled_geno_lookup(k, 1) = (1 - snp_avg) / sd;
-	    scaled_geno_lookup(k, 2) = (2 - snp_avg) / sd;
-	    scaled_geno_lookup(k, 3) = 0; // Assumes PLINK NA = 3
+	    // Note thet scaled values for the genotypes are stored based on
+	    // the PLINK indexing rather than the actual dosage indexing,
+	    // which lets us later just read the PLINK data and not have to
+	    // convert the dosages.
+	    //
+	    // plink '3' -> actual dosage '0'
+	    // plink '2' -> actual dosage '1'
+	    // plink '0' -> actual dosage '2'
+	    // plink '1' -> actual dosage '3' (NA)
+	    scaled_geno_lookup(3, k) = (0 - snp_avg) / sd;
+	    scaled_geno_lookup(2, k) = (1 - snp_avg) / sd;
+	    scaled_geno_lookup(0, k) = (2 - snp_avg) / sd;
+	    scaled_geno_lookup(1, k) = 0; // impute to average
 	 }
 	 visited[k] = true;
+      }
+      else
+      {
+	 // decode the genotypes, but don't convert to 0/1/2/NA, keep in
+	 // original format (see comments for decode_plink)
+	 decode_plink_simple(tmp2, tmp, np);
       }
 
       for(unsigned int i = 0 ; i < N ; i++)
       {
-	 X(i, j) = scaled_geno_lookup(k, tmp2[i]);
+	 X(i, j) = scaled_geno_lookup(tmp2[i], k);
       }
    }
 }
