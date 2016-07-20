@@ -37,6 +37,7 @@ using namespace Eigen;
 #define MODE_CCA 2
 #define MODE_SCCA 3
 #define MODE_UCCA 4
+#define MODE_CHECK_PCA 5
 
 #define MEM_MODE_OFFLINE 1
 #define MEM_MODE_ONLINE 2
@@ -100,5 +101,7 @@ class RandomPCA {
       void zca_whiten(bool transpose);
       void ucca(MatrixXd &X, MatrixXd &Y);
       void ucca(Data &dat);
+      void check(Data& dat, unsigned int block_size,
+	    std::string evec_file, std::string eval_file);
 };
 

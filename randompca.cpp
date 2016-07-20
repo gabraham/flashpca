@@ -20,7 +20,8 @@ class SVDWide
       unsigned int nops;
 
    public:
-      SVDWide(const MatrixXd& mat_, bool verbose_=false): mat(mat_), n(mat_.rows())
+      SVDWide(const MatrixXd& mat_, bool verbose_=false):
+	 mat(mat_), n(mat_.rows())
       {
 	 verbose = verbose_;
 	 nops = 1;
@@ -89,16 +90,23 @@ class SVDWideOnline
 	 Map<VectorXd> y(y_out, n);
 	 unsigned int actual_block_size;
 
-	 verbose && STDOUT << timestamp() << " Matrix operation " << nops << std::endl;
-	 verbose && STDOUT << timestamp() << "   Reading block 0" << std::endl;
+	 verbose && STDOUT << timestamp()
+	    << " Matrix operation " << nops << std::endl;
+
 	 actual_block_size = stop[0] - start[0] + 1;
 	 dat.read_snp_block(start[0], stop[0], false, false);
+
+	 verbose && STDOUT << timestamp() << "   Reading block " <<
+	       0 << " (" << start[0] << ", " << stop[0]
+	       << ")"  << std::endl;
+
 	 y.noalias() = dat.X.leftCols(actual_block_size) *
 	    (dat.X.leftCols(actual_block_size).transpose() * x);
 
 	 for(unsigned int k = 1 ; k < nblocks ; k++)
 	 {
-	    verbose && STDOUT << timestamp() << "   Reading block " << k << std::endl;
+	    verbose && STDOUT << timestamp() << "   Reading block " <<
+	       k << " (" << start[k] << ", " << stop[k] << ")"  << std::endl;
 	    actual_block_size = stop[k] - start[k] + 1;
 	    dat.read_snp_block(start[k], stop[k], false, false);
 	    //TODO: Kahan summation better here?
@@ -291,11 +299,10 @@ ArrayXXd wilks(const ArrayXd& r2, unsigned int n, unsigned int k)
    return res;
 }
 
-void RandomPCA::pca_fast(MatrixXd& X, unsigned int block_size, int method, bool transpose,
-   unsigned int ndim, unsigned int nextra, unsigned int maxiter, double tol,
-   long seed, int kernel, double sigma, bool rbf_center,
-   unsigned int rbf_sample, bool save_kernel, bool do_orth, bool do_loadings,
-   int mem)
+void RandomPCA::pca_fast(MatrixXd& X, unsigned int block_size, int method,
+   bool transpose, unsigned int ndim, unsigned int nextra, unsigned int maxiter,
+   double tol, long seed, int kernel, double sigma, bool rbf_center, unsigned
+   int rbf_sample, bool save_kernel, bool do_orth, bool do_loadings, int mem)
 {
    unsigned int N, p;
 
@@ -352,6 +359,12 @@ void RandomPCA::pca_fast(Data& dat, unsigned int block_size, int method, bool tr
 
    eigs.init();
    eigs.compute(maxiter, tol);
+
+      MatrixXd xl = dat.X.leftCols(dat.nsnps);
+      save_text(xl,
+         std::vector<std::string>(),
+         std::vector<std::string>(),
+         std::string("X.txt").c_str());
 
    double div = 1;
    if(divisor == DIVISOR_N1)
@@ -879,5 +892,51 @@ void RandomPCA::ucca(Data& data)
    }
 
    res = wilks(r2, n, data.Y.cols());
+}
+
+//void RandomPCA::check(Data& dat, unsigned int block_size, int method, bool transpose,
+//   unsigned int ndim, unsigned int nextra, unsigned int maxiter, double tol,
+//   long seed, int kernel, double sigma, bool rbf_center,
+//   unsigned int rbf_sample, bool save_kernel, bool do_orth, bool do_loadings,
+//   int mem)
+
+/// assumes WIDE
+void RandomPCA::check(Data& dat, unsigned int block_size,
+   std::string evec_file, std::string eval_file)
+{
+   SVDWideOnline op(dat, block_size, 1, verbose);
+
+   MatrixXd ev = dat.read_plink_pheno(eval_file.c_str(), 1, -1, 0);
+   if(ev.rows() == 0)
+      return;
+
+   VectorXd eval = ev.col(0);
+   MatrixXd evec = dat.read_plink_pheno(evec_file.c_str(), 1, -1, 0);
+   MatrixXd out = MatrixXd::Zero(evec.rows(), 1);
+   VectorXd uexp;
+
+   // X X' U = U D^2
+   STDOUT << timestamp()
+      << " Checking mean square error between (X X' U) and (U D^2)"
+      << std::endl;
+
+   VectorXd err(eval.size());
+
+   for(unsigned int i = 0 ; i < eval.size() ; i++)
+   {
+      MatrixXd u = evec.col(i);
+      op.perform_op(u.data(), out.data());
+      out /= dat.nsnps;
+      uexp = u * eval(i);
+      err(i) = (out.array() - uexp.array()).square().sum();
+   }
+
+   for(unsigned int i = 0 ; i < eval.size() ; i++)
+   {
+      STDOUT << "eval(" << (i + 1) 
+	 << "): " << eval(i) << ", sum squared error: "
+	 << err(i) << std::endl;
+   }
+   
 }
 

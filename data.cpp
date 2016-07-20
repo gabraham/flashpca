@@ -23,6 +23,7 @@ Data::Data(long seed)
    tmp = NULL;
    tmp2 = NULL;
    avg = NULL;
+   verbose = false;
 }
 
 Data::~Data()
@@ -89,16 +90,18 @@ void decode_plink(unsigned char * __restrict__ out,
 	 a2 = !(geno1 >> 1);
 	 out[k] = a1 + a2;
       }
+      k++;
 
       geno2 = (tmp & MASK1) >> 2;
       if(geno2 == 1)
-	 out[k+1] = 3;
+	 out[k] = 3;
       else
       {
 	 a1 = !(geno2 & 1);
 	 a2 = !(geno2 >> 1);
-	 out[k+1] = a1 + a2;
+	 out[k] = a1 + a2;
       }
+      k++;
 
       geno3 = (tmp & MASK2) >> 4;
       if(geno3 == 1)
@@ -107,8 +110,9 @@ void decode_plink(unsigned char * __restrict__ out,
       {
 	 a1 = !(geno3 & 1);
 	 a2 = !(geno3 >> 1);
-	 out[k+2] = a1 + a2;
+	 out[k] = a1 + a2;
       }
+      k++;
 
       geno4 = (tmp & MASK3) >> 6;
       if(geno4 == 1)
@@ -117,7 +121,7 @@ void decode_plink(unsigned char * __restrict__ out,
       {
 	 a1 = !(geno4 & 1);
 	 a2 = !(geno4 >> 1);
-	 out[k+3] = a1 + a2;
+	 out[k] = a1 + a2;
       }
    }
 }
@@ -226,7 +230,9 @@ void Data::read_snp_block(unsigned int start_idx, unsigned int stop_idx,
 	    << " Reallocating memory: " << X.rows() << " -> " <<
 	    actual_block_size << std::endl;
          if(X.rows() > actual_block_size)
+	 {
             X = MatrixXd(actual_block_size, N);
+	 }
       }
    }
    else if(X.cols() == 0 || (resize && X.cols() != actual_block_size))
@@ -281,6 +287,11 @@ void Data::read_snp_block(unsigned int start_idx, unsigned int stop_idx,
 	    // plink '2' -> actual dosage '1'
 	    // plink '0' -> actual dosage '2'
 	    // plink '1' -> actual dosage '3' (NA)
+	    //*                   plink BED           sparsnp
+ 	    //* minor homozyous:  00 => numeric 0     10 => numeric 2
+ 	    //* heterozygous:     10 => numeric 2     01 => numeric 1
+ 	    //* major homozygous: 11 => numeric 3     00 => numeric 0
+ 	    //* missing:          01 => numeric 1     11 => numeric 3
 	    scaled_geno_lookup(3, k) = (0 - snp_avg) / sd;
 	    scaled_geno_lookup(2, k) = (1 - snp_avg) / sd;
 	    scaled_geno_lookup(0, k) = (2 - snp_avg) / sd;
@@ -288,12 +299,12 @@ void Data::read_snp_block(unsigned int start_idx, unsigned int stop_idx,
 	 }
 	 visited[k] = true;
       }
-      else
-      {
-	 // decode the genotypes, but don't convert to 0/1/2/NA, keep in
-	 // original format (see comments for decode_plink)
-	 decode_plink_simple(tmp2, tmp, np);
-      }
+
+      // Unpack the genotypes, but don't convert to 0/1/2/NA, keep in
+      // original format (see comments for decode_plink).
+      // There is a bit of waste here in the first time the SNP is visited, as
+      // we unpack the data twice, once with decoding and once without.
+      decode_plink_simple(tmp2, tmp, np);
 
       for(unsigned int i = 0 ; i < N ; i++)
       {
@@ -384,8 +395,11 @@ void Data::read_pheno(const char *filename, unsigned int firstcol)
 // 
 // firstcol is one-based, 3 for pheno file, 6 for FAM file (ignoring gender),
 // 5 for FAM file (with gender)
-MatrixXd Data::read_plink_pheno(const char *filename, unsigned int firstcol)
+MatrixXd Data::read_plink_pheno(const char *filename, unsigned int firstcol,
+   unsigned int nrows, unsigned int skip)
 {
+   unsigned int line_num = 0;
+
    std::ifstream in(filename, std::ios::in);
 
    if(!in)
@@ -400,8 +414,12 @@ MatrixXd Data::read_plink_pheno(const char *filename, unsigned int firstcol)
    {
       std::string line;
       std::getline(in, line);
-      if(!in.eof())
-	 lines.push_back(line);
+      if(!in.eof() && (nrows == -1 || line_num < nrows))
+      {
+	 if(line_num >= skip)
+	    lines.push_back(line);
+	 line_num++;
+      }
    }
 
    verbose && STDOUT << timestamp() << " Detected pheno file " <<

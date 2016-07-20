@@ -48,7 +48,7 @@ int main(int argc, char * argv[])
       ("online,o", "don't load all genotypes into RAM at once")
       ("rand,r", "use the legacy randomised algorithm")
       ("memory,m", po::value<int>(), "size of block for online algorithm, in GB")
-      ("numthreads,t", po::value<int>(), "set number of OpenMP threads")
+      ("numthreads,n", po::value<int>(), "set number of OpenMP threads")
       ("seed", po::value<long>(), "set random seed")
       ("bed", po::value<std::string>(), "PLINK bed file")
       ("bim", po::value<std::string>(), "PLINK bim file")
@@ -91,6 +91,7 @@ int main(int argc, char * argv[])
       ("lambda2", po::value<double>(), "2nd penalty for CCA/SCCA")
       ("debug", "debug, dumps all intermdiate data (WARNING: slow, call only on small data)")
       ("suffix,f", po::value<std::string>(), "suffix for all output files")
+      ("check,c", "check eigenvalues/eigenvectors")
       ("version,v", "version")
    ;
 
@@ -137,6 +138,8 @@ int main(int argc, char * argv[])
       mode = MODE_SCCA;
    else if(vm.count("ucca"))
       mode = MODE_UCCA;
+   else if(vm.count("check"))
+      mode = MODE_CHECK_PCA;
 
    int mem_mode = vm.count("online") ? MEM_MODE_ONLINE : MEM_MODE_OFFLINE;
    bool fast_mode = !vm.count("rand");
@@ -148,6 +151,9 @@ int main(int argc, char * argv[])
 	 << std::endl;
       return EXIT_FAILURE;
    }
+
+   if(mode == MODE_CHECK_PCA)
+      mem_mode = MEM_MODE_ONLINE;
 
    unsigned long long const MAX_MEM = 8589934592; // 8GiB
    int memory = 8;
@@ -367,6 +373,8 @@ int main(int argc, char * argv[])
    bool whiten = vm.count("whiten");
    bool verbose = vm.count("verbose");
    bool transpose = vm.count("transpose");
+
+   std::cout << "verbose: " << verbose << std::endl;
 
    bool do_orth = true;
    if(vm.count("orth"))
@@ -616,9 +624,10 @@ int main(int argc, char * argv[])
          {
 	    if(fast_mode)
    	    {
-   	       rpca.pca_fast(data.X, block_size, method, transpose, n_dim, n_extra, maxiter,
-   	          tol, seed, kernel, sigma, rbf_center, rbf_sample, save_kernel,
-   	          do_orth, do_loadings, mem);
+   	       rpca.pca_fast(data.X, block_size, method, transpose, n_dim,
+		  n_extra, maxiter, tol, seed, kernel, sigma,
+		  rbf_center, rbf_sample, save_kernel, do_orth,
+		  do_loadings, mem);
    	    }
    	    else
    	    {
@@ -631,9 +640,9 @@ int main(int argc, char * argv[])
 	 {
 	    if(fast_mode)
 	    {
-	       rpca.pca_fast(data, block_size, method, transpose, n_dim, n_extra, maxiter,
-		  tol, seed, kernel, sigma, rbf_center, rbf_sample, save_kernel,
-		  do_orth, do_loadings, mem);
+	       rpca.pca_fast(data, block_size, method, transpose,
+		  n_dim, n_extra, maxiter, tol, seed, kernel, sigma,
+		  rbf_center, rbf_sample, save_kernel, do_orth, do_loadings, mem);
 	    }
 	    else
 	    {
@@ -654,17 +663,21 @@ int main(int argc, char * argv[])
       {
          std::cout << timestamp() << " SCCA begin" << std::endl;
          rpca.scca(data.X, data.Y, lambda1, lambda2, seed, n_dim, mem,
-   	 maxiter, tol);
+	    maxiter, tol);
          std::cout << timestamp() << " SCCA done" << std::endl;
       }
       else if(mode == MODE_UCCA)
       {
          std::cout << timestamp() << " UCCA begin" << std::endl;
          if(mem_mode == MEM_MODE_OFFLINE)
-   	 rpca.ucca(data.X, data.Y);
+	    rpca.ucca(data.X, data.Y);
          else
-   	 rpca.ucca(data);
+	    rpca.ucca(data);
          std::cout << timestamp() << " UCCA done" << std::endl;
+      }
+      else if(mode == MODE_CHECK_PCA)
+      {
+	 rpca.check(data, block_size, eigvecfile, eigvalfile);
       }
    
    
@@ -679,7 +692,7 @@ int main(int argc, char * argv[])
    
    
       // Common to all decompositions, except UCCA
-      if(mode != MODE_UCCA)
+      if(mode != MODE_UCCA && mode != MODE_CHECK_PCA)
       {
          std::cout << timestamp() << " Writing " << n_dim << 
    	 " eigenvalues to file " << eigvalfile << std::endl;
@@ -727,31 +740,31 @@ int main(int argc, char * argv[])
          std::cout << timestamp() << " Writing " << n_dim << 
    	 " X eigenvectors to file " << eigvecxfile << std::endl;
          save_text(rpca.U,
-   	 std::vector<std::string>(),
-   	 std::vector<std::string>(),
-   	 eigvecxfile.c_str());
+	    std::vector<std::string>(),
+   	    std::vector<std::string>(),
+   	    eigvecxfile.c_str());
    
          std::cout << timestamp() << " Writing " << n_dim << 
    	 " Y eigenvectors to file " << eigvecyfile << std::endl;
          save_text(rpca.V,
-   	 std::vector<std::string>(),
-   	 std::vector<std::string>(),
-   	 eigvecyfile.c_str());
+	    std::vector<std::string>(),
+	    std::vector<std::string>(),
+	    eigvecyfile.c_str());
    
          std::cout << timestamp() << " Writing " << n_dim <<
    	 " PCs to file " << pcxfile << std::endl;
          save_text(rpca.Px,
-   	 std::vector<std::string>(),
-   	 std::vector<std::string>(),
-   	 pcxfile.c_str());
+	    std::vector<std::string>(),
+   	    std::vector<std::string>(),
+   	    pcxfile.c_str());
    
          std::cout << timestamp() << " Writing " << n_dim <<
    	 " PCs to file " << pcyfile << std::endl;
    
          save_text(rpca.Py,
-   	 std::vector<std::string>(),
-   	 std::vector<std::string>(),
-   	 pcyfile.c_str());
+	    std::vector<std::string>(),
+   	    std::vector<std::string>(),
+   	    pcyfile.c_str());
       }
       else if(mode == MODE_UCCA)
       {
@@ -766,9 +779,9 @@ int main(int argc, char * argv[])
          std::cout << timestamp() << " Writing mean + sd file "
    	 << meansdfile << std::endl;
          save_text(rpca.X_meansd,
-   	 std::vector<std::string>(),
-   	 std::vector<std::string>(),
-   	 meansdfile.c_str());
+	  std::vector<std::string>(),
+   	  std::vector<std::string>(),
+   	  meansdfile.c_str());
       }
    
       ////////////////////////////////////////////////////////////////////////////////

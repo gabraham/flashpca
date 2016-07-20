@@ -73,7 +73,8 @@ class Data {
       void get_size();
       void read_pheno(const char *filename, unsigned int firstcol);
       void read_plink_bim(const char *filename);
-      MatrixXd read_plink_pheno(const char *filename, unsigned int firstcol);
+      MatrixXd read_plink_pheno(const char *filename, unsigned int firstcol,
+	 unsigned int nrows=-1, unsigned int skip=0);
 
       std::string tolower(const std::string& v);
 
