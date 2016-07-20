@@ -360,12 +360,6 @@ void RandomPCA::pca_fast(Data& dat, unsigned int block_size, int method, bool tr
    eigs.init();
    eigs.compute(maxiter, tol);
 
-      MatrixXd xl = dat.X.leftCols(dat.nsnps);
-      save_text(xl,
-         std::vector<std::string>(),
-         std::vector<std::string>(),
-         std::string("X.txt").c_str());
-
    double div = 1;
    if(divisor == DIVISOR_N1)
       div = N - 1;
