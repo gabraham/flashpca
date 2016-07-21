@@ -346,11 +346,11 @@ void RandomPCA::pca_fast(MatrixXd& X, unsigned int block_size, int method,
    }
 }
 
-void RandomPCA::pca_fast(Data& dat, unsigned int block_size, int method, bool transpose,
-   unsigned int ndim, unsigned int nextra, unsigned int maxiter, double tol,
-   long seed, int kernel, double sigma, bool rbf_center,
-   unsigned int rbf_sample, bool save_kernel, bool do_orth, bool do_loadings,
-   int mem)
+void RandomPCA::pca_fast(Data& dat, unsigned int block_size, int method,
+   bool transpose, unsigned int ndim, unsigned int nextra,
+   unsigned int maxiter, double tol, long seed, int kernel,
+   double sigma, bool rbf_center, unsigned int rbf_sample,
+   bool save_kernel, bool do_orth, bool do_loadings, int mem)
 {
    unsigned int N = dat.N, p = dat.nsnps;
    SVDWideOnline op(dat, block_size, stand_method_x, verbose);
@@ -382,10 +382,10 @@ void RandomPCA::pca_fast(Data& dat, unsigned int block_size, int method, bool tr
 
 // stub for now
 void RandomPCA::pca(Data& dat, int method, bool transpose,
-   unsigned int ndim, unsigned int nextra, unsigned int maxiter, double tol,
-   long seed, int kernel, double sigma, bool rbf_center,
-   unsigned int rbf_sample, bool save_kernel, bool do_orth, bool do_loadings,
-   int mem)
+   unsigned int ndim, unsigned int nextra, unsigned int maxiter,
+   double tol, long seed, int kernel, double sigma, bool rbf_center,
+   unsigned int rbf_sample, bool save_kernel, bool do_orth,
+   bool do_loadings, int mem)
 {
    //Spectra::DenseGenMatProd<double> op(dat.X);
    //Spectra::GenEigsSolver< double, Spectra::LARGEST_ALGE, Spectra::DenseGenMatProd<double> > eigs(&op, ndim, 2 * ndim + 1);
