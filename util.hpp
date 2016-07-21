@@ -69,7 +69,7 @@ bool save_text(Eigen::MatrixBase<Derived>& m,
    const std::vector<A>& colnames,
    const std::vector<B>& rownames,
    const char *filename,
-   const unsigned int precision=6)
+   const unsigned int precision=7)
 {
    std::ofstream out(filename, std::ofstream::out);
    out << std::setprecision(precision);

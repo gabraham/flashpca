@@ -727,12 +727,12 @@ int main(int argc, char * argv[])
    
          if(do_loadings)
          {
-   	 std::cout << timestamp() << " Writing" <<
-   	    " SNP loadings to file " << loadingsfile << std::endl;
-   	 save_text(rpca.V,
-   	    std::vector<std::string>(),
-   	    std::vector<std::string>(),
-   	    loadingsfile.c_str()); 
+	    std::cout << timestamp() << " Writing" <<
+	       " SNP loadings to file " << loadingsfile << std::endl;
+	    save_text(rpca.V,
+	       std::vector<std::string>(),
+	       std::vector<std::string>(),
+	       loadingsfile.c_str()); 
          }
       }
       else if(mode == MODE_CCA || mode == MODE_SCCA)

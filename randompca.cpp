@@ -94,15 +94,21 @@ class SVDWideOnline
 	    << " Matrix operation " << nops << std::endl;
 
 	 actual_block_size = stop[0] - start[0] + 1;
-	 dat.read_snp_block(start[0], stop[0], false, false);
 
-	 verbose && STDOUT << timestamp() << "   Reading block " <<
+	 // If we only have one block, keep it in memory instead of reading it
+	 // over again
+	 if(nblocks == 1 && nops == 1)
+	 {
+	    dat.read_snp_block(start[0], stop[0], false, false);
+	    verbose && STDOUT << timestamp() << "   Reading block " <<
 	       0 << " (" << start[0] << ", " << stop[0]
 	       << ")"  << std::endl;
+	 }
 
 	 y.noalias() = dat.X.leftCols(actual_block_size) *
 	    (dat.X.leftCols(actual_block_size).transpose() * x);
 
+	 // If there's only one block, this loop doesn't run anyway
 	 for(unsigned int k = 1 ; k < nblocks ; k++)
 	 {
 	    verbose && STDOUT << timestamp() << "   Reading block " <<
@@ -115,6 +121,47 @@ class SVDWideOnline
 	 }
 
 	 nops++;
+      }
+
+      void matrix_multiply(double *x_in, double *y_out, bool transpose)
+      {
+	 Map<VectorXd> x(x_in, n);
+	 Map<VectorXd> y(y_out, n);
+	 unsigned int actual_block_size;
+
+	 verbose && STDOUT << timestamp()
+	    << " Matrix operation " << nops << std::endl;
+
+	 actual_block_size = stop[0] - start[0] + 1;
+
+	 // If we only have one block, keep it in memory instead of reading it
+	 // over again
+	 //if(nblocks == 1 && nops == 1)
+	 //{
+	    dat.read_snp_block(start[0], stop[0], false, false);
+	    verbose && STDOUT << timestamp() << "   Reading block " <<
+	       0 << " (" << start[0] << ", " << stop[0]
+	       << ")"  << std::endl;
+	 //}
+
+	 if(transpose)
+	    y.noalias() = dat.X.leftCols(actual_block_size).transpose() * x;
+	 else
+	    y.noalias() = dat.X.leftCols(actual_block_size) * x;
+
+	 // If there's only one block, this loop doesn't run anyway
+	 for(unsigned int k = 1 ; k < nblocks ; k++)
+	 {
+	    verbose && STDOUT << timestamp() << "   Reading block " <<
+	       k << " (" << start[k] << ", " << stop[k] << ")"  << std::endl;
+	    actual_block_size = stop[k] - start[k] + 1;
+	    dat.read_snp_block(start[k], stop[k], false, false);
+	    //TODO: Kahan summation better here?
+	    if(transpose)
+	       y.noalias() = y + dat.X.leftCols(actual_block_size).transpose() * x;
+	    else
+	       y.noalias() = y + dat.X.leftCols(actual_block_size) * x;
+	 }
       }
 };
 
@@ -337,12 +384,20 @@ void RandomPCA::pca_fast(MatrixXd& X, unsigned int block_size, int method,
    if(eigs.info() == Spectra::SUCCESSFUL)
    {
       U = eigs.eigenvectors();
+      // Note: _eigenvalues_, not singular values
       d = eigs.eigenvalues().array() / div;
    }
    else
    {
       std::cerr << "Spectra eigen-decomposition was not successful, status: " 
 	 << eigs.info() << std::endl;
+   }
+
+   if(do_loadings)
+   {
+      //VectorXd s = d.array().sqrt().inverse();
+      //V.noalias() = X.transpose() * U * s.asDiagonal();
+      V.noalias() = X.transpose() * U;
    }
 }
 
@@ -369,6 +424,7 @@ void RandomPCA::pca_fast(Data& dat, unsigned int block_size, int method,
    if(eigs.info() == Spectra::SUCCESSFUL)
    {
       U = eigs.eigenvectors();
+      // Note: _eigenvalues_, not singular values
       d = eigs.eigenvalues().array() / div;
    }
    else
@@ -377,6 +433,24 @@ void RandomPCA::pca_fast(Data& dat, unsigned int block_size, int method,
 	 << eigs.info() << std::endl;
    }
 
+   if(do_loadings)
+   {
+      V = MatrixXd::Zero(dat.nsnps, U.cols());
+      // V.noalias() = X.transpose() * U * d.array().inverse().matrix().asDiagonal();
+      std::cout << "Computing loadings" << std::endl;
+      for(unsigned int j = 0 ; j < U.cols() ; j++)
+      {
+	 std::cout << "loading " << j << std::endl;
+	 //VectorXd u = U.col(j);
+	 VectorXd u = VectorXd::Zero(U.rows());
+	 VectorXd v(dat.nsnps);
+	 op.matrix_multiply(u.data(), v.data(), true);
+	 //double s = d(j);
+	 //V.col(j) = v * (1.0 / sqrt(s));
+	 V.col(j) = v;
+      } 
+
+   }
    //TODO: what about PVE??
 }
 
@@ -909,14 +983,21 @@ void RandomPCA::check(Data& dat, unsigned int block_size,
    MatrixXd out = MatrixXd::Zero(evec.rows(), 1);
    VectorXd uexp;
 
+   if(evec.rows() > dat.N)
+      throw std::runtime_error(
+	 "Eigenvector dimension doesn't match data dimension");
+
+   unsigned int k = fminl(evec.cols(), eval.size());
+
    // X X' U = U D^2
    STDOUT << timestamp()
       << " Checking mean square error between (X X' U) and (U D^2)"
+      << " for " << k << " dimensions"
       << std::endl;
 
    VectorXd err(eval.size());
 
-   for(unsigned int i = 0 ; i < eval.size() ; i++)
+   for(unsigned int i = 0 ; i < k ; i++)
    {
       MatrixXd u = evec.col(i);
       op.perform_op(u.data(), out.data());
@@ -925,7 +1006,7 @@ void RandomPCA::check(Data& dat, unsigned int block_size,
       err(i) = (out.array() - uexp.array()).square().sum();
    }
 
-   for(unsigned int i = 0 ; i < eval.size() ; i++)
+   for(unsigned int i = 0 ; i < k ; i++)
    {
       STDOUT << "eval(" << (i + 1) 
 	 << "): " << eval(i) << ", sum squared error: "
