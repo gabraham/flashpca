@@ -123,31 +123,25 @@ class SVDWideOnline
 	 nops++;
       }
 
-      void matrix_multiply(double *x_in, double *y_out, bool transpose)
+      // Like R crossprod(): y = X' * x
+      void crossprod(double *x_in, double *y_out)
       {
 	 Map<VectorXd> x(x_in, n);
-	 Map<VectorXd> y(y_out, n);
-	 unsigned int actual_block_size;
+	 Map<VectorXd> y(y_out, p);
+	 unsigned int actual_block_size = stop[0] - start[0] + 1;
 
 	 verbose && STDOUT << timestamp()
 	    << " Matrix operation " << nops << std::endl;
 
-	 actual_block_size = stop[0] - start[0] + 1;
+	 std::cout << "xxxxxx " << start[0] << " " << stop[0] << std::endl;
 
-	 // If we only have one block, keep it in memory instead of reading it
-	 // over again
-	 //if(nblocks == 1 && nops == 1)
-	 //{
-	    dat.read_snp_block(start[0], stop[0], false, false);
-	    verbose && STDOUT << timestamp() << "   Reading block " <<
-	       0 << " (" << start[0] << ", " << stop[0]
-	       << ")"  << std::endl;
-	 //}
+	 dat.read_snp_block(start[0], stop[0], false, false);
+	 verbose && STDOUT << timestamp() << "   Reading block " <<
+	    0 << " (" << start[0] << ", " << stop[0]
+	    << ")"  << std::endl;
 
-	 if(transpose)
-	    y.noalias() = dat.X.leftCols(actual_block_size).transpose() * x;
-	 else
-	    y.noalias() = dat.X.leftCols(actual_block_size) * x;
+	 y.segment(start[0], actual_block_size) 
+	    = dat.X.leftCols(actual_block_size).transpose() * x;
 
 	 // If there's only one block, this loop doesn't run anyway
 	 for(unsigned int k = 1 ; k < nblocks ; k++)
@@ -157,10 +151,8 @@ class SVDWideOnline
 	    actual_block_size = stop[k] - start[k] + 1;
 	    dat.read_snp_block(start[k], stop[k], false, false);
 	    //TODO: Kahan summation better here?
-	    if(transpose)
-	       y.noalias() = y + dat.X.leftCols(actual_block_size).transpose() * x;
-	    else
-	       y.noalias() = y + dat.X.leftCols(actual_block_size) * x;
+	    y.segment(start[k], actual_block_size)
+	       = dat.X.leftCols(actual_block_size).transpose() * x;
 	 }
       }
 };
@@ -386,18 +378,17 @@ void RandomPCA::pca_fast(MatrixXd& X, unsigned int block_size, int method,
       U = eigs.eigenvectors();
       // Note: _eigenvalues_, not singular values
       d = eigs.eigenvalues().array() / div;
+      if(do_loadings)
+      {
+         VectorXd s = d.array().sqrt().inverse() / sqrt(div);
+         V.noalias() = X.transpose() * U * s.asDiagonal();
+	 //V.noalias() = X.transpose();
+      }
    }
    else
    {
       std::cerr << "Spectra eigen-decomposition was not successful, status: " 
 	 << eigs.info() << std::endl;
-   }
-
-   if(do_loadings)
-   {
-      //VectorXd s = d.array().sqrt().inverse();
-      //V.noalias() = X.transpose() * U * s.asDiagonal();
-      V.noalias() = X.transpose() * U;
    }
 }
 
@@ -426,31 +417,28 @@ void RandomPCA::pca_fast(Data& dat, unsigned int block_size, int method,
       U = eigs.eigenvectors();
       // Note: _eigenvalues_, not singular values
       d = eigs.eigenvalues().array() / div;
+      if(do_loadings)
+      {
+         V = MatrixXd::Zero(dat.nsnps, U.cols());
+         std::cout << "Computing loadings" << std::endl;
+         VectorXd v(dat.nsnps);
+         for(unsigned int j = 0 ; j < U.cols() ; j++)
+         {
+            std::cout << "loading " << j << std::endl;
+            VectorXd u = U.col(j);
+            op.crossprod(u.data(), v.data());
+            double s = d(j);
+            V.col(j) = v * (1.0 / sqrt(s)) / sqrt(div);
+         } 
+      }
    }
    else
    {
-      std::cerr << "Spectra eigen-decomposition was not successful, status: " 
+      std::cerr
+	 << "Spectra eigen-decomposition was not successful, status: " 
 	 << eigs.info() << std::endl;
    }
 
-   if(do_loadings)
-   {
-      V = MatrixXd::Zero(dat.nsnps, U.cols());
-      // V.noalias() = X.transpose() * U * d.array().inverse().matrix().asDiagonal();
-      std::cout << "Computing loadings" << std::endl;
-      for(unsigned int j = 0 ; j < U.cols() ; j++)
-      {
-	 std::cout << "loading " << j << std::endl;
-	 //VectorXd u = U.col(j);
-	 VectorXd u = VectorXd::Zero(U.rows());
-	 VectorXd v(dat.nsnps);
-	 op.matrix_multiply(u.data(), v.data(), true);
-	 //double s = d(j);
-	 //V.col(j) = v * (1.0 / sqrt(s));
-	 V.col(j) = v;
-      } 
-
-   }
    //TODO: what about PVE??
 }
 

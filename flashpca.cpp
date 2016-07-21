@@ -48,6 +48,7 @@ int main(int argc, char * argv[])
       ("online,o", "don't load all genotypes into RAM at once")
       ("rand,r", "use the legacy randomised algorithm")
       ("memory,m", po::value<int>(), "size of block for online algorithm, in GB")
+      ("blocksize,b", po::value<int>(), "size of block for online algorithm, in number of SNPs")
       ("numthreads,n", po::value<int>(), "set number of OpenMP threads")
       ("seed", po::value<long>(), "set random seed")
       ("bed", po::value<std::string>(), "PLINK bed file")
@@ -165,6 +166,27 @@ int main(int argc, char * argv[])
       {
 	 std::cerr
 	    << "Error: memory (GB) must be >=1"
+	    << std::endl;
+	 return EXIT_FAILURE;
+      }
+   }
+
+   unsigned int block_size = 0;
+   if(vm.count("blocksize"))
+   {
+      if(vm.count("memory"))
+      {
+	 std::cerr <<
+	    "Error: cannot specify both --memory and --blocksize"
+	    << " at the same time" << std::endl;
+	 return EXIT_FAILURE;
+      }
+
+      block_size = vm["blocksize"].as<int>();
+      if(block_size < 1)
+      {
+	 std::cerr
+	    << "Error: blocksize must be >=1"
 	    << std::endl;
 	 return EXIT_FAILURE;
       }
@@ -608,7 +630,10 @@ int main(int argc, char * argv[])
          n_extra = fminl(max_dim - n_dim, 200 - n_dim);
 
       double mem = (double)memory * 1073741824;
-      int block_size = mem / ((double)data.N * 8.0);
+
+      if(block_size == 0)
+	 block_size = mem / ((double)data.N * 8.0);
+
       block_size = fminl(block_size, data.nsnps);
 
       std::cout << timestamp() << " blocksize: " << block_size 
