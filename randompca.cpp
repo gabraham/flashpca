@@ -102,7 +102,7 @@ class SVDWideOnline
 
 	 // If we only have one block, keep it in memory instead of reading it
 	 // over again
-	 if(nblocks == 1 && nops == 1)
+	 if(nblocks > 1 || nops == 1)
 	 {
 	    dat.read_snp_block(start[0], stop[0], false, false);
 	    verbose && STDOUT << timestamp() << "   Reading block " <<
