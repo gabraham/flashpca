@@ -380,9 +380,9 @@ void RandomPCA::pca_fast(MatrixXd& X, unsigned int block_size, int method,
       d = eigs.eigenvalues().array() / div;
       if(do_loadings)
       {
-         VectorXd s = d.array().sqrt().inverse() / sqrt(div);
-         V.noalias() = X.transpose() * U * s.asDiagonal();
-	 //V.noalias() = X.transpose();
+         //VectorXd s = d.array().sqrt().inverse() / sqrt(div);
+         //V.noalias() = X.transpose() * U * s.asDiagonal();
+	 V.noalias() = X.transpose() * U;
       }
    }
    else
@@ -427,8 +427,9 @@ void RandomPCA::pca_fast(Data& dat, unsigned int block_size, int method,
             std::cout << "loading " << j << std::endl;
             VectorXd u = U.col(j);
             op.crossprod(u.data(), v.data());
-            double s = d(j);
-            V.col(j) = v * (1.0 / sqrt(s)) / sqrt(div);
+            //double s = d(j);
+            //V.col(j) = v * (1.0 / sqrt(s)) / sqrt(div);
+	    V.col(j) = v;
          } 
       }
    }
