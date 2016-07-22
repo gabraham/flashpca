@@ -43,6 +43,10 @@ class SVDWide
 
 class SVDWideOnline
 {
+   public:
+      // Trace of X X'
+      double trace;
+
    private:
       Data& dat;
       const unsigned int n, p;
@@ -73,6 +77,7 @@ class SVDWideOnline
 	 }
 
 	 nops = 1;
+	 trace = 0;
       }
 
       ~SVDWideOnline()
@@ -107,6 +112,7 @@ class SVDWideOnline
 
 	 y.noalias() = dat.X.leftCols(actual_block_size) *
 	    (dat.X.leftCols(actual_block_size).transpose() * x);
+	 trace = dat.X.leftCols(actual_block_size).array().square().sum();
 
 	 // If there's only one block, this loop doesn't run anyway
 	 for(unsigned int k = 1 ; k < nblocks ; k++)
@@ -118,6 +124,7 @@ class SVDWideOnline
 	    //TODO: Kahan summation better here?
 	    y.noalias() = y + dat.X.leftCols(actual_block_size) *
 	       (dat.X.leftCols(actual_block_size).transpose() * x);
+	    trace += dat.X.leftCols(actual_block_size).array().square().sum();
 	 }
 
 	 nops++;
@@ -380,10 +387,12 @@ void RandomPCA::pca_fast(MatrixXd& X, unsigned int block_size, int method,
       d = eigs.eigenvalues().array() / div;
       if(do_loadings)
       {
-         //VectorXd s = d.array().sqrt().inverse() / sqrt(div);
-         //V.noalias() = X.transpose() * U * s.asDiagonal();
-	 V.noalias() = X.transpose() * U;
+         VectorXd s = d.array().sqrt().inverse() / sqrt(div);
+         V.noalias() = X.transpose() * U * s.asDiagonal();
       }
+      trace = X.array().square().sum() / div;
+      pve = d / trace;
+      std::cout << "pve: " << pve << std::endl;
    }
    else
    {
@@ -427,11 +436,13 @@ void RandomPCA::pca_fast(Data& dat, unsigned int block_size, int method,
             std::cout << "loading " << j << std::endl;
             VectorXd u = U.col(j);
             op.crossprod(u.data(), v.data());
-            //double s = d(j);
-            //V.col(j) = v * (1.0 / sqrt(s)) / sqrt(div);
-	    V.col(j) = v;
+            double s = d(j);
+            V.col(j) = v * (1.0 / sqrt(s)) / sqrt(div);
          } 
       }
+      trace = op.trace / div;
+      pve = d / trace;
+      std::cout << "pve: " << pve << std::endl;
    }
    else
    {
@@ -439,8 +450,6 @@ void RandomPCA::pca_fast(Data& dat, unsigned int block_size, int method,
 	 << "Spectra eigen-decomposition was not successful, status: " 
 	 << eigs.info() << std::endl;
    }
-
-   //TODO: what about PVE??
 }
 
 // stub for now
