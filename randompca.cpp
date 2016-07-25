@@ -179,9 +179,6 @@ class SVDWideOnline
 
 	 y.noalias() = dat.X.leftCols(actual_block_size) * x;
 
-	 MatrixXd tmp = dat.X.leftCols(actual_block_size);
-	 std::cout << "xxxxxxxxxxx " << tmp.topLeftCorner(10, 10) << "xxxxxxxxx" << std::endl;
-
 	 for(unsigned int k = 1 ; k < nblocks ; k++)
 	 {
 	    verbose && STDOUT << timestamp() << "   Reading block " <<
@@ -423,6 +420,7 @@ void RandomPCA::pca_fast(MatrixXd& X, unsigned int block_size, int method,
       trace = X.array().square().sum() / div;
       pve = d / trace;
       std::cout << "trace: " << trace << ", pve: " << pve << std::endl;
+      Px = U * d.array().sqrt().matrix().asDiagonal();
    }
    else
    {
@@ -473,6 +471,7 @@ void RandomPCA::pca_fast(Data& dat, unsigned int block_size, int method,
       trace = op.trace / div;
       pve = d / trace;
       std::cout << "trace: " << trace << ", pve: " << pve << std::endl;
+      Px = U * d.array().sqrt().matrix().asDiagonal();
    }
    else
    {
@@ -1064,9 +1063,6 @@ void RandomPCA::predict(Data& dat, unsigned int block_size,
    NamedMatrixWrapper M = dat.read_plink_pheno(loadings_file.c_str(), 1, -1, 0);
    V = M.X;
 
-   std::cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> " <<
-      V.topLeftCorner(10, 10) << std::endl;
-
    // Read the means+sds or the MAF (and convert MAF to means+sds)
    if(maf_file != "")
    {
@@ -1099,15 +1095,19 @@ void RandomPCA::predict(Data& dat, unsigned int block_size,
    unsigned int k = V.cols();
 
    Px = MatrixXd::Zero(dat.N, k);
+
+   double div = 1;
+   if(divisor == DIVISOR_N1)
+      div = dat.N - 1;
+   else if(divisor == DIVISOR_P)
+      div = V.rows();
    
    VectorXd pxi(dat.N);
    for(unsigned int i = 0 ; i < k ; i++)
    {
-      std::cout << "i: " << i << std::endl;
       MatrixXd v = V.col(i);
       op.prod(v.data(), pxi.data());
-      std::cout << ">>>>>>>>>>>>> " << pxi.head(10) << std::endl;
-      Px.col(i) = pxi;
+      Px.col(i) = pxi.array() / sqrt(div);
    }
 
 }
