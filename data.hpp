@@ -52,10 +52,18 @@
 
 using namespace Eigen;
 
+class NamedMatrixWrapper {
+   public:
+      MatrixXd X;
+      std::vector<std::string> rownames;
+      std::vector<std::string> colnames;
+};
+
 class Data {
    public:
       
       MatrixXd X, Y;
+      MatrixXd X_meansd;
       unsigned int N, p, K;
       unsigned long long len, np;
       unsigned int nsnps;
@@ -63,6 +71,7 @@ class Data {
       bool verbose;
       long seed;
       std::vector<std::string> snp_ids;
+      bool use_preloaded_maf;
       
       Data(long seed);
       ~Data();
@@ -73,7 +82,8 @@ class Data {
       void get_size();
       void read_pheno(const char *filename, unsigned int firstcol);
       void read_plink_bim(const char *filename);
-      MatrixXd read_plink_pheno(const char *filename, unsigned int firstcol,
+      NamedMatrixWrapper read_plink_pheno(
+	 const char *filename, unsigned int firstcol,
 	 unsigned int nrows=-1, unsigned int skip=0);
 
       std::string tolower(const std::string& v);

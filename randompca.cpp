@@ -131,6 +131,7 @@ class SVDWideOnline
       }
 
       // Like R crossprod(): y = X' * x
+      // Note: size of x must be number of samples, size y must number of SNPs
       void crossprod(double *x_in, double *y_out)
       {
 	 Map<VectorXd> x(x_in, n);
@@ -140,8 +141,6 @@ class SVDWideOnline
 	 verbose && STDOUT << timestamp()
 	    << " Matrix operation " << nops << std::endl;
 
-	 std::cout << "xxxxxx " << start[0] << " " << stop[0] << std::endl;
-
 	 dat.read_snp_block(start[0], stop[0], false, false);
 	 verbose && STDOUT << timestamp() << "   Reading block " <<
 	    0 << " (" << start[0] << ", " << stop[0]
@@ -150,7 +149,6 @@ class SVDWideOnline
 	 y.segment(start[0], actual_block_size) 
 	    = dat.X.leftCols(actual_block_size).transpose() * x;
 
-	 // If there's only one block, this loop doesn't run anyway
 	 for(unsigned int k = 1 ; k < nblocks ; k++)
 	 {
 	    verbose && STDOUT << timestamp() << "   Reading block " <<
@@ -160,6 +158,38 @@ class SVDWideOnline
 	    //TODO: Kahan summation better here?
 	    y.segment(start[k], actual_block_size)
 	       = dat.X.leftCols(actual_block_size).transpose() * x;
+	 }
+      }
+
+      // Like R %*%: y = X * x
+      // Note: size of x must be number of SNPs, size y must number of samples
+      void prod(double *x_in, double *y_out)
+      {
+	 Map<VectorXd> x(x_in, p);
+	 Map<VectorXd> y(y_out, n);
+	 unsigned int actual_block_size = stop[0] - start[0] + 1;
+
+	 verbose && STDOUT << timestamp()
+	    << " Matrix operation " << nops << std::endl;
+
+	 dat.read_snp_block(start[0], stop[0], false, false);
+	 verbose && STDOUT << timestamp() << "   Reading block " <<
+	    0 << " (" << start[0] << ", " << stop[0]
+	    << ")"  << std::endl;
+
+	 y.noalias() = dat.X.leftCols(actual_block_size) * x;
+
+	 MatrixXd tmp = dat.X.leftCols(actual_block_size);
+	 std::cout << "xxxxxxxxxxx " << tmp.topLeftCorner(10, 10) << "xxxxxxxxx" << std::endl;
+
+	 for(unsigned int k = 1 ; k < nblocks ; k++)
+	 {
+	    verbose && STDOUT << timestamp() << "   Reading block " <<
+	       k << " (" << start[k] << ", " << stop[k] << ")"  << std::endl;
+	    actual_block_size = stop[k] - start[k] + 1;
+	    dat.read_snp_block(start[k], stop[k], false, false);
+	    //TODO: Kahan summation better here?
+	    y.noalias() = y + dat.X.leftCols(actual_block_size) * x;
 	 }
       }
 };
@@ -392,7 +422,7 @@ void RandomPCA::pca_fast(MatrixXd& X, unsigned int block_size, int method,
       }
       trace = X.array().square().sum() / div;
       pve = d / trace;
-      std::cout << "pve: " << pve << std::endl;
+      std::cout << "trace: " << trace << ", pve: " << pve << std::endl;
    }
    else
    {
@@ -442,7 +472,7 @@ void RandomPCA::pca_fast(Data& dat, unsigned int block_size, int method,
       }
       trace = op.trace / div;
       pve = d / trace;
-      std::cout << "pve: " << pve << std::endl;
+      std::cout << "trace: " << trace << ", pve: " << pve << std::endl;
    }
    else
    {
@@ -972,12 +1002,14 @@ void RandomPCA::check(Data& dat, unsigned int block_size,
 {
    SVDWideOnline op(dat, block_size, 1, verbose);
 
-   MatrixXd ev = dat.read_plink_pheno(eval_file.c_str(), 1, -1, 0);
+   NamedMatrixWrapper M1 = dat.read_plink_pheno(eval_file.c_str(), 1, -1, 0);
+   MatrixXd ev = M1.X;
    if(ev.rows() == 0)
       return;
 
    VectorXd eval = ev.col(0);
-   MatrixXd evec = dat.read_plink_pheno(evec_file.c_str(), 1, -1, 0);
+   NamedMatrixWrapper M2 = dat.read_plink_pheno(evec_file.c_str(), 1, -1, 0);
+   MatrixXd evec = M2.X;
    MatrixXd out = MatrixXd::Zero(evec.rows(), 1);
    VectorXd uexp;
 
@@ -1011,5 +1043,72 @@ void RandomPCA::check(Data& dat, unsigned int block_size,
 	 << err(i) << std::endl;
    }
    
+}
+
+MatrixXd maf2meansd(MatrixXd maf)
+{
+   MatrixXd X_meansd(maf.rows(), 2);
+   X_meansd.col(0) = maf * 2.0;
+   X_meansd.col(1) = maf.array() * 2.0 * (1.0 - maf.array());
+   return X_meansd;
+}
+
+void RandomPCA::predict(Data& dat, unsigned int block_size,
+   std::string loadings_file, std::string maf_file, std::string meansd_file)
+{
+   
+   std::cout << "[predict] loadings_file " << loadings_file << std::endl;
+   // Read the PCs
+   // TODO: expects no rownames etc, just numeric
+   // TODO: missing values?
+   NamedMatrixWrapper M = dat.read_plink_pheno(loadings_file.c_str(), 1, -1, 0);
+   V = M.X;
+
+   std::cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> " <<
+      V.topLeftCorner(10, 10) << std::endl;
+
+   // Read the means+sds or the MAF (and convert MAF to means+sds)
+   if(maf_file != "")
+   {
+      // TODO: expects no rownames etc, just numeric
+      // TODO: missing/non-numeric values?
+      verbose && STDOUT << timestamp() << " Reading MAF file "
+	 << maf_file << std::endl;
+      NamedMatrixWrapper M2 = dat.read_plink_pheno(maf_file.c_str(), 1, -1, 0);   
+      dat.X_meansd = maf2meansd(M2.X);
+      dat.use_preloaded_maf = true;
+   }
+   else if(meansd_file != "")
+   {
+      verbose && STDOUT << timestamp() << " Reading mean/stdev file "
+	 << meansd_file << std::endl;
+      NamedMatrixWrapper M2 = dat.read_plink_pheno(meansd_file.c_str(), 1, -1, 0);   
+      dat.X_meansd = M2.X;
+      dat.use_preloaded_maf = true;
+   }
+   else
+   {
+      verbose && STDOUT << timestamp() << " Using MAF from the data" << std::endl;
+      dat.use_preloaded_maf = false;
+   }
+   
+   // Run predictions (=projection)
+   SVDWideOnline op(dat, block_size, 1, verbose);
+
+   //unsigned int k = fminl(U.cols(), eval.size());
+   unsigned int k = V.cols();
+
+   Px = MatrixXd::Zero(dat.N, k);
+   
+   VectorXd pxi(dat.N);
+   for(unsigned int i = 0 ; i < k ; i++)
+   {
+      std::cout << "i: " << i << std::endl;
+      MatrixXd v = V.col(i);
+      op.prod(v.data(), pxi.data());
+      std::cout << ">>>>>>>>>>>>> " << pxi.head(10) << std::endl;
+      Px.col(i) = pxi;
+   }
+
 }
 

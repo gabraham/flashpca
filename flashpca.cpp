@@ -45,10 +45,12 @@ int main(int argc, char * argv[])
       ("help", "produce help message")
       ("scca", "perform sparse canonical correlation analysis (SCCA)")
       ("ucca", "perform per-SNP canonical correlation analysis")
+      ("predict,p", "project new samples onto existing principal components")
       ("online,o", "don't load all genotypes into RAM at once")
       ("rand,r", "use the legacy randomised algorithm")
       ("memory,m", po::value<int>(), "size of block for online algorithm, in GB")
-      ("blocksize,b", po::value<int>(), "size of block for online algorithm, in number of SNPs")
+      ("blocksize,b", po::value<int>(),
+	 "size of block for online algorithm, in number of SNPs")
       ("numthreads,n", po::value<int>(), "set number of OpenMP threads")
       ("seed", po::value<long>(), "set random seed")
       ("bed", po::value<std::string>(), "PLINK bed file")
@@ -66,7 +68,8 @@ int main(int argc, char * argv[])
       ("method", po::value<std::string>(), "PCA method [eigen | svd]")
       ("orth", po::value<std::string>(), "use orthornormalization [yes | no]")
       ("mem", po::value<std::string>(), "SCCA/PCA method [low | high]")
-      ("div", po::value<std::string>(), "whether to divide the eigenvalues by p, n - 1, or don't divide [p | n1 | none]")
+      ("div", po::value<std::string>(),
+	 "whether to divide the eigenvalues by p, n - 1, or don't divide [p | n1 | none]")
       ("outpc", po::value<std::string>(), "PC output file")
       ("outpcx", po::value<std::string>(), "X PC output file, for CCA")
       ("outpcy", po::value<std::string>(), "Y PC output file, for CCA")
@@ -76,7 +79,12 @@ int main(int argc, char * argv[])
       ("outvecy", po::value<std::string>(), "Y eigenvector output file, for CCA")
       ("outval", po::value<std::string>(), "Eigenvalue output file")
       ("outpve", po::value<std::string>(), "proportion of variance explained output file")
-      ("outmeansd", po::value<std::string>(), "mean+SD (used to standardize SNPs) output file")
+      ("outmeansd", po::value<std::string>(),
+	 "mean+SD (used to standardize SNPs) output file")
+      ("inload", po::value<std::string>(), "SNP loadings input file")
+      ("inmeansd", po::value<std::string>(),
+	 "mean+SD (used to standardize SNPs) input file")
+      ("inmaf", po::value<std::string>(), "MAF input file")
       ("whiten", "whiten the data")
       ("outwhite", po::value<std::string>(), "whitened data output file")
       ("verbose,v", "verbose")
@@ -128,19 +136,85 @@ int main(int argc, char * argv[])
       return EXIT_SUCCESS;
    }
 
+
+   // Check for which mode we're working in, and verify no conlicting options
    int mode = MODE_PCA;
+
+   std::vector<std::string>
+      modes = {"cca", "ucca", "scca", "check", "predict"};
+   
    if(vm.count("cca"))
    {
+      for(int i = 0 ; i < modes.size() ; i++)
+      {
+	 if(modes[i] != std::string("cca") && vm.count(modes[i]))
+	 {
+	    std::cerr << "Error: conflicting modes requested: --cca, --"
+	       << modes[i] << std::endl
+	       << "Use --help to get more help" << std::endl;
+	    return EXIT_FAILURE;
+	 }
+      }
       mode = MODE_CCA;
       std::cerr << "Error: CCA is currently disabled" << std::endl;
       return EXIT_FAILURE;
    }
    else if(vm.count("scca"))
+   {
+      for(int i = 0 ; i < modes.size() ; i++)
+      {
+	 if(modes[i] != std::string("scca") && vm.count(modes[i]))
+	 {
+	    std::cerr << "Error: conflicting modes requested: --scca, --"
+	       << modes[i] << std::endl
+	       << "Use --help to get more help" << std::endl;
+	    return EXIT_FAILURE;
+	 }
+      }
       mode = MODE_SCCA;
+   }
    else if(vm.count("ucca"))
+   {
+      for(int i = 0 ; i < modes.size() ; i++)
+      {
+	 if(modes[i] != std::string("ucca") && vm.count(modes[i]))
+	 {
+	    std::cerr << "Error: conflicting modes requested: --ucca, --"
+	       << modes[i] << std::endl
+	       << "Use --help to get more help" << std::endl;
+	    return EXIT_FAILURE;
+	 }
+      }
       mode = MODE_UCCA;
+   }
    else if(vm.count("check"))
+   {
+      for(int i = 0 ; i < modes.size() ; i++)
+      {
+	 if(modes[i] != std::string("check") && vm.count(modes[i]))
+	 {
+	    std::cerr << "Error: conflicting modes requested: --check, --"
+	       << modes[i] << std::endl
+	       << "Use --help to get more help" << std::endl;
+	    return EXIT_FAILURE;
+	 }
+      }
       mode = MODE_CHECK_PCA;
+   }
+   else if(vm.count("predict"))
+   {
+      for(int i = 0 ; i < modes.size() ; i++)
+      {
+	 if(modes[i] != std::string("predict") && vm.count(modes[i]))
+	 {
+	    std::cerr << "Error: conflicting modes requested: --predict, --"
+	       << modes[i] << std::endl
+	       << "Use --help to get more help" << std::endl;
+	    return EXIT_FAILURE;
+	 }
+      }
+      mode = MODE_PREDICT_PCA;
+   }
 
    int mem_mode = vm.count("online") ? MEM_MODE_ONLINE : MEM_MODE_OFFLINE;
    bool fast_mode = !vm.count("rand");
@@ -153,10 +227,10 @@ int main(int argc, char * argv[])
       return EXIT_FAILURE;
    }
 
-   if(mode == MODE_CHECK_PCA)
+   if(mode == MODE_CHECK_PCA || mode == MODE_PREDICT_PCA)
       mem_mode = MEM_MODE_ONLINE;
 
-   unsigned long long const MAX_MEM = 8589934592; // 8GiB
+   //unsigned long long const MAX_MEM = _8GiB;
    int memory = 8;
    
    if(vm.count("memory"))
@@ -382,7 +456,10 @@ int main(int argc, char * argv[])
 
    std::string whitefile = "whitened" + suffix;
    if(vm.count("outwhite"))
+   {
+      std::cerr << "Note: whitening currently disabled" << std::endl;
       whitefile = vm["outwhite"].as<std::string>();
+   }
 
    std::string meansdfile = "";
    bool save_meansd = false;
@@ -555,6 +632,58 @@ int main(int argc, char * argv[])
       }
    }
 
+   // Options relevant to prediction mode
+   std::string in_meansd_file = "";
+   std::string in_maf_file = "";
+   if(vm.count("inmeansd"))
+   {
+      if(vm.count("inmaf"))
+      {
+	 std::cerr <<
+	    "Error: conflicting options requested --inmeansd, --inmaf"
+	    << std::endl;
+	 return EXIT_FAILURE;
+      }
+	 
+      in_meansd_file = vm["inmeansd"].as<std::string>();
+      if(in_meansd_file == "")
+      {
+	 std::cerr << "Error: no file specified for --inmeansd"
+	    << std::endl;
+	 return EXIT_FAILURE;
+      }
+   }
+   else if(vm.count("inmaf"))
+   {
+      if(vm.count("inmeansd"))
+      {
+	 std::cerr <<
+	    "Error: conflicting options requested --inmeansd, --inmaf"
+	    << std::endl;
+	 return EXIT_FAILURE;
+      }
+	 
+      in_maf_file = vm["inmaf"].as<std::string>();
+      if(in_maf_file == "")
+      {
+	 std::cerr << "Error: no file specified for --inmaf"
+	    << std::endl;
+	 return EXIT_FAILURE;
+      }
+   }
+
+   std::string in_load_file = "";
+   if(vm.count("inload"))
+   {
+      in_load_file = vm["inload"].as<std::string>();
+      if(in_load_file == "")
+      {
+	 std::cerr << "Error: no file specified for --inload"
+	    << std::endl;
+	 return EXIT_FAILURE;
+      }
+   }
+
    ////////////////////////////////////////////////////////////////////////////////
    // End command line parsing
       
@@ -649,6 +778,7 @@ int main(int argc, char * argv[])
          {
 	    if(fast_mode)
    	    {
+	       // New Spectra algorithm
    	       rpca.pca_fast(data.X, block_size, method, transpose, n_dim,
 		  n_extra, maxiter, tol, seed, kernel, sigma,
 		  rbf_center, rbf_sample, save_kernel, do_orth,
@@ -656,6 +786,7 @@ int main(int argc, char * argv[])
    	    }
    	    else
    	    {
+	       // Old randomised algorithm
    	       rpca.pca(data.X, method, transpose, n_dim, n_extra, maxiter,
    	          tol, seed, kernel, sigma, rbf_center, rbf_sample, save_kernel,
    	          do_orth, do_loadings, mem);
@@ -665,12 +796,14 @@ int main(int argc, char * argv[])
 	 {
 	    if(fast_mode)
 	    {
+	       // New Spectra algorithm
 	       rpca.pca_fast(data, block_size, method, transpose,
 		  n_dim, n_extra, maxiter, tol, seed, kernel, sigma,
 		  rbf_center, rbf_sample, save_kernel, do_orth, do_loadings, mem);
 	    }
 	    else
 	    {
+	       // Old randomised algorithm
 	       rpca.pca(data, method, transpose, n_dim, n_extra, maxiter,
 		  tol, seed, kernel, sigma, rbf_center, rbf_sample, save_kernel,
 		  do_orth, do_loadings, mem);
@@ -704,6 +837,15 @@ int main(int argc, char * argv[])
       {
 	 rpca.check(data, block_size, eigvecfile, eigvalfile);
       }
+      else if(mode == MODE_PREDICT_PCA)
+      {
+	 rpca.predict(data, block_size, in_load_file, in_meansd_file, in_maf_file);
+      }
+      else
+      {
+	 throw std::runtime_error("Unknown mode");
+      }
+
    
    
       ////////////////////////////////////////////////////////////////////////////////
@@ -716,15 +858,14 @@ int main(int argc, char * argv[])
       // Write out results
    
    
-      // Common to all decompositions, except UCCA
-      if(mode != MODE_UCCA && mode != MODE_CHECK_PCA)
+      if(mode == MODE_PCA || mode == MODE_SCCA)
       {
          std::cout << timestamp() << " Writing " << n_dim << 
-   	 " eigenvalues to file " << eigvalfile << std::endl;
+	    " eigenvalues to file " << eigvalfile << std::endl;
          save_text(rpca.d,
-   	 std::vector<std::string>(),
-   	 std::vector<std::string>(),
-   	 eigvalfile.c_str());
+	    std::vector<std::string>(),
+	    std::vector<std::string>(),
+	    eigvalfile.c_str());
       }
    
       if(mode == MODE_PCA)
@@ -732,9 +873,9 @@ int main(int argc, char * argv[])
          std::cout << timestamp() << " Writing " << n_dim << 
    	 " eigenvectors to file " << eigvecfile << std::endl;
          save_text(rpca.U,
-   	 std::vector<std::string>(),
-   	 std::vector<std::string>(),
-   	 eigvecfile.c_str());
+	    std::vector<std::string>(),
+   	    std::vector<std::string>(),
+   	    eigvecfile.c_str());
    
          std::cout << timestamp() << " Writing " << n_dim <<
    	 " PCs to file " << pcfile << std::endl;
@@ -746,9 +887,9 @@ int main(int argc, char * argv[])
          std::cout << timestamp() << " Writing " << n_dim << 
    	 " proportion variance explained to file " << eigpvefile << std::endl;
          save_text(rpca.pve,
-   	 std::vector<std::string>(),
-   	 std::vector<std::string>(),
-   	 eigpvefile.c_str());
+	    std::vector<std::string>(),
+	    std::vector<std::string>(),
+	    eigpvefile.c_str());
    
          if(do_loadings)
          {
@@ -798,15 +939,21 @@ int main(int argc, char * argv[])
          std::vector<std::string> v(str, str + 4);
          save_text(res, v, data.snp_ids, std::string("ucca.txt").c_str());
       }
+      else if(mode == MODE_PREDICT_PCA)
+      {
+	 std::string projfile = std::string("projection.txt");
+	 save_text(rpca.Px, std::vector<std::string>(),
+	    std::vector<std::string>(), projfile.c_str());
+      }
    
       if(save_meansd)
       {
          std::cout << timestamp() << " Writing mean + sd file "
    	 << meansdfile << std::endl;
          save_text(rpca.X_meansd,
-	  std::vector<std::string>(),
-   	  std::vector<std::string>(),
-   	  meansdfile.c_str());
+	    std::vector<std::string>(),
+   	    std::vector<std::string>(),
+   	    meansdfile.c_str());
       }
    
       ////////////////////////////////////////////////////////////////////////////////

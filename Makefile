@@ -8,7 +8,7 @@ BOOST_INC=/usr/local/include/boost
 BOOST_LIB=/usr/local/lib
 SPECTRA_INC=spectra
 
-all: flashpca predict
+all: flashpca
 static: flashpca_x86-64
 
 OBJ = \
@@ -18,11 +18,10 @@ OBJ = \
    util.o
 
 OBJ2 = \
-   predict.o \
    data.o \
    util.o
 
-CXXFLAGS = -I${SPECTRA_INC} -I${BOOST_INC} -I${EIGEN_INC}
+CXXFLAGS = -I${SPECTRA_INC} -I${BOOST_INC} -I${EIGEN_INC} -std=c++11
 
 UNAME := $(shell uname)
 ifeq ($(UNAME), Darwin)
@@ -47,12 +46,6 @@ flashpca: CXXFLAGS += -g -O3 -DNDEBUG -DVERSION=\"$(VERSION)\" \
    -funroll-loops -ftree-vectorize -ffast-math
 flashpca: flashpca.o randompca.o data.o util.o
 	$(CXX) $(CXXFLAGS) -o flashpca $^ $(LDFLAGS)
-
-predict: LDFLAGS = $(BOOST)
-predict: CXXFLAGS += -g -O3 -DNDEBUG -DVERSION=\"$(VERSION)\" \
-   -funroll-loops -ftree-vectorize -ffast-math
-predict: $(OBJ2)
-	$(CXX) $(CXXFLAGS) -o predict $^ $(LDFLAGS)
 
 flashpca_x86-64: LDFLAGS = $(BOOST) -Wl,--whole-archive -lpthread -Wl,--no-whole-archive
 flashpca_x86-64: CXXFLAGS += -g -O3 -DNDEBUG -DVERSION=\"$(VERSION)\" \

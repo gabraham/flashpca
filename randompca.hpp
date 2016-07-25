@@ -27,6 +27,8 @@
 
 using namespace Eigen;
 
+#define _8GiB 8589934592
+
 #define METHOD_EIGEN 1
 #define METHOD_SVD 2
 
@@ -38,6 +40,7 @@ using namespace Eigen;
 #define MODE_SCCA 3
 #define MODE_UCCA 4
 #define MODE_CHECK_PCA 5
+#define MODE_PREDICT_PCA 6
 
 #define MEM_MODE_OFFLINE 1
 #define MEM_MODE_ONLINE 2
@@ -103,5 +106,8 @@ class RandomPCA {
       void ucca(Data &dat);
       void check(Data& dat, unsigned int block_size,
 	    std::string evec_file, std::string eval_file);
+      void predict(Data& dat, unsigned int block_size,
+	 std::string loadings_file, std::string maf_file,
+	 std::string meansd_file);
 };
 

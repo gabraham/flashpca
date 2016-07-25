@@ -24,6 +24,7 @@ Data::Data(long seed)
    tmp2 = NULL;
    avg = NULL;
    verbose = false;
+   use_preloaded_maf = false;
 }
 
 Data::~Data()
@@ -197,6 +198,7 @@ void Data::prepare()
 
    avg = new double[nsnps](); 
    visited = new bool[nsnps]();
+   X_meansd = MatrixXd::Zero(nsnps, 2); // TODO: duplication here with avg
 
    scaled_geno_lookup = ArrayXXd::Zero(4, nsnps);
 
@@ -260,20 +262,32 @@ void Data::read_snp_block(unsigned int start_idx, unsigned int stop_idx,
 	 // decode the genotypes and convert to 0/1/2/NA
 	 decode_plink(tmp2, tmp, np);
 
-	 for(unsigned int i = 0 ; i < N ; i++)
-      	 {
-      	    double s = (double)tmp2[i];
-      	    if(tmp2[i] != PLINK_NA)
-      	    {
-      	       snp_avg += s;
-      	       ngood++;
-      	    }
-      	 }
-      	 snp_avg /= ngood;
+	 double P, sd;
 
-	 // Store the 4 possible standardized genotypes for each SNP
-	 double P = snp_avg / 2.0;
-	 double sd = sqrt(2.0 * P * (1 - P));
+	 if(!use_preloaded_maf)
+	 {
+	    for(unsigned int i = 0 ; i < N ; i++)
+      	    {
+      	       double s = (double)tmp2[i];
+      	       if(tmp2[i] != PLINK_NA)
+      	       {
+      	          snp_avg += s;
+      	          ngood++;
+      	       }
+      	    }
+      	    snp_avg /= ngood;
+
+	    // Store the 4 possible standardized genotypes for each SNP
+	    P = snp_avg / 2.0;
+	    sd = sqrt(2.0 * P * (1 - P));
+	    X_meansd(k, 0) = snp_avg;
+	    X_meansd(k, 1) = sd;
+	 }
+	 else
+	 {
+	    snp_avg = X_meansd(k, 0);
+	    sd = X_meansd(k, 1);
+	 }
 
 	 // scaled genotyped initialised to zero
 	 if(sd > VAR_TOL)
@@ -386,18 +400,24 @@ void Data::read_bed(bool transpose)
 
 void Data::read_pheno(const char *filename, unsigned int firstcol)
 {
-   Y = read_plink_pheno(filename, firstcol);
+    NamedMatrixWrapper M = read_plink_pheno(filename, firstcol);
+    Y = M.X;
+    N = M.X.rows();
 }
 
+// TODO: shouldn't be a class method
+//
 // Reads PLINK phenotype files:
 // FID IID pheno1 pheno2 ...
 // Need to be able to read continuous phenotypes
 // 
 // firstcol is one-based, 3 for pheno file, 6 for FAM file (ignoring gender),
 // 5 for FAM file (with gender)
-MatrixXd Data::read_plink_pheno(const char *filename, unsigned int firstcol,
-   unsigned int nrows, unsigned int skip)
+NamedMatrixWrapper Data::read_plink_pheno(const char *filename,
+   unsigned int firstcol, unsigned int nrows, unsigned int skip)
 {
+   NamedMatrixWrapper M;
+
    unsigned int line_num = 0;
 
    std::ifstream in(filename, std::ios::in);
@@ -429,7 +449,8 @@ MatrixXd Data::read_plink_pheno(const char *filename, unsigned int firstcol,
 
    unsigned int numtok = 0, numfields;
 
-   MatrixXd Z(0, 0);
+   //MatrixXd Z(0, 0);
+   M.X = MatrixXd(0, 0);
 
    for(unsigned int i = 0 ; i < lines.size() ; i++)
    {
@@ -443,17 +464,18 @@ MatrixXd Data::read_plink_pheno(const char *filename, unsigned int firstcol,
       numtok = tokens.size();
       numfields = numtok - firstcol + 1;
       if(i == 0)
-	 Z.resize(lines.size(), numfields);
+	 M.X.resize(lines.size(), numfields);
 
       VectorXd y(numfields);
       for(unsigned int j = 0 ; j < numfields ; j++)
 	 y(j) = std::atof(tokens[j + firstcol - 1].c_str());
-      Z.row(i) = y;
+      M.X.row(i) = y;
    }
 
-   N = Z.rows();
+   //N = M.X.rows();
 
-   return Z;
+   //return Z;
+   return M;
 }
 
 void Data::read_plink_bim(const char *filename)
