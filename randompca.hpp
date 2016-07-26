@@ -106,7 +106,7 @@ class RandomPCA {
       void ucca(Data &dat);
       void check(Data& dat, unsigned int block_size,
 	    std::string evec_file, std::string eval_file);
-      void predict(Data& dat, unsigned int block_size,
+      void project(Data& dat, unsigned int block_size,
 	 std::string loadings_file, std::string maf_file,
 	 std::string meansd_file);
 };

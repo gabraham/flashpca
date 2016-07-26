@@ -45,7 +45,7 @@ int main(int argc, char * argv[])
       ("help", "produce help message")
       ("scca", "perform sparse canonical correlation analysis (SCCA)")
       ("ucca", "perform per-SNP canonical correlation analysis")
-      ("predict,p", "project new samples onto existing principal components")
+      ("project,p", "project new samples onto existing principal components")
       ("online,o", "don't load all genotypes into RAM at once")
       ("rand,r", "use the legacy randomised algorithm")
       ("memory,m", po::value<int>(), "size of block for online algorithm, in GB")
@@ -102,7 +102,7 @@ int main(int argc, char * argv[])
       ("debug", "debug, dumps all intermdiate data (WARNING: slow, call only on small data)")
       ("suffix,f", po::value<std::string>(), "suffix for all output files")
       ("check,c", "check eigenvalues/eigenvectors")
-      ("version,v", "version")
+      ("version,V", "version")
    ;
 
    po::variables_map vm;
@@ -142,7 +142,7 @@ int main(int argc, char * argv[])
    int mode = MODE_PCA;
 
    std::vector<std::string>
-      modes = {"cca", "ucca", "scca", "check", "predict"};
+      modes = {"cca", "ucca", "scca", "check", "project"};
    
    if(vm.count("cca"))
    {
@@ -202,19 +202,34 @@ int main(int argc, char * argv[])
       }
       mode = MODE_CHECK_PCA;
    }
-   else if(vm.count("predict"))
+   else if(vm.count("project"))
    {
       for(int i = 0 ; i < modes.size() ; i++)
       {
-	 if(modes[i] != std::string("predict") && vm.count(modes[i]))
+	 if(modes[i] != std::string("project") && vm.count(modes[i]))
 	 {
-	    std::cerr << "Error: conflicting modes requested: --predict, --"
+	    std::cerr << "Error: conflicting modes requested: --project, --"
 	       << modes[i] << std::endl
 	       << "Use --help to get more help" << std::endl;
 	    return EXIT_FAILURE;
 	 }
       }
       mode = MODE_PREDICT_PCA;
+      if(!vm.count("inload"))
+      {
+	 std::cerr << "Error: SNP-loadings must be specified using --inload"
+	    << std::endl;
+	 return EXIT_FAILURE;
+      }
+
+      if(!vm.count("inmaf") && !vm.count("inmeansd"))
+      {
+	 std::cerr
+	    << "Error: one of MAF or mean/stdev must be specified using "
+	    << " --inmaf or --inmeansd, respectively"
+	    << std::endl;
+	 return EXIT_FAILURE;
+      }
    }
 
    int mem_mode = vm.count("online") ? MEM_MODE_ONLINE : MEM_MODE_OFFLINE;
@@ -714,6 +729,7 @@ int main(int argc, char * argv[])
          data.read_pheno(fam_file.c_str(), 6);
    
       data.read_plink_bim(bim_file.c_str());
+      data.read_plink_fam(fam_file.c_str());
          
       data.geno_filename = geno_file.c_str();
       data.get_size();
@@ -844,25 +860,17 @@ int main(int argc, char * argv[])
       }
       else if(mode == MODE_PREDICT_PCA)
       {
-	 rpca.predict(data, block_size, in_load_file, in_meansd_file, in_maf_file);
+	 rpca.project(data, block_size,
+	    in_load_file, in_maf_file, in_meansd_file);
       }
       else
       {
 	 throw std::runtime_error("Unknown mode");
       }
-
    
-   
-      ////////////////////////////////////////////////////////////////////////////////
-      //  Close open files if in online mode
-      if(mem_mode == MEM_MODE_ONLINE)
-      {
-      }
    
       ////////////////////////////////////////////////////////////////////////////////
       // Write out results
-   
-   
       if(mode == MODE_PCA || mode == MODE_SCCA)
       {
          std::cout << timestamp() << " Writing " << n_dim << 
@@ -900,10 +908,9 @@ int main(int argc, char * argv[])
          {
 	    std::cout << timestamp() << " Writing" <<
 	       " SNP loadings to file " << loadingsfile << std::endl;
-	    save_text(rpca.V,
-	       std::vector<std::string>(),
-	       std::vector<std::string>(),
-	       loadingsfile.c_str()); 
+	    std::cout << rpca.V.rows() << " x " << rpca.V.cols() << std::endl;
+	    std::cout << data.snp_ids.size() << std::endl;
+	    save_text(rpca.V, v, data.snp_ids, loadingsfile.c_str()); 
          }
       }
       else if(mode == MODE_CCA || mode == MODE_SCCA)
@@ -946,18 +953,19 @@ int main(int argc, char * argv[])
       }
       else if(mode == MODE_PREDICT_PCA)
       {
-	 save_text(rpca.Px, std::vector<std::string>(),
-	    std::vector<std::string>(), projfile.c_str());
+         std::vector<std::string> v(rpca.Px.cols());
+         for(unsigned int i = 0 ; i < rpca.Px.cols() ; i++)
+	    v[i] = "PC" + std::to_string(i + 1);
+	 save_text(rpca.Px, v, std::vector<std::string>(),
+	    projfile.c_str());
       }
    
       if(save_meansd)
       {
          std::cout << timestamp() << " Writing mean + sd file "
-   	 << meansdfile << std::endl;
-         save_text(rpca.X_meansd,
-	    std::vector<std::string>(),
-   	    std::vector<std::string>(),
-   	    meansdfile.c_str());
+	    << meansdfile << std::endl;
+	 std::vector<std::string> v = {"SNP", "Mean", "SD"};
+         save_text(rpca.X_meansd, v, data.snp_ids, meansdfile.c_str());
       }
    
       ////////////////////////////////////////////////////////////////////////////////

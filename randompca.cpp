@@ -161,8 +161,9 @@ class SVDWideOnline
 	 }
       }
 
-      // Like R %*%: y = X * x
-      // Note: size of x must be number of SNPs, size y must number of samples
+      // Like y = X %*% x
+      // Note: size of x must be number of SNPs,
+      // size y must number of samples
       void prod(double *x_in, double *y_out)
       {
 	 Map<VectorXd> x(x_in, p);
@@ -177,7 +178,9 @@ class SVDWideOnline
 	    0 << " (" << start[0] << ", " << stop[0]
 	    << ")"  << std::endl;
 
-	 y.noalias() = dat.X.leftCols(actual_block_size) * x;
+	 y.noalias() =
+	    dat.X.leftCols(actual_block_size)
+	       * x.segment(start[0], actual_block_size);
 
 	 for(unsigned int k = 1 ; k < nblocks ; k++)
 	 {
@@ -186,7 +189,9 @@ class SVDWideOnline
 	    actual_block_size = stop[k] - start[k] + 1;
 	    dat.read_snp_block(start[k], stop[k], false, false);
 	    //TODO: Kahan summation better here?
-	    y.noalias() = y + dat.X.leftCols(actual_block_size) * x;
+	    y.noalias() =
+	       y + dat.X.leftCols(actual_block_size)
+		  * x.segment(start[k], actual_block_size);
 	 }
       }
 };
@@ -471,6 +476,7 @@ void RandomPCA::pca_fast(Data& dat, unsigned int block_size, int method,
       trace = op.trace / div;
       pve = d / trace;
       Px = U * d.array().sqrt().matrix().asDiagonal();
+      X_meansd = dat.X_meansd; // TODO: duplication
    }
    else
    {
@@ -1006,14 +1012,14 @@ void RandomPCA::check(Data& dat, unsigned int block_size,
 {
    SVDWideOnline op(dat, block_size, 1, verbose);
 
-   NamedMatrixWrapper M1 = dat.read_plink_pheno(
+   NamedMatrixWrapper M1 = read_text(
       eval_file.c_str(), 1, -1, 0);
    MatrixXd ev = M1.X;
    if(ev.rows() == 0)
       return;
 
    VectorXd eval = ev.col(0);
-   NamedMatrixWrapper M2 = dat.read_plink_pheno(
+   NamedMatrixWrapper M2 = read_text(
       evec_file.c_str(), 1, -1, 0);
    MatrixXd evec = M2.X;
    MatrixXd out = MatrixXd::Zero(evec.rows(), 1);
@@ -1059,37 +1065,33 @@ MatrixXd maf2meansd(MatrixXd maf)
    return X_meansd;
 }
 
-void RandomPCA::predict(Data& dat, unsigned int block_size,
+void RandomPCA::project(Data& dat, unsigned int block_size,
    std::string loadings_file, std::string maf_file,
    std::string meansd_file)
 {
-   
-   std::cout << "[predict] loadings_file " << loadings_file << std::endl;
+   std::cout << "[project] loadings_file " << loadings_file << std::endl;
+
    // Read the PCs
    // TODO: expects no rownames etc, just numeric
    // TODO: missing values?
-   NamedMatrixWrapper M = dat.read_plink_pheno(
-      loadings_file.c_str(), 1, -1, 0);
+   NamedMatrixWrapper M = read_text(loadings_file.c_str(), 2, -1, 1);
    V = M.X;
 
    // Read the means+sds or the MAF (and convert MAF to means+sds)
    if(maf_file != "")
    {
-      // TODO: expects no rownames etc, just numeric
       // TODO: missing/non-numeric values?
       verbose && STDOUT << timestamp() << " Reading MAF file "
 	 << maf_file << std::endl;
-      NamedMatrixWrapper M2 = dat.read_plink_pheno(
-	 maf_file.c_str(), 1, -1, 0);   
+      NamedMatrixWrapper M2 = read_text(maf_file.c_str(), 2, -1, 1);   
       dat.X_meansd = maf2meansd(M2.X);
       dat.use_preloaded_maf = true;
    }
    else if(meansd_file != "")
    {
-      verbose && STDOUT << timestamp() << " Reading mean/stdev file "
-	 << meansd_file << std::endl;
-      NamedMatrixWrapper M2 = dat.read_plink_pheno(
-	 meansd_file.c_str(), 1, -1, 0);   
+      verbose && STDOUT << timestamp()
+	 << " Reading mean/stdev file " << meansd_file << std::endl;
+      NamedMatrixWrapper M2 = read_text(meansd_file.c_str(), 2, -1, 1);   
       dat.X_meansd = M2.X;
       dat.use_preloaded_maf = true;
    }
@@ -1100,12 +1102,9 @@ void RandomPCA::predict(Data& dat, unsigned int block_size,
       dat.use_preloaded_maf = false;
    }
    
-   // Run predictions (=projection)
    SVDWideOnline op(dat, block_size, 1, verbose);
 
-   //unsigned int k = fminl(U.cols(), eval.size());
    unsigned int k = V.cols();
-
    Px = MatrixXd::Zero(dat.N, k);
 
    double div = 1;
@@ -1113,14 +1112,13 @@ void RandomPCA::predict(Data& dat, unsigned int block_size,
       div = dat.N - 1;
    else if(divisor == DIVISOR_P)
       div = V.rows();
-   
+
    VectorXd pxi(dat.N);
    for(unsigned int i = 0 ; i < k ; i++)
    {
       MatrixXd v = V.col(i);
       op.prod(v.data(), pxi.data());
-      Px.col(i) = pxi.array() / sqrt(div);
+      Px.col(i) = pxi.array() / sqrt(div); // X V = U D
    }
-
 }
 

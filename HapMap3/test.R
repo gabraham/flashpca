@@ -1,3 +1,5 @@
+rm(list=ls())
+
 library(RSpectra)
 library(plink2R)
 library(abind)
@@ -12,6 +14,8 @@ scale2 <- function(X)
       MARGIN=2, STATS=sqrt(2 * p * (1 - p)), FUN="/"
    )
    S[is.na(S)] <- 0
+   attr(S, "scaled:center") <- 2 * p
+   attr(S, "scaled:scale") <- sqrt(2 * p * (1 - p))
    S
 }
 
@@ -19,29 +23,47 @@ X <- scale2(dat$bed)
 
 X <- X / sqrt(ncol(X))
 
-k <- 50
+k <- 10
 tol <- 1e-6
 s1 <- svd(X, nu=k, nv=k)
 s2 <- svds(X, k=k, tol=tol)
 system(paste0("../flashpca --bfile data --ndim ", k, " --suffix .batch.txt ",
-   "--tol ", tol, " --outload loadings.batch.txt"))
+   "--tol ", tol, " --outload loadings.batch.txt --outmeansd meansd.batch.txt"))
 system(paste0("../flashpca --bfile data --online --ndim ", k,
-   " --suffix .online.txt --tol ", tol, " --outload loadings.online.txt"))
-system(paste0("../flashpca --bfile data --suffix .batch.txt ",
-   "--tol ", tol, " --outload loadings.batch.txt"))
-system(paste0("../flashpca --bfile data --online --ndim ", k,
-   " --suffix .online.txt --tol ", tol, " --outload loadings.online.txt"))
+   " --suffix .online.txt --tol ", tol, " --outload loadings.online.txt",
+   " --outmeansd meansd.online.txt"))
+system(paste0("../flashpca --bfile data --project --inmeansd meansd.online.txt",
+   " --outproj projections.online.txt --inload loadings.online.txt -v"))
 
 evec3 <- as.matrix(read.table("eigenvectors.batch.txt", header=FALSE))
 evec4 <- as.matrix(read.table("eigenvectors.online.txt", header=FALSE))
 eval3 <- scan("eigenvalues.batch.txt")
 eval4 <- scan("eigenvalues.online.txt")
-load3 <- as.matrix(read.table("loadings.batch.txt", header=FALSE))
-load4 <- as.matrix(read.table("loadings.online.txt", header=FALSE))
+load3 <- as.matrix(read.table("loadings.batch.txt", header=TRUE, row.names=1))
+load4 <- as.matrix(read.table("loadings.online.txt", header=TRUE, row.names=1))
 pc3 <- as.matrix(read.table("pcs.batch.txt", header=TRUE))
 pc4 <- as.matrix(read.table("pcs.online.txt", header=TRUE))
 pve3 <- scan("pve.batch.txt")
 pve4 <- scan("pve.online.txt")
+msd3 <- read.table("meansd.batch.txt", header=TRUE, row.names=1)
+msd4 <- read.table("meansd.online.txt", header=TRUE, row.names=1)
+proj4 <- read.table("projections.online.txt", header=TRUE)
+
+################################################################################
+# Scaling
+scl.mean <- cbind(attr(X, "scaled:center"), msd3[,1], msd4[,1])
+scl.mean.rmse <- sapply(1:3, function(i) {
+   sapply(1:3, function(j) {
+      sqrt(mean((scl.mean[,i] - scl.mean[,j])^2))
+   })
+})
+
+scl.sd <- cbind(attr(X, "scaled:scale"), msd3[,2], msd4[,2])
+scl.sd.rmse <- sapply(1:3, function(i) {
+   sapply(1:3, function(j) {
+      sqrt(sd((scl.sd[,i] - scl.sd[,j])^2))
+   })
+})
 
 ################################################################################
 # Eigenvalues
@@ -93,5 +115,11 @@ load.rmse <- sapply(1:4, function(i) {
 
 ################################################################################
 # Projection (=PCs if same samples used for deriving eigenvectors)
+proj <- abind(list(X %*% s1$v, X %*% s2$v, pc4, proj4), along=3)
+proj.rmse <- sapply(1:4, function(i) {
+   sapply(1:4, function(j) {
+      sqrt(mean((proj[,,i] - proj[,,j]))^2)
+   })
+})
 
 

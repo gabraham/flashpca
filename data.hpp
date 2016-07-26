@@ -70,6 +70,8 @@ class Data {
       const char *geno_filename;
       bool verbose;
       long seed;
+      std::vector<std::string> fam_ids;
+      std::vector<std::string> indiv_ids;
       std::vector<std::string> snp_ids;
       bool use_preloaded_maf;
       
@@ -82,9 +84,7 @@ class Data {
       void get_size();
       void read_pheno(const char *filename, unsigned int firstcol);
       void read_plink_bim(const char *filename);
-      NamedMatrixWrapper read_plink_pheno(
-	 const char *filename, unsigned int firstcol,
-	 unsigned int nrows=-1, unsigned int skip=0);
+      void read_plink_fam(const char *filename);
 
       std::string tolower(const std::string& v);
 
@@ -99,6 +99,9 @@ class Data {
       ArrayXXd scaled_geno_lookup;
 };
 
+NamedMatrixWrapper read_text(
+   const char *filename, unsigned int firstcol,
+   unsigned int nrows=-1, unsigned int skip=0, bool verbose=false);
 
 void decode_plink(unsigned char * __restrict__ out,
    const unsigned char * __restrict__ in,

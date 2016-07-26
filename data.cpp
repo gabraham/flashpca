@@ -400,21 +400,20 @@ void Data::read_bed(bool transpose)
 
 void Data::read_pheno(const char *filename, unsigned int firstcol)
 {
-    NamedMatrixWrapper M = read_plink_pheno(filename, firstcol);
+    NamedMatrixWrapper M = read_text(filename, firstcol);
     Y = M.X;
     N = M.X.rows();
 }
 
-// TODO: shouldn't be a class method
-//
 // Reads PLINK phenotype files:
 // FID IID pheno1 pheno2 ...
 // Need to be able to read continuous phenotypes
 // 
-// firstcol is one-based, 3 for pheno file, 6 for FAM file (ignoring gender),
+// firstcol is _one-based_, 3 for pheno file, 6 for FAM file (ignoring sex),
 // 5 for FAM file (with gender)
-NamedMatrixWrapper Data::read_plink_pheno(const char *filename,
-   unsigned int firstcol, unsigned int nrows, unsigned int skip)
+NamedMatrixWrapper read_text(const char *filename,
+   unsigned int firstcol, unsigned int nrows, unsigned int skip,
+   bool verbose)
 {
    NamedMatrixWrapper M;
 
@@ -424,7 +423,7 @@ NamedMatrixWrapper Data::read_plink_pheno(const char *filename,
 
    if(!in)
    {
-      std::cerr << "[Data::read_plink_pheno] Error reading file " 
+      std::cerr << "[Data::read_text] Error reading file " 
 	 << filename << std::endl;
       throw std::string("io error");
    }
@@ -449,7 +448,6 @@ NamedMatrixWrapper Data::read_plink_pheno(const char *filename,
 
    unsigned int numtok = 0, numfields;
 
-   //MatrixXd Z(0, 0);
    M.X = MatrixXd(0, 0);
 
    for(unsigned int i = 0 ; i < lines.size() ; i++)
@@ -472,9 +470,6 @@ NamedMatrixWrapper Data::read_plink_pheno(const char *filename,
       M.X.row(i) = y;
    }
 
-   //N = M.X.rows();
-
-   //return Z;
    return M;
 }
 
@@ -511,6 +506,41 @@ void Data::read_plink_bim(const char *filename)
       while(ss >> s)
 	 tokens.push_back(s);
       snp_ids.push_back(tokens[1]);
+   }
+}
+
+void Data::read_plink_fam(const char *filename)
+{
+   std::ifstream in(filename, std::ios::in);
+
+   if(!in)
+   {
+      std::cerr << "[Data::read_plink_fam] Error reading file " 
+	 << filename << std::endl;
+      throw std::string("io error");
+   }
+   std::vector<std::string> lines;
+   
+   while(in)
+   {
+      std::string line;
+      std::getline(in, line);
+      if(!in.eof())
+	 lines.push_back(line);
+   }
+
+   in.close();
+
+   for(unsigned int i = 0 ; i < lines.size() ; i++)
+   {
+      std::stringstream ss(lines[i]);
+      std::string s;
+      std::vector<std::string> tokens;
+
+      while(ss >> s)
+	 tokens.push_back(s);
+      fam_ids.push_back(tokens[0]);
+      indiv_ids.push_back(tokens[1]);
    }
 }
 
