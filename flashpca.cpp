@@ -81,6 +81,7 @@ int main(int argc, char * argv[])
       ("outpve", po::value<std::string>(), "proportion of variance explained output file")
       ("outmeansd", po::value<std::string>(),
 	 "mean+SD (used to standardize SNPs) output file")
+      ("outproj", po::value<std::string>(), "PCA projection output file")
       ("inload", po::value<std::string>(), "SNP loadings input file")
       ("inmeansd", po::value<std::string>(),
 	 "mean+SD (used to standardize SNPs) input file")
@@ -461,13 +462,17 @@ int main(int argc, char * argv[])
       whitefile = vm["outwhite"].as<std::string>();
    }
 
-   std::string meansdfile = "";
+   std::string meansdfile = "meansd" + suffix;
    bool save_meansd = false;
    if(vm.count("outmeansd"))
    {
       meansdfile = vm["outmeansd"].as<std::string>();
       save_meansd = true;
    }
+
+   std::string projfile = "projection" + suffix;
+   if(vm.count("outproj"))
+      projfile = vm["outproj"].as<std::string>();
 
    bool whiten = vm.count("whiten");
    bool verbose = vm.count("verbose");
@@ -878,10 +883,10 @@ int main(int argc, char * argv[])
    	    eigvecfile.c_str());
    
          std::cout << timestamp() << " Writing " << n_dim <<
-   	 " PCs to file " << pcfile << std::endl;
+	    " PCs to file " << pcfile << std::endl;
          std::vector<std::string> v(n_dim);
          for(unsigned int i = 0 ; i < n_dim ; i++)
-   	 v[i] = "PC" + std::to_string(i + 1);
+	    v[i] = "PC" + std::to_string(i + 1);
          save_text(rpca.Px, v, std::vector<std::string>(), pcfile.c_str());
    
          std::cout << timestamp() << " Writing " << n_dim << 
@@ -941,7 +946,6 @@ int main(int argc, char * argv[])
       }
       else if(mode == MODE_PREDICT_PCA)
       {
-	 std::string projfile = std::string("projection.txt");
 	 save_text(rpca.Px, std::vector<std::string>(),
 	    std::vector<std::string>(), projfile.c_str());
       }

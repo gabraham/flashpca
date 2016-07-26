@@ -419,12 +419,12 @@ void RandomPCA::pca_fast(MatrixXd& X, unsigned int block_size, int method,
       }
       trace = X.array().square().sum() / div;
       pve = d / trace;
-      std::cout << "trace: " << trace << ", pve: " << pve << std::endl;
       Px = U * d.array().sqrt().matrix().asDiagonal();
    }
    else
    {
-      std::cerr << "Spectra eigen-decomposition was not successful, status: " 
+      std::cerr 
+	 << "Spectra eigen-decomposition was not successful, status: " 
 	 << eigs.info() << std::endl;
    }
 }
@@ -470,7 +470,6 @@ void RandomPCA::pca_fast(Data& dat, unsigned int block_size, int method,
       }
       trace = op.trace / div;
       pve = d / trace;
-      std::cout << "trace: " << trace << ", pve: " << pve << std::endl;
       Px = U * d.array().sqrt().matrix().asDiagonal();
    }
    else
@@ -568,7 +567,8 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
    }
    else if(mem == HIGHMEM)
    {
-      verbose && STDOUT << timestamp() << " Using linear kernel" << std::endl;
+      verbose && STDOUT << timestamp() 
+	 << " Using linear kernel" << std::endl;
 
       K.noalias() = X * X.transpose() / div;
    }
@@ -578,7 +578,8 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
       trace = X.array().square().sum();
    else
    {
-      verbose && STDOUT << timestamp() << " dim(K): " << dim(K) << std::endl;
+      verbose && STDOUT << timestamp()
+	 << " dim(K): " << dim(K) << std::endl;
       trace = K.diagonal().array().sum();
    }
    
@@ -773,7 +774,8 @@ void scca_lowmem(MatrixXd& X, MatrixXd &Y, MatrixXd& U, MatrixXd& V,
 	 v = norm_thresh(v, lambda2);
 	 V.col(j) = v;
 
-	 if(iter > 0 && (v_old.array() - v.array()).abs().maxCoeff() < tol
+	 if(iter > 0 
+	    && (v_old.array() - v.array()).abs().maxCoeff() < tol
 	       && (u_old.array() - u.array()).abs().maxCoeff() < tol)
 	 {
 	    verbose && STDOUT << timestamp() << " dim " << j << " finished in "
@@ -850,7 +852,8 @@ void scca_highmem(MatrixXd& X, MatrixXd &Y, MatrixXd& U, MatrixXd& V,
 	 v = norm_thresh(v, lambda2);
 	 V.col(j) = v;
 
-	 if(iter > 0 && (v_old.array() - v.array()).abs().maxCoeff() < tol
+	 if(iter > 0
+	    && (v_old.array() - v.array()).abs().maxCoeff() < tol
 	       && (u_old.array() - u.array()).abs().maxCoeff() < tol)
 	 {
 	    verbose && STDOUT << timestamp() << " dim " << j << " finished in "
@@ -935,7 +938,8 @@ void RandomPCA::ucca(MatrixXd &X, MatrixXd &Y)
    VectorXd d = svd.singularValues() / sqrt(n - 1);
    VectorXd d2 = d.array().pow(-2);
    MatrixXd V = svd.matrixV();
-   MatrixXd covYinv = svd.matrixV() * d2.asDiagonal() * svd.matrixV().transpose();
+   MatrixXd covYinv =
+      svd.matrixV() * d2.asDiagonal() * svd.matrixV().transpose();
    ArrayXd r2 = ArrayXd(p);
 
    for(unsigned int j = 0 ; j < p ; j++)
@@ -970,7 +974,8 @@ void RandomPCA::ucca(Data& data)
    VectorXd d = svd.singularValues() / sqrt(n - 1);
    VectorXd d2 = d.array().pow(-2);
    MatrixXd V = svd.matrixV();
-   MatrixXd covYinv = svd.matrixV() * d2.asDiagonal() * svd.matrixV().transpose();
+   MatrixXd covYinv
+      = svd.matrixV() * d2.asDiagonal() * svd.matrixV().transpose();
    ArrayXd r2 = ArrayXd(p);
 
    for(unsigned int j = 0 ; j < p ; j++)
@@ -1001,13 +1006,15 @@ void RandomPCA::check(Data& dat, unsigned int block_size,
 {
    SVDWideOnline op(dat, block_size, 1, verbose);
 
-   NamedMatrixWrapper M1 = dat.read_plink_pheno(eval_file.c_str(), 1, -1, 0);
+   NamedMatrixWrapper M1 = dat.read_plink_pheno(
+      eval_file.c_str(), 1, -1, 0);
    MatrixXd ev = M1.X;
    if(ev.rows() == 0)
       return;
 
    VectorXd eval = ev.col(0);
-   NamedMatrixWrapper M2 = dat.read_plink_pheno(evec_file.c_str(), 1, -1, 0);
+   NamedMatrixWrapper M2 = dat.read_plink_pheno(
+      evec_file.c_str(), 1, -1, 0);
    MatrixXd evec = M2.X;
    MatrixXd out = MatrixXd::Zero(evec.rows(), 1);
    VectorXd uexp;
@@ -1053,14 +1060,16 @@ MatrixXd maf2meansd(MatrixXd maf)
 }
 
 void RandomPCA::predict(Data& dat, unsigned int block_size,
-   std::string loadings_file, std::string maf_file, std::string meansd_file)
+   std::string loadings_file, std::string maf_file,
+   std::string meansd_file)
 {
    
    std::cout << "[predict] loadings_file " << loadings_file << std::endl;
    // Read the PCs
    // TODO: expects no rownames etc, just numeric
    // TODO: missing values?
-   NamedMatrixWrapper M = dat.read_plink_pheno(loadings_file.c_str(), 1, -1, 0);
+   NamedMatrixWrapper M = dat.read_plink_pheno(
+      loadings_file.c_str(), 1, -1, 0);
    V = M.X;
 
    // Read the means+sds or the MAF (and convert MAF to means+sds)
@@ -1070,7 +1079,8 @@ void RandomPCA::predict(Data& dat, unsigned int block_size,
       // TODO: missing/non-numeric values?
       verbose && STDOUT << timestamp() << " Reading MAF file "
 	 << maf_file << std::endl;
-      NamedMatrixWrapper M2 = dat.read_plink_pheno(maf_file.c_str(), 1, -1, 0);   
+      NamedMatrixWrapper M2 = dat.read_plink_pheno(
+	 maf_file.c_str(), 1, -1, 0);   
       dat.X_meansd = maf2meansd(M2.X);
       dat.use_preloaded_maf = true;
    }
@@ -1078,13 +1088,15 @@ void RandomPCA::predict(Data& dat, unsigned int block_size,
    {
       verbose && STDOUT << timestamp() << " Reading mean/stdev file "
 	 << meansd_file << std::endl;
-      NamedMatrixWrapper M2 = dat.read_plink_pheno(meansd_file.c_str(), 1, -1, 0);   
+      NamedMatrixWrapper M2 = dat.read_plink_pheno(
+	 meansd_file.c_str(), 1, -1, 0);   
       dat.X_meansd = M2.X;
       dat.use_preloaded_maf = true;
    }
    else
    {
-      verbose && STDOUT << timestamp() << " Using MAF from the data" << std::endl;
+      verbose && STDOUT << timestamp()
+	 << " Using MAF from the data" << std::endl;
       dat.use_preloaded_maf = false;
    }
    

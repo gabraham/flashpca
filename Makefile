@@ -21,11 +21,11 @@ OBJ2 = \
    data.o \
    util.o
 
-CXXFLAGS = -I${SPECTRA_INC} -I${BOOST_INC} -I${EIGEN_INC} -std=c++11
+CXXFLAGS = -I${SPECTRA_INC} -I${BOOST_INC} -I${EIGEN_INC}
 
 UNAME := $(shell uname)
 ifeq ($(UNAME), Darwin)
-   CXXFLAGS += -msse2 -DEIGEN_DONT_PARALLELIZE
+   CXXFLAGS += -msse2 -DEIGEN_DONT_PARALLELIZE -std=c++11
 else
    CXXFLAGS += -march=native -fopenmp -std=c++0x
 endif
