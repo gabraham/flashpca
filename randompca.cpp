@@ -217,7 +217,7 @@ class SVDWideOnline
 	       << ")"  << std::endl;
 	 }
 
-	 MatrixXd y = dat.X.leftCols(actual_block_size) *
+	 MatrixXd Y = dat.X.leftCols(actual_block_size) *
 	    (dat.X.leftCols(actual_block_size).transpose() * x);
 	 trace = dat.X.leftCols(actual_block_size).array().square().sum();
 
@@ -229,13 +229,13 @@ class SVDWideOnline
 	    actual_block_size = stop[k] - start[k] + 1;
 	    dat.read_snp_block(start[k], stop[k], false, false);
 	    //TODO: Kahan summation better here?
-	    y.noalias() = y + dat.X.leftCols(actual_block_size) *
+	    Y.noalias() = Y + dat.X.leftCols(actual_block_size) *
 	       (dat.X.leftCols(actual_block_size).transpose() * x);
 	    trace += dat.X.leftCols(actual_block_size).array().square().sum();
 	 }
 
 	 nops++;
-	 return y;
+	 return Y;
       }
 
       // Like Y = x' * X, where X is genotypes, x is a matrix
@@ -263,8 +263,38 @@ class SVDWideOnline
 	    dat.read_snp_block(start[k], stop[k], false, false);
 	    //TODO: Kahan summation better here?
 	    Y.block(0, start[0], n, actual_block_size) =
-	       Y.block(0, start[0], n, actual_block_size)
-		  + x.transpose() * dat.X.leftCols(actual_block_size);
+	       x.transpose() * dat.X.leftCols(actual_block_size);
+	 }
+	 nops++;
+	 return Y;
+      }
+
+      // Like Y = X * x, where X is genotypes, x is a matrix
+      MatrixXd prod3(MatrixXd& x)
+      {
+	 unsigned int actual_block_size = stop[0] - start[0] + 1;
+
+	 verbose && STDOUT << timestamp()
+	    << " Matrix operation " << nops << std::endl;
+
+	 dat.read_snp_block(start[0], stop[0], false, false);
+	 verbose && STDOUT << timestamp() << "   Reading block " <<
+	    0 << " (" << start[0] << ", " << stop[0]
+	    << ")"  << std::endl;
+
+	 MatrixXd Y = dat.X.leftCols(actual_block_size) 
+	    * x.middleRows(start[0], actual_block_size);
+
+	 for(unsigned int k = 1 ; k < nblocks ; k++)
+	 {
+	    verbose && STDOUT << timestamp() << "   Reading block " <<
+	       k << " (" << start[k] << ", " << stop[k] << ")"  << std::endl;
+	    actual_block_size = stop[k] - start[k] + 1;
+	    dat.read_snp_block(start[k], stop[k], false, false);
+	    //TODO: Kahan summation better here?
+	    Y.noalias() =
+	       Y + dat.X.leftCols(actual_block_size) 
+		  * x.middleRows(start[0], actual_block_size);
 	 }
 	 nops++;
 	 return Y;
@@ -579,15 +609,13 @@ void RandomPCA::pca(Data& dat, int method, bool transpose,
       div = p;
    unsigned int total_dim = ndim + nextra;
    MatrixXd R = make_gaussian(dat.nsnps, total_dim, seed);
-   MatrixXd Y = R;
+   MatrixXd Y = op.prod3(R);
+   verbose && STDOUT << timestamp() << " dim(Y): " << dim(Y) << std::endl;
    MatrixXd Yn;
 
    for(unsigned int iter = 0 ; iter < maxiter ; iter++)
    {
       verbose && STDOUT << timestamp() << " iter " << iter;
-
-      //Xy.noalias() = X.transpose() * Y;
-      //Yn.noalias() = X * Xy;
 
       Yn.noalias() = op.perform_op_multi(Y);
 
@@ -627,8 +655,6 @@ void RandomPCA::pca(Data& dat, int method, bool transpose,
    //   B.row(j) = b;
    //}
    MatrixXd B = op.prod2(Q);
-
-   std::cout << B.topLeftCorner(10, 10) << std::endl;
 
    verbose && STDOUT << timestamp() << " dim(B): " << dim(B) << std::endl;
 
