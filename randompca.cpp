@@ -197,6 +197,7 @@ class SVDWideOnline
 	 nops++;
       }
 
+      // return Y = X * X' * x where x is a matrix (despite x being lower case)
       MatrixXd perform_op_multi(MatrixXd& x)
       {
 	 unsigned int actual_block_size;
@@ -235,6 +236,38 @@ class SVDWideOnline
 
 	 nops++;
 	 return y;
+      }
+
+      // Like Y = x' * X, where X is genotypes, x is a matrix
+      MatrixXd prod2(MatrixXd& x)
+      {
+	 unsigned int actual_block_size = stop[0] - start[0] + 1;
+
+	 verbose && STDOUT << timestamp()
+	    << " Matrix operation " << nops << std::endl;
+
+	 dat.read_snp_block(start[0], stop[0], false, false);
+	 verbose && STDOUT << timestamp() << "   Reading block " <<
+	    0 << " (" << start[0] << ", " << stop[0]
+	    << ")"  << std::endl;
+
+	 MatrixXd Y(x.cols(), p);
+	 Y.block(0, start[0], n, actual_block_size) =
+	    x.transpose() * dat.X.leftCols(actual_block_size);
+
+	 for(unsigned int k = 1 ; k < nblocks ; k++)
+	 {
+	    verbose && STDOUT << timestamp() << "   Reading block " <<
+	       k << " (" << start[k] << ", " << stop[k] << ")"  << std::endl;
+	    actual_block_size = stop[k] - start[k] + 1;
+	    dat.read_snp_block(start[k], stop[k], false, false);
+	    //TODO: Kahan summation better here?
+	    Y.block(0, start[0], n, actual_block_size) =
+	       Y.block(0, start[0], n, actual_block_size)
+		  + x.transpose() * dat.X.leftCols(actual_block_size);
+	 }
+	 nops++;
+	 return Y;
       }
 };
 
@@ -538,7 +571,7 @@ void RandomPCA::pca(Data& dat, int method, bool transpose,
    int block_size = 5000;
    SVDWideOnline op(dat, block_size, stand_method_x, verbose);
 
-   unsigned int N, p;
+   unsigned int N = dat.N, p = dat.nsnps;
    double div = 1;
    if(divisor == DIVISOR_N1)
       div = N - 1;
@@ -585,14 +618,17 @@ void RandomPCA::pca(Data& dat, int method, bool transpose,
    verbose && STDOUT << timestamp() << " QR done" << std::endl;
 
    //MatrixXd B = Q.transpose() * X;
-   MatrixXd B(Q.cols(), dat.nsnps);
-   for(unsigned int j = 0 ; j < Q.cols() ; j++)
-   {
-      VectorXd b(dat.nsnps);
-      VectorXd q = Q.col(j);
-      op.crossprod(q.data(), b.data());  
-      B.row(j) = b;
-   }
+   //MatrixXd B(Q.cols(), dat.nsnps);
+   //for(unsigned int j = 0 ; j < Q.cols() ; j++)
+   //{
+   //   VectorXd b(dat.nsnps);
+   //   VectorXd q = Q.col(j);
+   //   op.crossprod(q.data(), b.data());  
+   //   B.row(j) = b;
+   //}
+   MatrixXd B = op.prod2(Q);
+
+   std::cout << B.topLeftCorner(10, 10) << std::endl;
 
    verbose && STDOUT << timestamp() << " dim(B): " << dim(B) << std::endl;
 
