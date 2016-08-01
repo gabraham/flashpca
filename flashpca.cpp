@@ -67,7 +67,6 @@ int main(int argc, char * argv[])
 	 "standardization method for phenotypes [sd | binom2 | binom | none | center]")
       ("method", po::value<std::string>(), "PCA method [eigen | svd]")
       ("orth", po::value<std::string>(), "use orthornormalization [yes | no]")
-      ("mem", po::value<std::string>(), "SCCA/PCA method [low | high]")
       ("div", po::value<std::string>(),
 	 "whether to divide the eigenvalues by p, n - 1, or don't divide [p | n1 | none]")
       ("outpc", po::value<std::string>(), "PC output file")
@@ -99,7 +98,7 @@ int main(int argc, char * argv[])
       ("savekernel", "save the kernel as text file")
       ("lambda1", po::value<double>(), "1st penalty for CCA/SCCA")
       ("lambda2", po::value<double>(), "2nd penalty for CCA/SCCA")
-      ("debug", "debug, dumps all intermdiate data (WARNING: slow, call only on small data)")
+      ("debug", "debug, dumps all intermediate data (WARNING: slow, call only on small data)")
       ("suffix,f", po::value<std::string>(), "suffix for all output files")
       ("check,c", "check eigenvalues/eigenvectors")
       ("version,V", "version")
@@ -235,13 +234,13 @@ int main(int argc, char * argv[])
    int mem_mode = vm.count("online") ? MEM_MODE_ONLINE : MEM_MODE_OFFLINE;
    bool fast_mode = !vm.count("rand");
    
-   if(mem_mode == MEM_MODE_ONLINE && !fast_mode)
-   {
-      std::cerr
-	 << "Error: --online only supported in fast mode (--fast)"
-	 << std::endl;
-      return EXIT_FAILURE;
-   }
+   //if(mem_mode == MEM_MODE_ONLINE && !fast_mode)
+   //{
+   //   std::cerr
+   //      << "Error: --online only supported in fast mode (--fast)"
+   //      << std::endl;
+   //   return EXIT_FAILURE;
+   //}
 
    if(mode == MODE_CHECK_PCA || mode == MODE_PREDICT_PCA)
       mem_mode = MEM_MODE_ONLINE;
@@ -417,21 +416,21 @@ int main(int argc, char * argv[])
       }
    }
 
-   int mem = LOWMEM;
-   if(vm.count("mem"))
-   {
-      std::string m = vm["mem"].as<std::string>();
-      if(m == "low")
-	 mem = LOWMEM;
-      else if(m == "high")
-	 mem = HIGHMEM;
-      else
-      {
-	 std::cerr << "Error: unknown argument (--mem): "
-	    << m << std::endl;
-	 return EXIT_FAILURE;
-      }
-   }
+   //int mem = LOWMEM;
+   //if(vm.count("mem"))
+   //{
+   //   std::string m = vm["mem"].as<std::string>();
+   //   if(m == "low")
+   //      mem = LOWMEM;
+   //   else if(m == "high")
+   //      mem = HIGHMEM;
+   //   else
+   //   {
+   //      std::cerr << "Error: unknown argument (--mem): "
+   //         << m << std::endl;
+   //      return EXIT_FAILURE;
+   //   }
+   //}
 
    std::string suffix = ".txt";
    if(vm.count("suffix"))
@@ -810,7 +809,7 @@ int main(int argc, char * argv[])
 	       // Old randomised algorithm
    	       rpca.pca(data.X, method, transpose, n_dim, n_extra, maxiter,
    	          tol, seed, kernel, sigma, rbf_center, rbf_sample, save_kernel,
-   	          do_orth, do_loadings, mem);
+   	          do_orth, do_loadings, HIGHMEM);
    	    }
          }
 	 else
@@ -827,7 +826,7 @@ int main(int argc, char * argv[])
 	       // Old randomised algorithm
 	       rpca.pca(data, method, transpose, n_dim, n_extra, maxiter,
 		  tol, seed, kernel, sigma, rbf_center, rbf_sample, save_kernel,
-		  do_orth, do_loadings, mem);
+		  do_orth, do_loadings, LOWMEM);
 	    }
 	 }
 	 std::cout << timestamp() << " PCA done" << std::endl;

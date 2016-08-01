@@ -159,6 +159,7 @@ class SVDWideOnline
 	    y.segment(start[k], actual_block_size)
 	       = dat.X.leftCols(actual_block_size).transpose() * x;
 	 }
+	 nops++;
       }
 
       // Like y = X %*% x
@@ -193,6 +194,47 @@ class SVDWideOnline
 	       y + dat.X.leftCols(actual_block_size)
 		  * x.segment(start[k], actual_block_size);
 	 }
+	 nops++;
+      }
+
+      MatrixXd perform_op_multi(MatrixXd& x)
+      {
+	 unsigned int actual_block_size;
+
+	 verbose && STDOUT << timestamp()
+	    << " Matrix operation " << nops << std::endl;
+
+	 actual_block_size = stop[0] - start[0] + 1;
+
+	 // If we only have one block, keep it in memory instead of reading it
+	 // over again
+	 if(nblocks > 1 || nops == 1)
+	 {
+	    dat.read_snp_block(start[0], stop[0], false, false);
+	    verbose && STDOUT << timestamp() << "   Reading block " <<
+	       0 << " (" << start[0] << ", " << stop[0]
+	       << ")"  << std::endl;
+	 }
+
+	 MatrixXd y = dat.X.leftCols(actual_block_size) *
+	    (dat.X.leftCols(actual_block_size).transpose() * x);
+	 trace = dat.X.leftCols(actual_block_size).array().square().sum();
+
+	 // If there's only one block, this loop doesn't run anyway
+	 for(unsigned int k = 1 ; k < nblocks ; k++)
+	 {
+	    verbose && STDOUT << timestamp() << "   Reading block " <<
+	       k << " (" << start[k] << ", " << stop[k] << ")"  << std::endl;
+	    actual_block_size = stop[k] - start[k] + 1;
+	    dat.read_snp_block(start[k], stop[k], false, false);
+	    //TODO: Kahan summation better here?
+	    y.noalias() = y + dat.X.leftCols(actual_block_size) *
+	       (dat.X.leftCols(actual_block_size).transpose() * x);
+	    trace += dat.X.leftCols(actual_block_size).array().square().sum();
+	 }
+
+	 nops++;
+	 return y;
       }
 };
 
@@ -486,23 +528,98 @@ void RandomPCA::pca_fast(Data& dat, unsigned int block_size, int method,
    }
 }
 
-// stub for now
+// implies low mem
 void RandomPCA::pca(Data& dat, int method, bool transpose,
    unsigned int ndim, unsigned int nextra, unsigned int maxiter,
    double tol, long seed, int kernel, double sigma, bool rbf_center,
    unsigned int rbf_sample, bool save_kernel, bool do_orth,
    bool do_loadings, int mem)
 {
-   //Spectra::DenseGenMatProd<double> op(dat.X);
-   //Spectra::GenEigsSolver< double, Spectra::LARGEST_ALGE, Spectra::DenseGenMatProd<double> > eigs(&op, ndim, 2 * ndim + 1);
-   //eigs.init();
-   //int nconv = eigs.compute();
+   int block_size = 5000;
+   SVDWideOnline op(dat, block_size, stand_method_x, verbose);
 
-   //if(eigs.info() == Spectra::SUCCESSFUL)
+   unsigned int N, p;
+   double div = 1;
+   if(divisor == DIVISOR_N1)
+      div = N - 1;
+   else if(divisor == DIVISOR_P)
+      div = p;
+   unsigned int total_dim = ndim + nextra;
+   MatrixXd R = make_gaussian(dat.nsnps, total_dim, seed);
+   MatrixXd Y = R;
+   MatrixXd Yn;
+
+   for(unsigned int iter = 0 ; iter < maxiter ; iter++)
+   {
+      verbose && STDOUT << timestamp() << " iter " << iter;
+
+      //Xy.noalias() = X.transpose() * Y;
+      //Yn.noalias() = X * Xy;
+
+      Yn.noalias() = op.perform_op_multi(Y);
+
+      verbose && STDOUT << " (orthogonalising)";
+      
+      ColPivHouseholderQR<MatrixXd> qr(Yn);
+      MatrixXd I = MatrixXd::Identity(Yn.rows(), Yn.cols());
+      Yn = qr.householderQ() * I;
+      Yn.conservativeResize(NoChange, Yn.cols());
+
+      double diff = (Y - Yn).array().square().sum() / Y.size(); 
+
+      verbose && STDOUT << " " << diff << std::endl;
+
+      Y.noalias() = Yn;
+      if(diff < tol)
+	 break;
+   }
+
+   verbose && STDOUT << timestamp() << " QR begin" << std::endl;
+
+   ColPivHouseholderQR<MatrixXd> qr(Y);
+   MatrixXd Q = MatrixXd::Identity(Y.rows(), Y.cols());
+   Q = qr.householderQ() * Q;
+   Q.conservativeResize(NoChange, Y.cols());
+
+   verbose && STDOUT << timestamp() << " dim(Q): " << dim(Q) << std::endl;
+   verbose && STDOUT << timestamp() << " QR done" << std::endl;
+
+   //MatrixXd B = Q.transpose() * X;
+   MatrixXd B(Q.cols(), dat.nsnps);
+   for(unsigned int j = 0 ; j < Q.cols() ; j++)
+   {
+      VectorXd b(dat.nsnps);
+      VectorXd q = Q.col(j);
+      op.crossprod(q.data(), b.data());  
+      B.row(j) = b;
+   }
+
+   verbose && STDOUT << timestamp() << " dim(B): " << dim(B) << std::endl;
+
+   MatrixXd Et;
+   pca_small(B, method, Et, d, verbose);
+
+   verbose && STDOUT << timestamp() << " dim(Et): " << dim(Et) << std::endl;
+
+   d = d.array() / div;
+
+   // Px = U D = X V
+   U.noalias() = Q * Et;
+   VectorXd dtmp = d.array().sqrt();
+   Px.noalias() = U * dtmp.asDiagonal();
+   //if(do_loadings)
    //{
-   //   U = eigs.eigenvectors();
-   //   d = eigs.eigenvalues().array().sqrt();
+   //   VectorXd s;
+   //   s = 1 / (d.array().sqrt() * sqrt(div));
+   //   MatrixXd Dinv = s.asDiagonal();
+   //   V = X.transpose() * U * Dinv;
    //}
+   
+   Px.conservativeResize(NoChange, ndim);
+   U.conservativeResize(NoChange, ndim);
+   V.conservativeResize(NoChange, ndim);
+   d.conservativeResize(ndim);
+   pve = d.array() / trace;
 }
 
 void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
@@ -924,6 +1041,11 @@ void RandomPCA::scca(MatrixXd &X, MatrixXd &Y, double lambda1, double lambda2,
    Px = X * U;
    Py = Y * V;
 }
+
+//void RandomPCA::scca(Data& dat, double lambda1, double lambda2, long seed)
+//{
+//   
+//}
 
 // Single-SNP CCA (like plink.multivariate), offline version (loading all SNPs
 // into memory)
