@@ -56,6 +56,7 @@ class SVDWideOnline
       bool verbose;
       unsigned int nops;
       unsigned int block_size;
+      bool trace_done;
 
    public:
       SVDWideOnline(Data& dat_, unsigned int block_size_, int stand_method_,
@@ -78,6 +79,7 @@ class SVDWideOnline
 
 	 nops = 1;
 	 trace = 0;
+	 trace_done = false;
       }
 
       ~SVDWideOnline()
@@ -112,7 +114,8 @@ class SVDWideOnline
 
 	 y.noalias() = dat.X.leftCols(actual_block_size) *
 	    (dat.X.leftCols(actual_block_size).transpose() * x);
-	 trace = dat.X.leftCols(actual_block_size).array().square().sum();
+	 if(!trace_done)
+	    trace = dat.X.leftCols(actual_block_size).array().square().sum();
 
 	 // If there's only one block, this loop doesn't run anyway
 	 for(unsigned int k = 1 ; k < nblocks ; k++)
@@ -124,8 +127,12 @@ class SVDWideOnline
 	    //TODO: Kahan summation better here?
 	    y.noalias() = y + dat.X.leftCols(actual_block_size) *
 	       (dat.X.leftCols(actual_block_size).transpose() * x);
-	    trace += dat.X.leftCols(actual_block_size).array().square().sum();
+	    if(!trace_done)
+	       trace += dat.X.leftCols(actual_block_size).array().square().sum();
 	 }
+
+	 if(!trace_done)
+	    trace_done = true;
 
 	 nops++;
       }
@@ -251,7 +258,8 @@ class SVDWideOnline
 
 	 MatrixXd Y = dat.X.leftCols(actual_block_size) *
 	    (dat.X.leftCols(actual_block_size).transpose() * x);
-	 trace = dat.X.leftCols(actual_block_size).array().square().sum();
+	 if(!trace_done)
+	    trace = dat.X.leftCols(actual_block_size).array().square().sum();
 
 	 // If there's only one block, this loop doesn't run anyway
 	 for(unsigned int k = 1 ; k < nblocks ; k++)
@@ -263,10 +271,14 @@ class SVDWideOnline
 	    //TODO: Kahan summation better here?
 	    Y.noalias() = Y + dat.X.leftCols(actual_block_size) *
 	       (dat.X.leftCols(actual_block_size).transpose() * x);
-	    trace += dat.X.leftCols(actual_block_size).array().square().sum();
+	    if(!trace_done)
+	       trace += dat.X.leftCols(actual_block_size).array().square().sum();
 	 }
 
 	 nops++;
+	 if(!trace_done)
+	    trace_done = true;
+
 	 return Y;
       }
 
@@ -695,6 +707,10 @@ void RandomPCA::pca(Data& dat, int method, bool transpose,
 
    verbose && STDOUT << timestamp() << " dim(Et): " << dim(Et) << std::endl;
 
+   trace = op.trace / div;
+   verbose && STDOUT << timestamp() << " Trace(K): " << trace 
+      << " (N: " << N << ")" << " " << op.trace <<
+      std::endl;
    d = d.array() / div;
 
    // Px = U D = X V
@@ -801,7 +817,7 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
       trace = K.diagonal().array().sum();
    }
    
-   trace /= div;
+   //trace /= div;
 
    verbose && STDOUT << timestamp() << " Trace(K): " << trace 
       << " (N: " << N << ")" << std::endl;

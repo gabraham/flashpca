@@ -115,18 +115,17 @@ eval.rmse <- sapply(1:ncol(eval), function(i) {
 ################################################################################
 # Eigenvectors
 evec <- abind(list(s1$u, s2$u, evec3, evec4, evec5, evec6), along=3)
-stop()
-evec.rmse <- sapply(1:4, function(i) {
-   sapply(1:4, function(j) {
+evec.rmse <- sapply(1:dim(evec)[3], function(i) {
+   sapply(1:dim(evec)[3], function(j) {
       sqrt(mean((evec[,,i] - evec[,,j]))^2)
    })
 })
 
 ################################################################################
 # Principal components
-pc <- abind(list(X %*% s1$v, X %*% s2$v, pc3, pc4), along=3)
-pc.rmse <- sapply(1:4, function(i) {
-   sapply(1:4, function(j) {
+pc <- abind(list(X %*% s1$v, X %*% s2$v, pc3, pc4, pc5, pc6), along=3)
+pc.rmse <- sapply(1:dim(pc)[3], function(i) {
+   sapply(1:dim(pc)[3], function(j) {
       sqrt(mean((pc[,,i] - pc[,,j]))^2)
    })
 })
@@ -135,18 +134,19 @@ pc.rmse <- sapply(1:4, function(i) {
 # Proportion of variance explained
 tr <- sum(X^2)
 pve <- cbind(svd=s1$d[1:k]^2 / tr, RSpectra=s2$d^2 / tr,
-   FlashPCA_batch=pve3, FlashPCA_online=pve4)
-pve.rmse <- sapply(1:4, function(i) {
-   sapply(1:4, function(j) {
+   FlashPCA_batch=pve3, FlashPCA_online=pve4,
+   FlashPCA_rand=pve5, FlashPCA_rand_online=pve6)
+pve.rmse <- sapply(1:ncol(pve), function(i) {
+   sapply(1:ncol(pve), function(j) {
       sqrt(mean((pve[,i] - pve[,j])^2))
    }) 
 })
 
 ################################################################################
 # SNP loadings
-load <-  abind(list(s1$v, s2$v, load3, load4), along=3)
-load.rmse <- sapply(1:4, function(i) {
-   sapply(1:4, function(j) {
+load <-  abind(list(s1$v, s2$v, load3, load4, load5, load6), along=3)
+load.rmse <- sapply(1:dim(load)[3], function(i) {
+   sapply(1:dim(load)[3], function(j) {
       sqrt(mean((load[,,i] - load[,,j]))^2)
    })
 })
