@@ -722,9 +722,7 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
    MatrixXd R = make_gaussian(X.cols(), total_dim, seed);
    MatrixXd Y = X * R;
 
-   std::cout << R.topLeftCorner(5, 5) << std::endl;
    verbose && STDOUT << timestamp() << " dim(Y): " << dim(Y) << std::endl;
-   std::cout << Y.topLeftCorner(5, 5) << std::endl;
 
    normalize(Y);
    MatrixXd Yn;
