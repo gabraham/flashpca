@@ -252,7 +252,7 @@ class SVDWideOnline
 	    << ")"  << std::endl;
 
 	 MatrixXd Y(x.cols(), p);
-	 Y.block(0, start[0], n, actual_block_size) =
+	 Y.middleCols(start[0], actual_block_size) =
 	    x.transpose() * dat.X.leftCols(actual_block_size);
 
 	 for(unsigned int k = 1 ; k < nblocks ; k++)
@@ -262,7 +262,7 @@ class SVDWideOnline
 	    actual_block_size = stop[k] - start[k] + 1;
 	    dat.read_snp_block(start[k], stop[k], false, false);
 	    //TODO: Kahan summation better here?
-	    Y.block(0, start[0], n, actual_block_size) =
+	    Y.middleCols(start[k], actual_block_size) =
 	       x.transpose() * dat.X.leftCols(actual_block_size);
 	 }
 	 nops++;
@@ -294,7 +294,7 @@ class SVDWideOnline
 	    //TODO: Kahan summation better here?
 	    Y.noalias() =
 	       Y + dat.X.leftCols(actual_block_size) 
-		  * x.middleRows(start[0], actual_block_size);
+		  * x.middleRows(start[k], actual_block_size);
 	 }
 	 nops++;
 	 return Y;
@@ -596,9 +596,8 @@ void RandomPCA::pca(Data& dat, int method, bool transpose,
    unsigned int ndim, unsigned int nextra, unsigned int maxiter,
    double tol, long seed, int kernel, double sigma, bool rbf_center,
    unsigned int rbf_sample, bool save_kernel, bool do_orth,
-   bool do_loadings, int mem)
+   bool do_loadings, int block_size)
 {
-   int block_size = 5000;
    SVDWideOnline op(dat, block_size, stand_method_x, verbose);
 
    unsigned int N = dat.N, p = dat.nsnps;
@@ -610,6 +609,7 @@ void RandomPCA::pca(Data& dat, int method, bool transpose,
    unsigned int total_dim = ndim + nextra;
    MatrixXd R = make_gaussian(dat.nsnps, total_dim, seed);
    MatrixXd Y = op.prod3(R);
+   normalize(Y);
    verbose && STDOUT << timestamp() << " dim(Y): " << dim(Y) << std::endl;
    MatrixXd Yn;
 
@@ -722,7 +722,9 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
    MatrixXd R = make_gaussian(X.cols(), total_dim, seed);
    MatrixXd Y = X * R;
 
+   std::cout << R.topLeftCorner(5, 5) << std::endl;
    verbose && STDOUT << timestamp() << " dim(Y): " << dim(Y) << std::endl;
+   std::cout << Y.topLeftCorner(5, 5) << std::endl;
 
    normalize(Y);
    MatrixXd Yn;

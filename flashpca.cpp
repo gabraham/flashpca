@@ -826,7 +826,7 @@ int main(int argc, char * argv[])
 	       // Old randomised algorithm
 	       rpca.pca(data, method, transpose, n_dim, n_extra, maxiter,
 		  tol, seed, kernel, sigma, rbf_center, rbf_sample, save_kernel,
-		  do_orth, do_loadings, LOWMEM);
+		  do_orth, do_loadings, block_size);
 	    }
 	 }
 	 std::cout << timestamp() << " PCA done" << std::endl;
