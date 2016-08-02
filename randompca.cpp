@@ -162,6 +162,38 @@ class SVDWideOnline
 	 nops++;
       }
 
+      // Like R crossprod(): y = X' * x
+      // Note: size of x must be number of samples, size y must number of SNPs
+      MatrixXd crossprod2(MatrixXd& x)
+      {
+	 unsigned int actual_block_size = stop[0] - start[0] + 1;
+
+	 verbose && STDOUT << timestamp()
+	    << " Matrix operation " << nops << std::endl;
+
+	 dat.read_snp_block(start[0], stop[0], false, false);
+	 verbose && STDOUT << timestamp() << "   Reading block " <<
+	    0 << " (" << start[0] << ", " << stop[0]
+	    << ")"  << std::endl;
+
+	 MatrixXd Y(p, x.cols());
+	 Y.middleRows(start[0], actual_block_size) =
+	    dat.X.leftCols(actual_block_size).transpose() * x;
+
+	 for(unsigned int k = 1 ; k < nblocks ; k++)
+	 {
+	    verbose && STDOUT << timestamp() << "   Reading block " <<
+	       k << " (" << start[k] << ", " << stop[k] << ")"  << std::endl;
+	    actual_block_size = stop[k] - start[k] + 1;
+	    dat.read_snp_block(start[k], stop[k], false, false);
+	    //TODO: Kahan summation better here?
+	    Y.middleRows(start[k], actual_block_size) =
+	       dat.X.leftCols(actual_block_size).transpose() * x;
+	 }
+	 nops++;
+	 return Y;
+      }
+
       // Like y = X %*% x
       // Note: size of x must be number of SNPs,
       // size y must number of samples
@@ -669,13 +701,14 @@ void RandomPCA::pca(Data& dat, int method, bool transpose,
    U.noalias() = Q * Et;
    VectorXd dtmp = d.array().sqrt();
    Px.noalias() = U * dtmp.asDiagonal();
-   //if(do_loadings)
-   //{
-   //   VectorXd s;
-   //   s = 1 / (d.array().sqrt() * sqrt(div));
-   //   MatrixXd Dinv = s.asDiagonal();
-   //   V = X.transpose() * U * Dinv;
-   //}
+   if(do_loadings)
+   {
+      VectorXd s;
+      s = 1 / (d.array().sqrt() * sqrt(div));
+      MatrixXd UDinv = U * s.asDiagonal();
+      //V = X.transpose() * U * Dinv;
+      V = op.crossprod2(UDinv);
+   }
    
    Px.conservativeResize(NoChange, ndim);
    U.conservativeResize(NoChange, ndim);
