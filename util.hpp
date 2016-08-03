@@ -92,8 +92,7 @@ bool save_text(Eigen::MatrixBase<Derived>& m,
          out << "\t";
    }
    
-   const IOFormat fmt(6, DontAlignCols, "\t", "\n", "", "", "", "");
-   //out << m.format(fmt) << std::endl;
+   const IOFormat fmt(precision , DontAlignCols, "\t", "\n", "", "", "", "");
 
    for(unsigned int j = 0 ; j < m.rows() ; j++)
    {

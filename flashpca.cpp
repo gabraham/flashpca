@@ -101,6 +101,7 @@ int main(int argc, char * argv[])
       ("debug", "debug, dumps all intermediate data (WARNING: slow, call only on small data)")
       ("suffix,f", po::value<std::string>(), "suffix for all output files")
       ("check,c", "check eigenvalues/eigenvectors")
+      ("precision", po::value<int>(), "digits of precision for output")
       ("version,V", "version")
    ;
 
@@ -703,6 +704,18 @@ int main(int argc, char * argv[])
       }
    }
 
+   int precision = 7;
+   if(vm.count("precision"))
+   {
+      precision = vm["precision"].as<int>();
+      if(precision <= 1)
+      {
+	 std::cerr << "Error: output --precision too low"
+	    << std::endl;
+	 return EXIT_FAILURE;
+      }
+   }
+
    ////////////////////////////////////////////////////////////////////////////////
    // End command line parsing
       
@@ -877,7 +890,7 @@ int main(int argc, char * argv[])
          save_text(rpca.d,
 	    std::vector<std::string>(),
 	    std::vector<std::string>(),
-	    eigvalfile.c_str());
+	    eigvalfile.c_str(), precision);
       }
    
       if(mode == MODE_PCA)
@@ -887,21 +900,25 @@ int main(int argc, char * argv[])
          save_text(rpca.U,
 	    std::vector<std::string>(),
    	    std::vector<std::string>(),
-   	    eigvecfile.c_str());
+   	    eigvecfile.c_str(), precision);
    
          std::cout << timestamp() << " Writing " << n_dim <<
 	    " PCs to file " << pcfile << std::endl;
          std::vector<std::string> v(n_dim);
          for(unsigned int i = 0 ; i < n_dim ; i++)
 	    v[i] = "PC" + std::to_string(i + 1);
-         save_text(rpca.Px, v, std::vector<std::string>(), pcfile.c_str());
+         save_text(rpca.Px, v,	 
+	    std::vector<std::string>(),
+	    pcfile.c_str(),
+	    precision);
    
          std::cout << timestamp() << " Writing " << n_dim << 
    	 " proportion variance explained to file " << eigpvefile << std::endl;
          save_text(rpca.pve,
 	    std::vector<std::string>(),
 	    std::vector<std::string>(),
-	    eigpvefile.c_str());
+	    eigpvefile.c_str(),
+	    precision);
    
          if(do_loadings)
          {
@@ -909,7 +926,7 @@ int main(int argc, char * argv[])
 	       " SNP loadings to file " << loadingsfile << std::endl;
 	    std::cout << rpca.V.rows() << " x " << rpca.V.cols() << std::endl;
 	    std::cout << data.snp_ids.size() << std::endl;
-	    save_text(rpca.V, v, data.snp_ids, loadingsfile.c_str()); 
+	    save_text(rpca.V, v, data.snp_ids, loadingsfile.c_str(), precision); 
          }
       }
       else if(mode == MODE_CCA || mode == MODE_SCCA)
@@ -919,21 +936,21 @@ int main(int argc, char * argv[])
          save_text(rpca.U,
 	    std::vector<std::string>(),
    	    std::vector<std::string>(),
-   	    eigvecxfile.c_str());
+   	    eigvecxfile.c_str(), precision);
    
          std::cout << timestamp() << " Writing " << n_dim << 
    	 " Y eigenvectors to file " << eigvecyfile << std::endl;
          save_text(rpca.V,
 	    std::vector<std::string>(),
 	    std::vector<std::string>(),
-	    eigvecyfile.c_str());
+	    eigvecyfile.c_str(), precision);
    
          std::cout << timestamp() << " Writing " << n_dim <<
    	 " PCs to file " << pcxfile << std::endl;
          save_text(rpca.Px,
 	    std::vector<std::string>(),
    	    std::vector<std::string>(),
-   	    pcxfile.c_str());
+   	    pcxfile.c_str(), precision);
    
          std::cout << timestamp() << " Writing " << n_dim <<
    	 " PCs to file " << pcyfile << std::endl;
@@ -941,14 +958,15 @@ int main(int argc, char * argv[])
          save_text(rpca.Py,
 	    std::vector<std::string>(),
    	    std::vector<std::string>(),
-   	    pcyfile.c_str());
+   	    pcyfile.c_str(), precision);
       }
       else if(mode == MODE_UCCA)
       {
          MatrixXd res(rpca.res);
          std::string str[] = {"SNP", "R", "Fstat", "P"};
          std::vector<std::string> v(str, str + 4);
-         save_text(res, v, data.snp_ids, std::string("ucca.txt").c_str());
+         save_text(res, v, data.snp_ids, std::string("ucca.txt").c_str(),
+	    precision);
       }
       else if(mode == MODE_PREDICT_PCA)
       {
@@ -956,7 +974,7 @@ int main(int argc, char * argv[])
          for(unsigned int i = 0 ; i < rpca.Px.cols() ; i++)
 	    v[i] = "PC" + std::to_string(i + 1);
 	 save_text(rpca.Px, v, std::vector<std::string>(),
-	    projfile.c_str());
+	    projfile.c_str(), precision);
       }
    
       if(save_meansd)
@@ -964,7 +982,8 @@ int main(int argc, char * argv[])
          std::cout << timestamp() << " Writing mean + sd file "
 	    << meansdfile << std::endl;
 	 std::vector<std::string> v = {"SNP", "Mean", "SD"};
-         save_text(rpca.X_meansd, v, data.snp_ids, meansdfile.c_str());
+         save_text(rpca.X_meansd, v, data.snp_ids, meansdfile.c_str(),
+	    precision);
       }
    
       ////////////////////////////////////////////////////////////////////////////////
