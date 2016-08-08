@@ -379,6 +379,13 @@ int main(int argc, char * argv[])
       }
    }
 
+   if(stand_method_x != STANDARDIZE_BINOM2 && mem_mode == MEM_MODE_ONLINE)
+   {
+      std::cerr << "Error: in online mode (--online), only --stand binom2"
+	 << " is supported" << std::endl;
+      return EXIT_FAILURE;
+   }
+
    int stand_method_y = STANDARDIZE_SD;
    if(vm.count("standy"))
    {

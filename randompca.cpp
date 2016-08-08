@@ -91,6 +91,7 @@ class SVDWideOnline
       inline unsigned int rows() const { return n; }
       inline unsigned int cols() const { return n; }
 
+      // y = X X' * x
       void perform_op(double *x_in, double* y_out)
       {
 	 Map<VectorXd> x(x_in, n);
@@ -137,6 +138,52 @@ class SVDWideOnline
 	 nops++;
       }
 
+      // y = X X' * x
+      MatrixXd perform_op_mat(MatrixXd x)
+      {
+	 unsigned int actual_block_size;
+
+	 verbose && STDOUT << timestamp()
+	    << " Matrix operation " << nops << std::endl;
+
+	 actual_block_size = stop[0] - start[0] + 1;
+
+	 // If we only have one block, keep it in memory instead of reading it
+	 // over again
+	 if(nblocks > 1 || nops == 1)
+	 {
+	    dat.read_snp_block(start[0], stop[0], false, false);
+	    verbose && STDOUT << timestamp() << "   Reading block " <<
+	       0 << " (" << start[0] << ", " << stop[0]
+	       << ")"  << std::endl;
+	 }
+	 
+	 MatrixXd Y(n, x.cols());
+	 Y.noalias() = dat.X.leftCols(actual_block_size) *
+	    (dat.X.leftCols(actual_block_size).transpose() * x);
+	 if(!trace_done)
+	    trace = dat.X.leftCols(actual_block_size).array().square().sum();
+
+	 // If there's only one block, this loop doesn't run anyway
+	 for(unsigned int k = 1 ; k < nblocks ; k++)
+	 {
+	    verbose && STDOUT << timestamp() << "   Reading block " <<
+	       k << " (" << start[k] << ", " << stop[k] << ")"  << std::endl;
+	    actual_block_size = stop[k] - start[k] + 1;
+	    dat.read_snp_block(start[k], stop[k], false, false);
+	    //TODO: Kahan summation better here?
+	    Y.noalias() = Y + dat.X.leftCols(actual_block_size) *
+	       (dat.X.leftCols(actual_block_size).transpose() * x);
+	    if(!trace_done)
+	       trace += dat.X.leftCols(actual_block_size).array().square().sum();
+	 }
+
+	 if(!trace_done)
+	    trace_done = true;
+
+	 nops++;
+	 return Y;
+      }
       // Like R crossprod(): y = X' * x
       // Note: size of x must be number of samples, size y must number of SNPs
       void crossprod(double *x_in, double *y_out)
@@ -1258,9 +1305,13 @@ void RandomPCA::check(Data& dat, unsigned int block_size,
    MatrixXd out = MatrixXd::Zero(evec.rows(), 1);
    VectorXd uexp;
 
-   if(evec.rows() > dat.N)
+   if(evec.rows() != dat.N)
       throw std::runtime_error(
 	 "Eigenvector dimension doesn't match data dimension");
+
+   if(eval.size() != evec.cols())
+      throw std::runtime_error(
+	 "Eigenvector dimension doesn't match the number of eigenvalues");
 
    unsigned int k = fminl(evec.cols(), eval.size());
 
@@ -1270,23 +1321,40 @@ void RandomPCA::check(Data& dat, unsigned int block_size,
       << " for " << k << " dimensions"
       << std::endl;
 
+   MatrixXd UD = evec * eval.asDiagonal();
+
    VectorXd err(eval.size());
 
-   for(unsigned int i = 0 ; i < k ; i++)
+   //for(unsigned int i = 0 ; i < k ; i++)
+   //{
+   //   MatrixXd u = evec.col(i);
+   //   op.perform_op(u.data(), out.data());
+   //   out /= dat.nsnps;
+   //   uexp = u * eval(i);
+   //   err(i) = (out.array() - uexp.array()).square().sum();
+   //}
+   MatrixXd XXU = op.perform_op_mat(evec);
+   XXU /= dat.nsnps;
+
+   for(unsigned int j = 0 ; j < k ; j++)
    {
-      MatrixXd u = evec.col(i);
-      op.perform_op(u.data(), out.data());
-      out /= dat.nsnps;
-      uexp = u * eval(i);
-      err(i) = (out.array() - uexp.array()).square().sum();
+      err(j) = (XXU.col(j).array() - UD.col(j).array()).square().sum();
    }
 
-   for(unsigned int i = 0 ; i < k ; i++)
+
+   for(unsigned int j = 0 ; j < k ; j++)
    {
-      STDOUT << "eval(" << (i + 1) 
-	 << "): " << eval(i) << ", sum squared error: "
-	 << err(i) << std::endl;
+      STDOUT << timestamp() << " eval(" << (j + 1) 
+	 << "): " << eval(j) << ", sum squared error: "
+	 << err(j) << std::endl;
    }
+
+   double mse = err.array().sum() / dat.N;
+   double rmse = sqrt(mse);
+
+   STDOUT << timestamp() << " Mean squared error: " << mse
+      << ", Root mean squared error: " << rmse
+      << " (n=" << dat.N << ")" << std::endl;
    
 }
 
