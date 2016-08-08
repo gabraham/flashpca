@@ -1313,43 +1313,34 @@ void RandomPCA::check(Data& dat, unsigned int block_size,
       throw std::runtime_error(
 	 "Eigenvector dimension doesn't match the number of eigenvalues");
 
-   unsigned int k = fminl(evec.cols(), eval.size());
+   unsigned int K = fminl(evec.cols(), eval.size());
 
    // X X' U = U D^2
    STDOUT << timestamp()
       << " Checking mean square error between (X X' U) and (U D^2)"
-      << " for " << k << " dimensions"
+      << " for " << K << " dimensions"
       << std::endl;
 
+   MatrixXd XXU = op.perform_op_mat(evec);
+   XXU /= dat.nsnps;
    MatrixXd UD = evec * eval.asDiagonal();
 
    VectorXd err(eval.size());
 
-   //for(unsigned int i = 0 ; i < k ; i++)
-   //{
-   //   MatrixXd u = evec.col(i);
-   //   op.perform_op(u.data(), out.data());
-   //   out /= dat.nsnps;
-   //   uexp = u * eval(i);
-   //   err(i) = (out.array() - uexp.array()).square().sum();
-   //}
-   MatrixXd XXU = op.perform_op_mat(evec);
-   XXU /= dat.nsnps;
-
-   for(unsigned int j = 0 ; j < k ; j++)
+   for(unsigned int j = 0 ; j < K ; j++)
    {
       err(j) = (XXU.col(j).array() - UD.col(j).array()).square().sum();
    }
 
 
-   for(unsigned int j = 0 ; j < k ; j++)
+   for(unsigned int j = 0 ; j < K ; j++)
    {
       STDOUT << timestamp() << " eval(" << (j + 1) 
 	 << "): " << eval(j) << ", sum squared error: "
 	 << err(j) << std::endl;
    }
 
-   double mse = err.array().sum() / dat.N;
+   double mse = err.array().sum() / (dat.N * K);
    double rmse = sqrt(mse);
 
    STDOUT << timestamp() << " Mean squared error: " << mse
