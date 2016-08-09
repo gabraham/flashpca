@@ -44,7 +44,7 @@ int main(int argc, char * argv[])
       ("scca", "perform sparse canonical correlation analysis (SCCA)")
       ("ucca", "perform per-SNP canonical correlation analysis")
       ("project,p", "project new samples onto existing principal components")
-      ("online,o", "don't load all genotypes into RAM at once")
+      ("batch,b", "load all genotypes into RAM at once")
       ("rand,r", "use the legacy randomised algorithm")
       ("memory,m", po::value<int>(), "size of block for online algorithm, in GB")
       ("blocksize,b", po::value<int>(),
@@ -118,7 +118,7 @@ int main(int argc, char * argv[])
       return EXIT_SUCCESS;
    }
 
-   show_timestamp = vm.count("nostamp");
+   show_timestamp = !vm.count("nostamp");
 
    std::cout << timestamp() << "arguments: flashpca ";
    for(int i = 0 ; i < argc ; i++)
@@ -238,7 +238,7 @@ int main(int argc, char * argv[])
       }
    }
 
-   int mem_mode = vm.count("online") ? MEM_MODE_ONLINE : MEM_MODE_OFFLINE;
+   int mem_mode = vm.count("batch") ? MEM_MODE_OFFLINE : MEM_MODE_ONLINE;
    bool fast_mode = !vm.count("rand");
    
    //if(mem_mode == MEM_MODE_ONLINE && !fast_mode)
