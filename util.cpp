@@ -12,6 +12,8 @@
 
 using namespace Eigen;
 
+bool show_timestamp;
+
 // Standardize matrix column-wise to zero mean and unit variance.
 // *Standardizes in place*
 // If a column is all zeros, it will remain zero.
@@ -28,7 +30,7 @@ MatrixXd standardize(MatrixXd& X, int method, bool verbose)
 
    if(method == STANDARDIZE_SD)
    {
-      verbose && STDOUT << timestamp() << " standardizing matrix (SD)" 
+      verbose && STDOUT << timestamp() << "standardizing matrix (SD)" 
 	 << " p: " << p << std::endl;
 
       for(unsigned int j = 0 ; j < p ; j++)
@@ -42,7 +44,7 @@ MatrixXd standardize(MatrixXd& X, int method, bool verbose)
    // Same as Price 2006 eqn 3
    else if(method == STANDARDIZE_BINOM)
    {
-      verbose && STDOUT << timestamp() << " standardizing matrix (BINOM)" 
+      verbose && STDOUT << timestamp() << "standardizing matrix (BINOM)" 
 	 << " p: " << p << std::endl;
 
       double r;
@@ -57,7 +59,7 @@ MatrixXd standardize(MatrixXd& X, int method, bool verbose)
    }
    else if(method == STANDARDIZE_BINOM2)
    {
-      verbose && STDOUT << timestamp() << " standardizing matrix (BINOM2)" 
+      verbose && STDOUT << timestamp() << "standardizing matrix (BINOM2)" 
 	 << " p: " << p << std::endl;
 
       double r;
@@ -173,12 +175,17 @@ double myatof(char* c)
 
 std::string timestamp()
 {
-   time_t t = time(NULL);
-   char *s = asctime(localtime(&t));
-   s[strlen(s) - 1] = '\0';
-   std::string str(s);
-   str = std::string("[") + str + std::string("]");
-   return str;
+   if(show_timestamp)
+   {
+      time_t t = time(NULL);
+      char *s = asctime(localtime(&t));
+      s[strlen(s) - 1] = '\0';
+      std::string str(s);
+      str = std::string("[") + str + std::string("] ");
+      return str;
+   }
+   else
+      return std::string("");
 }
 
 /*

@@ -25,6 +25,8 @@
 using namespace Eigen;
 namespace po = boost::program_options;
 
+extern bool show_timestamp;
+
 int main(int argc, char * argv[])
 {
 
@@ -32,10 +34,6 @@ int main(int argc, char * argv[])
    std::cout << "******* Running in Debug mode *******" << std::endl;
 #endif
 
-   std::cout << timestamp() << " arguments: flashpca ";
-   for(int i = 0 ; i < argc ; i++)
-      std::cout << argv[i] << " ";
-   std::cout << std::endl;
 
    ////////////////////////////////////////////////////////////////////////////////
    // Parse commandline arguments
@@ -102,6 +100,7 @@ int main(int argc, char * argv[])
       ("suffix,f", po::value<std::string>(), "suffix for all output files")
       ("check,c", "check eigenvalues/eigenvectors")
       ("precision", po::value<int>(), "digits of precision for output")
+      ("notime", "don't print timestamp in output")
       ("version,V", "version")
    ;
 
@@ -118,6 +117,13 @@ int main(int argc, char * argv[])
 	 << std::endl;
       return EXIT_SUCCESS;
    }
+
+   show_timestamp = vm.count("nostamp");
+
+   std::cout << timestamp() << "arguments: flashpca ";
+   for(int i = 0 ; i < argc ; i++)
+      std::cout << argv[i] << " ";
+   std::cout << std::endl;
 
    if(vm.count("version"))
    {
@@ -424,22 +430,6 @@ int main(int argc, char * argv[])
       }
    }
 
-   //int mem = LOWMEM;
-   //if(vm.count("mem"))
-   //{
-   //   std::string m = vm["mem"].as<std::string>();
-   //   if(m == "low")
-   //      mem = LOWMEM;
-   //   else if(m == "high")
-   //      mem = HIGHMEM;
-   //   else
-   //   {
-   //      std::cerr << "Error: unknown argument (--mem): "
-   //         << m << std::endl;
-   //      return EXIT_FAILURE;
-   //   }
-   //}
-
    std::string suffix = ".txt";
    if(vm.count("suffix"))
       suffix = vm["suffix"].as<std::string>();
@@ -726,12 +716,12 @@ int main(int argc, char * argv[])
    ////////////////////////////////////////////////////////////////////////////////
    // End command line parsing
       
-   std::cout << timestamp() << " Start flashpca (version " << VERSION
+   std::cout << timestamp() << "Start flashpca (version " << VERSION
       << ")" << std::endl;
 #ifdef _OPENMP
 #ifdef _EIGEN_HAS_OPENMP
    omp_set_num_threads(num_threads);
-   std::cout << timestamp() << " Using " << num_threads 
+   std::cout << timestamp() << "Using " << num_threads 
       << " OpenMP threads" << std::endl;
 #endif
 #endif
@@ -740,7 +730,7 @@ int main(int argc, char * argv[])
    {
       Data data(seed);
       data.verbose = verbose;
-      std::cout << timestamp() << " seed: " << data.seed << std::endl;
+      std::cout << timestamp() << "seed: " << data.seed << std::endl;
    
       if(mode == MODE_CCA || mode == MODE_SCCA || mode == MODE_UCCA)
          data.read_pheno(pheno_file.c_str(), 3);
@@ -786,7 +776,7 @@ int main(int argc, char * argv[])
       
       if(n_dim > max_dim)
       {
-	 std::cout << timestamp() << " You asked for " 
+	 std::cout << timestamp() << "You asked for " 
 	    << n_dim << " dimensions, but only "
 	    << max_dim << " allowed, using " << max_dim
 	    << " instead" << std::endl;
@@ -805,14 +795,14 @@ int main(int argc, char * argv[])
 
       block_size = fminl(block_size, data.nsnps);
 
-      std::cout << timestamp() << " blocksize: " << block_size 
+      std::cout << timestamp() << "blocksize: " << block_size 
 	 << " (" << (double)block_size * 8.0 * data.N << " bytes)" << std::endl;
    
       ////////////////////////////////////////////////////////////////////////////////
       // The main analysis
       if(mode == MODE_PCA)
       {
-         std::cout << timestamp() << " PCA begin" << std::endl;
+         std::cout << timestamp() << "PCA begin" << std::endl;
    
          if(mem_mode == MEM_MODE_OFFLINE)
          {
@@ -849,29 +839,33 @@ int main(int argc, char * argv[])
 		  do_orth, do_loadings, block_size);
 	    }
 	 }
-	 std::cout << timestamp() << " PCA done" << std::endl;
+	 std::cout << timestamp() << "PCA done" << std::endl;
       }
       //else if(mode == MODE_CCA)
       //{
-      //   std::cout << timestamp() << " CCA begin" << std::endl;
+      //   std::cout << timestamp() << "CCA begin" << std::endl;
       //   rpca.cca(data.X, data.Y, lambda1, lambda2, seed);
-      //   std::cout << timestamp() << " CCA done" << std::endl;
+      //   std::cout << timestamp() << "CCA done" << std::endl;
       //}
       else if(mode == MODE_SCCA)
       {
-         std::cout << timestamp() << " SCCA begin" << std::endl;
+         std::cout << timestamp() << "SCCA begin" << std::endl;
          rpca.scca(data.X, data.Y, lambda1, lambda2, seed, n_dim, mem,
 	    maxiter, tol);
-         std::cout << timestamp() << " SCCA done" << std::endl;
+         std::cout << timestamp() << "SCCA done" << std::endl;
+         save_text(rpca.V0,
+	    std::vector<std::string>(),
+	    std::vector<std::string>(),
+	    std::string("scca_v0.txt").c_str(), precision);
       }
       else if(mode == MODE_UCCA)
       {
-         std::cout << timestamp() << " UCCA begin" << std::endl;
+         std::cout << timestamp() << "UCCA begin" << std::endl;
          if(mem_mode == MEM_MODE_OFFLINE)
 	    rpca.ucca(data.X, data.Y);
          else
 	    rpca.ucca(data);
-         std::cout << timestamp() << " UCCA done" << std::endl;
+         std::cout << timestamp() << "UCCA done" << std::endl;
       }
       else if(mode == MODE_CHECK_PCA)
       {
@@ -892,7 +886,7 @@ int main(int argc, char * argv[])
       // Write out results
       if(mode == MODE_PCA || mode == MODE_SCCA)
       {
-         std::cout << timestamp() << " Writing " << n_dim << 
+         std::cout << timestamp() << "Writing " << n_dim << 
 	    " eigenvalues to file " << eigvalfile << std::endl;
          save_text(rpca.d,
 	    std::vector<std::string>(),
@@ -902,14 +896,14 @@ int main(int argc, char * argv[])
    
       if(mode == MODE_PCA)
       {
-         std::cout << timestamp() << " Writing " << n_dim << 
+         std::cout << timestamp() << "Writing " << n_dim << 
    	 " eigenvectors to file " << eigvecfile << std::endl;
          save_text(rpca.U,
 	    std::vector<std::string>(),
    	    std::vector<std::string>(),
    	    eigvecfile.c_str(), precision);
    
-         std::cout << timestamp() << " Writing " << n_dim <<
+         std::cout << timestamp() << "Writing " << n_dim <<
 	    " PCs to file " << pcfile << std::endl;
          std::vector<std::string> v(n_dim);
          for(unsigned int i = 0 ; i < n_dim ; i++)
@@ -919,7 +913,7 @@ int main(int argc, char * argv[])
 	    pcfile.c_str(),
 	    precision);
    
-         std::cout << timestamp() << " Writing " << n_dim << 
+         std::cout << timestamp() << "Writing " << n_dim << 
    	 " proportion variance explained to file " << eigpvefile << std::endl;
          save_text(rpca.pve,
 	    std::vector<std::string>(),
@@ -929,7 +923,7 @@ int main(int argc, char * argv[])
    
          if(do_loadings)
          {
-	    std::cout << timestamp() << " Writing" <<
+	    std::cout << timestamp() << "Writing" <<
 	       " SNP loadings to file " << loadingsfile << std::endl;
 	    std::cout << rpca.V.rows() << " x " << rpca.V.cols() << std::endl;
 	    std::cout << data.snp_ids.size() << std::endl;
@@ -938,28 +932,28 @@ int main(int argc, char * argv[])
       }
       else if(mode == MODE_CCA || mode == MODE_SCCA)
       {
-         std::cout << timestamp() << " Writing " << n_dim << 
+         std::cout << timestamp() << "Writing " << n_dim << 
    	 " X eigenvectors to file " << eigvecxfile << std::endl;
          save_text(rpca.U,
 	    std::vector<std::string>(),
    	    std::vector<std::string>(),
    	    eigvecxfile.c_str(), precision);
    
-         std::cout << timestamp() << " Writing " << n_dim << 
+         std::cout << timestamp() << "Writing " << n_dim << 
    	 " Y eigenvectors to file " << eigvecyfile << std::endl;
          save_text(rpca.V,
 	    std::vector<std::string>(),
 	    std::vector<std::string>(),
 	    eigvecyfile.c_str(), precision);
    
-         std::cout << timestamp() << " Writing " << n_dim <<
+         std::cout << timestamp() << "Writing " << n_dim <<
    	 " PCs to file " << pcxfile << std::endl;
          save_text(rpca.Px,
 	    std::vector<std::string>(),
    	    std::vector<std::string>(),
    	    pcxfile.c_str(), precision);
    
-         std::cout << timestamp() << " Writing " << n_dim <<
+         std::cout << timestamp() << "Writing " << n_dim <<
    	 " PCs to file " << pcyfile << std::endl;
    
          save_text(rpca.Py,
@@ -986,7 +980,7 @@ int main(int argc, char * argv[])
    
       if(save_meansd)
       {
-         std::cout << timestamp() << " Writing mean + sd file "
+         std::cout << timestamp() << "Writing mean + sd file "
 	    << meansdfile << std::endl;
 	 std::vector<std::string> v = {"SNP", "Mean", "SD"};
          save_text(rpca.X_meansd, v, data.snp_ids, meansdfile.c_str(),
@@ -998,14 +992,14 @@ int main(int argc, char * argv[])
    
       //if(mode == MODE_PCA && whiten)
       //{
-      //   std::cout << timestamp() << " ZCA whitening data" << std::endl;
+      //   std::cout << timestamp() << "ZCA whitening data" << std::endl;
       //   rpca.zca_whiten(transpose);
-      //   std::cout << timestamp() << " Writing whitened data to file "
+      //   std::cout << timestamp() << "Writing whitened data to file "
       //      << whitefile << std::endl;
       //   save_text(whitefile.c_str(), rpca.W);
       //}
    
-      std::cout << timestamp() << " Goodbye!" << std::endl;
+      std::cout << timestamp() << "Goodbye!" << std::endl;
    }
    catch(std::exception& e)
    {

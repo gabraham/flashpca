@@ -56,6 +56,7 @@ class RandomPCA {
    public:
       MatrixXd U, V, W, Px, Py;
       VectorXd d;
+      MatrixXd V0;
       double trace;
       VectorXd pve;
       MatrixXd X_meansd, Y_meansd;

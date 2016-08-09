@@ -34,7 +34,7 @@ class SVDWide
       {
 	 Map<VectorXd> x(x_in, n);
 	 Map<VectorXd> y(y_out, n);
-	 verbose && STDOUT << timestamp() << " Matrix operation "
+	 verbose && STDOUT << timestamp() << "Matrix operation "
 	    << nops << std::endl;
 	 y.noalias() = mat * (mat.transpose() * x);
 	 nops++;
@@ -99,7 +99,7 @@ class SVDWideOnline
 	 unsigned int actual_block_size;
 
 	 verbose && STDOUT << timestamp()
-	    << " Matrix operation " << nops << std::endl;
+	    << "Matrix operation " << nops << std::endl;
 
 	 actual_block_size = stop[0] - start[0] + 1;
 
@@ -108,7 +108,7 @@ class SVDWideOnline
 	 if(nblocks > 1 || nops == 1)
 	 {
 	    dat.read_snp_block(start[0], stop[0], false, false);
-	    verbose && STDOUT << timestamp() << "   Reading block " <<
+	    verbose && STDOUT << timestamp() << "Reading block " <<
 	       0 << " (" << start[0] << ", " << stop[0]
 	       << ")"  << std::endl;
 	 }
@@ -121,7 +121,7 @@ class SVDWideOnline
 	 // If there's only one block, this loop doesn't run anyway
 	 for(unsigned int k = 1 ; k < nblocks ; k++)
 	 {
-	    verbose && STDOUT << timestamp() << "   Reading block " <<
+	    verbose && STDOUT << timestamp() << "Reading block " <<
 	       k << " (" << start[k] << ", " << stop[k] << ")"  << std::endl;
 	    actual_block_size = stop[k] - start[k] + 1;
 	    dat.read_snp_block(start[k], stop[k], false, false);
@@ -144,7 +144,7 @@ class SVDWideOnline
 	 unsigned int actual_block_size;
 
 	 verbose && STDOUT << timestamp()
-	    << " Matrix operation " << nops << std::endl;
+	    << "Matrix operation " << nops << std::endl;
 
 	 actual_block_size = stop[0] - start[0] + 1;
 
@@ -153,7 +153,7 @@ class SVDWideOnline
 	 if(nblocks > 1 || nops == 1)
 	 {
 	    dat.read_snp_block(start[0], stop[0], false, false);
-	    verbose && STDOUT << timestamp() << "   Reading block " <<
+	    verbose && STDOUT << timestamp() << "Reading block " <<
 	       0 << " (" << start[0] << ", " << stop[0]
 	       << ")"  << std::endl;
 	 }
@@ -167,7 +167,7 @@ class SVDWideOnline
 	 // If there's only one block, this loop doesn't run anyway
 	 for(unsigned int k = 1 ; k < nblocks ; k++)
 	 {
-	    verbose && STDOUT << timestamp() << "   Reading block " <<
+	    verbose && STDOUT << timestamp() << "Reading block " <<
 	       k << " (" << start[k] << ", " << stop[k] << ")"  << std::endl;
 	    actual_block_size = stop[k] - start[k] + 1;
 	    dat.read_snp_block(start[k], stop[k], false, false);
@@ -193,10 +193,10 @@ class SVDWideOnline
 	 unsigned int actual_block_size = stop[0] - start[0] + 1;
 
 	 verbose && STDOUT << timestamp()
-	    << " Matrix operation " << nops << std::endl;
+	    << "Matrix operation " << nops << std::endl;
 
 	 dat.read_snp_block(start[0], stop[0], false, false);
-	 verbose && STDOUT << timestamp() << "   Reading block " <<
+	 verbose && STDOUT << timestamp() << "Reading block " <<
 	    0 << " (" << start[0] << ", " << stop[0]
 	    << ")"  << std::endl;
 
@@ -205,7 +205,7 @@ class SVDWideOnline
 
 	 for(unsigned int k = 1 ; k < nblocks ; k++)
 	 {
-	    verbose && STDOUT << timestamp() << "   Reading block " <<
+	    verbose && STDOUT << timestamp() << "Reading block " <<
 	       k << " (" << start[k] << ", " << stop[k] << ")"  << std::endl;
 	    actual_block_size = stop[k] - start[k] + 1;
 	    dat.read_snp_block(start[k], stop[k], false, false);
@@ -223,10 +223,10 @@ class SVDWideOnline
 	 unsigned int actual_block_size = stop[0] - start[0] + 1;
 
 	 verbose && STDOUT << timestamp()
-	    << " Matrix operation " << nops << std::endl;
+	    << "Matrix operation " << nops << std::endl;
 
 	 dat.read_snp_block(start[0], stop[0], false, false);
-	 verbose && STDOUT << timestamp() << "   Reading block " <<
+	 verbose && STDOUT << timestamp() << "Reading block " <<
 	    0 << " (" << start[0] << ", " << stop[0]
 	    << ")"  << std::endl;
 
@@ -236,7 +236,7 @@ class SVDWideOnline
 
 	 for(unsigned int k = 1 ; k < nblocks ; k++)
 	 {
-	    verbose && STDOUT << timestamp() << "   Reading block " <<
+	    verbose && STDOUT << timestamp() << "Reading block " <<
 	       k << " (" << start[k] << ", " << stop[k] << ")"  << std::endl;
 	    actual_block_size = stop[k] - start[k] + 1;
 	    dat.read_snp_block(start[k], stop[k], false, false);
@@ -258,10 +258,10 @@ class SVDWideOnline
 	 unsigned int actual_block_size = stop[0] - start[0] + 1;
 
 	 verbose && STDOUT << timestamp()
-	    << " Matrix operation " << nops << std::endl;
+	    << "Matrix operation " << nops << std::endl;
 
 	 dat.read_snp_block(start[0], stop[0], false, false);
-	 verbose && STDOUT << timestamp() << "   Reading block " <<
+	 verbose && STDOUT << timestamp() << "Reading block " <<
 	    0 << " (" << start[0] << ", " << stop[0]
 	    << ")"  << std::endl;
 
@@ -271,7 +271,7 @@ class SVDWideOnline
 
 	 for(unsigned int k = 1 ; k < nblocks ; k++)
 	 {
-	    verbose && STDOUT << timestamp() << "   Reading block " <<
+	    verbose && STDOUT << timestamp() << "Reading block " <<
 	       k << " (" << start[k] << ", " << stop[k] << ")"  << std::endl;
 	    actual_block_size = stop[k] - start[k] + 1;
 	    dat.read_snp_block(start[k], stop[k], false, false);
@@ -289,7 +289,7 @@ class SVDWideOnline
 	 unsigned int actual_block_size;
 
 	 verbose && STDOUT << timestamp()
-	    << " Matrix operation " << nops << std::endl;
+	    << "Matrix operation " << nops << std::endl;
 
 	 actual_block_size = stop[0] - start[0] + 1;
 
@@ -298,7 +298,7 @@ class SVDWideOnline
 	 if(nblocks > 1 || nops == 1)
 	 {
 	    dat.read_snp_block(start[0], stop[0], false, false);
-	    verbose && STDOUT << timestamp() << "   Reading block " <<
+	    verbose && STDOUT << timestamp() << "Reading block " <<
 	       0 << " (" << start[0] << ", " << stop[0]
 	       << ")"  << std::endl;
 	 }
@@ -311,7 +311,7 @@ class SVDWideOnline
 	 // If there's only one block, this loop doesn't run anyway
 	 for(unsigned int k = 1 ; k < nblocks ; k++)
 	 {
-	    verbose && STDOUT << timestamp() << "   Reading block " <<
+	    verbose && STDOUT << timestamp() << "Reading block " <<
 	       k << " (" << start[k] << ", " << stop[k] << ")"  << std::endl;
 	    actual_block_size = stop[k] - start[k] + 1;
 	    dat.read_snp_block(start[k], stop[k], false, false);
@@ -335,10 +335,10 @@ class SVDWideOnline
 	 unsigned int actual_block_size = stop[0] - start[0] + 1;
 
 	 verbose && STDOUT << timestamp()
-	    << " Matrix operation " << nops << std::endl;
+	    << "Matrix operation " << nops << std::endl;
 
 	 dat.read_snp_block(start[0], stop[0], false, false);
-	 verbose && STDOUT << timestamp() << "   Reading block " <<
+	 verbose && STDOUT << timestamp() << "Reading block " <<
 	    0 << " (" << start[0] << ", " << stop[0]
 	    << ")"  << std::endl;
 
@@ -348,7 +348,7 @@ class SVDWideOnline
 
 	 for(unsigned int k = 1 ; k < nblocks ; k++)
 	 {
-	    verbose && STDOUT << timestamp() << "   Reading block " <<
+	    verbose && STDOUT << timestamp() << "Reading block " <<
 	       k << " (" << start[k] << ", " << stop[k] << ")"  << std::endl;
 	    actual_block_size = stop[k] - start[k] + 1;
 	    dat.read_snp_block(start[k], stop[k], false, false);
@@ -366,10 +366,10 @@ class SVDWideOnline
 	 unsigned int actual_block_size = stop[0] - start[0] + 1;
 
 	 verbose && STDOUT << timestamp()
-	    << " Matrix operation " << nops << std::endl;
+	    << "Matrix operation " << nops << std::endl;
 
 	 dat.read_snp_block(start[0], stop[0], false, false);
-	 verbose && STDOUT << timestamp() << "   Reading block " <<
+	 verbose && STDOUT << timestamp() << "Reading block " <<
 	    0 << " (" << start[0] << ", " << stop[0]
 	    << ")"  << std::endl;
 
@@ -378,7 +378,7 @@ class SVDWideOnline
 
 	 for(unsigned int k = 1 ; k < nblocks ; k++)
 	 {
-	    verbose && STDOUT << timestamp() << "   Reading block " <<
+	    verbose && STDOUT << timestamp() << "Reading block " <<
 	       k << " (" << start[k] << ", " << stop[k] << ")"  << std::endl;
 	    actual_block_size = stop[k] - start[k] + 1;
 	    dat.read_snp_block(start[k], stop[k], false, false);
@@ -422,22 +422,22 @@ void pca_small(MatrixXd &B, int method, MatrixXd& U, VectorXd &d, bool verbose)
 {
    if(method == METHOD_SVD)
    {
-      verbose && STDOUT << timestamp() << " SVD begin" << std::endl;
+      verbose && STDOUT << timestamp() << "SVD begin" << std::endl;
 
       JacobiSVD<MatrixXd> svd(B, ComputeThinU | ComputeThinV);
       U = svd.matrixU();
       MatrixXd V = svd.matrixV();
       d = svd.singularValues().array().pow(2);
 
-      verbose && STDOUT << timestamp() << " SVD done" << std::endl;
+      verbose && STDOUT << timestamp() << "SVD done" << std::endl;
    }
    else if(method == METHOD_EIGEN)
    {
-      verbose && STDOUT << timestamp() << " Eigen-decomposition begin" << std::endl;
+      verbose && STDOUT << timestamp() << "Eigen-decomposition begin" << std::endl;
 
       MatrixXd BBT = B * B.transpose();
 
-      verbose && STDOUT << timestamp() << " dim(BBT): " << dim(BBT) << std::endl;
+      verbose && STDOUT << timestamp() << "dim(BBT): " << dim(BBT) << std::endl;
 
       SelfAdjointEigenSolver<MatrixXd> eig(BBT);
 
@@ -478,7 +478,7 @@ double median_dist(MatrixXd& X, unsigned int n, long seed, bool verbose)
    MatrixXd X2(n, X.cols());
    if(n < X.rows()) 
    {
-      verbose && STDOUT << timestamp() << " Sampling" << std::endl;
+      verbose && STDOUT << timestamp() << "Sampling" << std::endl;
 
       // Sample n rows from X
       for(unsigned int i = 0, k = 0 ; i < X.rows() ; i++)
@@ -509,7 +509,7 @@ double median_dist(MatrixXd& X, unsigned int n, long seed, bool verbose)
    else
       med = d[m / 2];
 
-   verbose && STDOUT << timestamp() << " Median Euclidean distance: "
+   verbose && STDOUT << timestamp() << "Median Euclidean distance: "
       << med << std::endl;
 
    return med;
@@ -528,7 +528,7 @@ MatrixXd rbf_kernel(MatrixXd& X, const double sigma, bool rbf_center,
 
    if(rbf_center)
    {
-      verbose && STDOUT << timestamp() << " Centering RBF kernel" << std::endl;
+      verbose && STDOUT << timestamp() << "Centering RBF kernel" << std::endl;
 
       MatrixXd M = ones * ones.transpose() / n;
       MatrixXd I = ones.asDiagonal();
@@ -701,12 +701,12 @@ void RandomPCA::pca(Data& dat, int method, bool transpose,
    MatrixXd R = make_gaussian(dat.nsnps, total_dim, seed);
    MatrixXd Y = op.prod3(R);
    normalize(Y);
-   verbose && STDOUT << timestamp() << " dim(Y): " << dim(Y) << std::endl;
+   verbose && STDOUT << timestamp() << "dim(Y): " << dim(Y) << std::endl;
    MatrixXd Yn;
 
    for(unsigned int iter = 0 ; iter < maxiter ; iter++)
    {
-      verbose && STDOUT << timestamp() << " iter " << iter;
+      verbose && STDOUT << timestamp() << "iter " << iter;
 
       Yn.noalias() = op.perform_op_multi(Y);
 
@@ -726,15 +726,15 @@ void RandomPCA::pca(Data& dat, int method, bool transpose,
 	 break;
    }
 
-   verbose && STDOUT << timestamp() << " QR begin" << std::endl;
+   verbose && STDOUT << timestamp() << "QR begin" << std::endl;
 
    ColPivHouseholderQR<MatrixXd> qr(Y);
    MatrixXd Q = MatrixXd::Identity(Y.rows(), Y.cols());
    Q = qr.householderQ() * Q;
    Q.conservativeResize(NoChange, Y.cols());
 
-   verbose && STDOUT << timestamp() << " dim(Q): " << dim(Q) << std::endl;
-   verbose && STDOUT << timestamp() << " QR done" << std::endl;
+   verbose && STDOUT << timestamp() << "dim(Q): " << dim(Q) << std::endl;
+   verbose && STDOUT << timestamp() << "QR done" << std::endl;
 
    //MatrixXd B = Q.transpose() * X;
    //MatrixXd B(Q.cols(), dat.nsnps);
@@ -747,15 +747,15 @@ void RandomPCA::pca(Data& dat, int method, bool transpose,
    //}
    MatrixXd B = op.prod2(Q);
 
-   verbose && STDOUT << timestamp() << " dim(B): " << dim(B) << std::endl;
+   verbose && STDOUT << timestamp() << "dim(B): " << dim(B) << std::endl;
 
    MatrixXd Et;
    pca_small(B, method, Et, d, verbose);
 
-   verbose && STDOUT << timestamp() << " dim(Et): " << dim(Et) << std::endl;
+   verbose && STDOUT << timestamp() << "dim(Et): " << dim(Et) << std::endl;
 
    trace = op.trace / div;
-   verbose && STDOUT << timestamp() << " Trace(K): " << trace 
+   verbose && STDOUT << timestamp() << "Trace(K): " << trace 
       << " (N: " << N << ")" << " " << op.trace <<
       std::endl;
    d = d.array() / div;
@@ -796,7 +796,7 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
 	 << " Kernel not linear, can't transpose" << std::endl;
    }
 
-   verbose && STDOUT << timestamp() << " Transpose: " 
+   verbose && STDOUT << timestamp() << "Transpose: " 
       << (transpose ? "yes" : "no") << std::endl;
 
    if(transpose)
@@ -818,12 +818,12 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
    MatrixXd R = make_gaussian(X.cols(), total_dim, seed);
    MatrixXd Y = X * R;
 
-   verbose && STDOUT << timestamp() << " dim(Y): " << dim(Y) << std::endl;
+   verbose && STDOUT << timestamp() << "dim(Y): " << dim(Y) << std::endl;
 
    normalize(Y);
    MatrixXd Yn;
 
-   verbose && STDOUT << timestamp() << " dim(X): " << dim(X) << std::endl;
+   verbose && STDOUT << timestamp() << "dim(X): " << dim(X) << std::endl;
 
    double div = 1;
    if(divisor == DIVISOR_N1)
@@ -841,15 +841,14 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
       	 sigma = sqrt(med);
       }
 
-      verbose && STDOUT << timestamp() << " Using RBF kernel with sigma="
+      verbose && STDOUT << timestamp() << "Using RBF kernel with sigma="
 	 << sigma << std::endl;
 
       K.noalias() = rbf_kernel(X, sigma, rbf_center, verbose);
    }
    else if(mem == HIGHMEM)
    {
-      verbose && STDOUT << timestamp() 
-	 << " Using linear kernel" << std::endl;
+      verbose && STDOUT << timestamp()  << "Using linear kernel" << std::endl;
 
       K.noalias() = X * X.transpose() / div;
    }
@@ -859,19 +858,18 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
       trace = X.array().square().sum();
    else
    {
-      verbose && STDOUT << timestamp()
-	 << " dim(K): " << dim(K) << std::endl;
+      verbose && STDOUT << timestamp() << "dim(K): " << dim(K) << std::endl;
       trace = K.diagonal().array().sum();
    }
    
    //trace /= div;
 
-   verbose && STDOUT << timestamp() << " Trace(K): " << trace 
+   verbose && STDOUT << timestamp() << "Trace(K): " << trace 
       << " (N: " << N << ")" << std::endl;
 
    if(mem == HIGHMEM && save_kernel)
    {
-      verbose && STDOUT << timestamp() << " saving K" << std::endl;
+      verbose && STDOUT << timestamp() << "saving K" << std::endl;
 
       //save_text(K, "kernel.txt");
    }
@@ -880,7 +878,7 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
 
    for(unsigned int iter = 0 ; iter < maxiter ; iter++)
    {
-      verbose && STDOUT << timestamp() << " iter " << iter;
+      verbose && STDOUT << timestamp() << "iter " << iter;
 
       if(mem == LOWMEM)
       {
@@ -910,24 +908,24 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
 	 break;
    }
 
-   verbose && STDOUT << timestamp() << " QR begin" << std::endl;
+   verbose && STDOUT << timestamp() << "QR begin" << std::endl;
 
    ColPivHouseholderQR<MatrixXd> qr(Y);
    MatrixXd Q = MatrixXd::Identity(Y.rows(), Y.cols());
    Q = qr.householderQ() * Q;
    Q.conservativeResize(NoChange, Y.cols());
 
-   verbose && STDOUT << timestamp() << " dim(Q): " << dim(Q) << std::endl;
-   verbose && STDOUT << timestamp() << " QR done" << std::endl;
+   verbose && STDOUT << timestamp() << "dim(Q): " << dim(Q) << std::endl;
+   verbose && STDOUT << timestamp() << "QR done" << std::endl;
 
    MatrixXd B = Q.transpose() * X;
 
-   verbose && STDOUT << timestamp() << " dim(B): " << dim(B) << std::endl;
+   verbose && STDOUT << timestamp() << "dim(B): " << dim(B) << std::endl;
 
    MatrixXd Et;
    pca_small(B, method, Et, d, verbose);
 
-   verbose && STDOUT << timestamp() << " dim(Et): " << dim(Et) << std::endl;
+   verbose && STDOUT << timestamp() << "dim(Et): " << dim(Et) << std::endl;
 
    d = d.array() / div;
 
@@ -971,7 +969,7 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
 // ZCA of genotypes
 //void RandomPCA::zca_whiten(bool transpose)
 //{
-//   verbose && STDOUT << timestamp() << " Whitening begin" << std::endl;
+//   verbose && STDOUT << timestamp() << "Whitening begin" << std::endl;
 //   VectorXd s = 1 / d.array();
 //   MatrixXd Dinv = s.asDiagonal();
 //
@@ -979,7 +977,7 @@ void RandomPCA::pca(MatrixXd &X, int method, bool transpose,
 //      W.noalias() = U * Dinv * U.transpose() * X.transpose();
 //   else
 //      W.noalias() = U * Dinv * U.transpose() * X;
-//   verbose && STDOUT << timestamp() << " Whitening done (" << dim(W) << ")" << std::endl;
+//   verbose && STDOUT << timestamp() << "Whitening done (" << dim(W) << ")" << std::endl;
 //}
 
 double inline sign_scalar(double x)
@@ -1059,7 +1057,7 @@ void scca_lowmem(MatrixXd& X, MatrixXd &Y, MatrixXd& U, MatrixXd& V,
 	    && (v_old.array() - v.array()).abs().maxCoeff() < tol
 	       && (u_old.array() - u.array()).abs().maxCoeff() < tol)
 	 {
-	    verbose && STDOUT << timestamp() << " dim " << j << " finished in "
+	    verbose && STDOUT << timestamp() << "dim " << j << " finished in "
 	       << iter << " iterations" << std::endl;
 
 	    break;
@@ -1076,13 +1074,13 @@ void scca_lowmem(MatrixXd& X, MatrixXd &Y, MatrixXd& U, MatrixXd& V,
       long long nzu = (U.col(j).array() != 0).count();
       long long nzv = (V.col(j).array() != 0).count();
 
-      verbose && STDOUT << timestamp() << " U_" << j 
+      verbose && STDOUT << timestamp() << "U_" << j 
 	 << " non-zeros: " << nzu << ", V_" << j
 	 << " non-zeros: " << nzv << std::endl;
 
       // Use X and Y, not X2 and Y2
       d[j] = (X * U.col(j)).transpose() * (Y * V.col(j)); 
-      verbose && STDOUT << timestamp() << " d[" << j << "]: "
+      verbose && STDOUT << timestamp() << "d[" << j << "]: "
 	 << d[j] << std::endl;
    }
 }
@@ -1091,24 +1089,24 @@ void scca_highmem(MatrixXd& X, MatrixXd &Y, MatrixXd& U, MatrixXd& V,
    VectorXd& d, double lambda1, double lambda2,
    unsigned int maxiter, double tol, bool verbose)
 {
-   verbose && STDOUT << timestamp() << " Begin computing X^T Y" << std::endl;
+   verbose && STDOUT << timestamp() << "Begin computing X^T Y" << std::endl;
 
    MatrixXd XY = X.transpose() * Y;
 
-   verbose && STDOUT << timestamp() << " End computing X^T Y" << std::endl;
+   verbose && STDOUT << timestamp() << "End computing X^T Y" << std::endl;
 
    MatrixXd XYj;
    VectorXd u, v, u_old, v_old;
 
    for(unsigned int j = 0 ; j < U.cols() ; j++)
    {
-      verbose && STDOUT << timestamp() << " dim " << j << std::endl;
+      verbose && STDOUT << timestamp() << "dim " << j << std::endl;
 
       if(j == 0)
 	 XYj = XY;
       else
       {
-	 XYj = XYj - d[j-1] * U.col(j-1) * V.col(j - 1).transpose();
+	 XYj = XYj - d[j - 1] * U.col(j - 1) * V.col(j - 1).transpose();
 
 	 //HouseholderQR<MatrixXd> qrU(U.leftCols(j + 1)), qrV(V.leftCols(j + 1));
 	 //MatrixXd Iu = MatrixXd::Identity(U.rows(), j + 1);
@@ -1137,7 +1135,7 @@ void scca_highmem(MatrixXd& X, MatrixXd &Y, MatrixXd& U, MatrixXd& V,
 	    && (v_old.array() - v.array()).abs().maxCoeff() < tol
 	       && (u_old.array() - u.array()).abs().maxCoeff() < tol)
 	 {
-	    verbose && STDOUT << timestamp() << " dim " << j << " finished in "
+	    verbose && STDOUT << timestamp() << "dim " << j << " finished in "
 	       << iter << " iterations" << std::endl;
 	    break;
 	 }
@@ -1153,7 +1151,7 @@ void scca_highmem(MatrixXd& X, MatrixXd &Y, MatrixXd& U, MatrixXd& V,
       long long nzu = (U.col(j).array() != 0).count();
       long long nzv = (V.col(j).array() != 0).count();
 
-      verbose && STDOUT << timestamp() << " U_" << j 
+      verbose && STDOUT << timestamp() << "U_" << j 
 	 << " non-zeros: " << nzu << ", V_" << j
 	 << " non-zeros: " << nzv << std::endl;
 
@@ -1315,14 +1313,20 @@ void RandomPCA::check(Data& dat, unsigned int block_size,
 
    unsigned int K = fminl(evec.cols(), eval.size());
 
-   // X X' U = U D^2
+   // X X' U / div = U D^2
    STDOUT << timestamp()
-      << " Checking mean square error between (X X' U) and (U D^2)"
+      << "Checking mean square error between (X X' U) and (U D^2)"
       << " for " << K << " dimensions"
       << std::endl;
 
+   double div = 1;
+   if(divisor == DIVISOR_N1)
+      div = dat.N - 1;
+   else if(divisor == DIVISOR_P)
+      div = dat.nsnps;
+
    MatrixXd XXU = op.perform_op_mat(evec);
-   XXU /= dat.nsnps;
+   XXU /= div;
    MatrixXd UD = evec * eval.asDiagonal();
 
    VectorXd err(eval.size());
@@ -1332,10 +1336,9 @@ void RandomPCA::check(Data& dat, unsigned int block_size,
       err(j) = (XXU.col(j).array() - UD.col(j).array()).square().sum();
    }
 
-
    for(unsigned int j = 0 ; j < K ; j++)
    {
-      STDOUT << timestamp() << " eval(" << (j + 1) 
+      STDOUT << timestamp() << "eval(" << (j + 1) 
 	 << "): " << eval(j) << ", sum squared error: "
 	 << err(j) << std::endl;
    }
@@ -1343,7 +1346,7 @@ void RandomPCA::check(Data& dat, unsigned int block_size,
    double mse = err.array().sum() / (dat.N * K);
    double rmse = sqrt(mse);
 
-   STDOUT << timestamp() << " Mean squared error: " << mse
+   STDOUT << timestamp() << "Mean squared error: " << mse
       << ", Root mean squared error: " << rmse
       << " (n=" << dat.N << ")" << std::endl;
    
@@ -1373,7 +1376,7 @@ void RandomPCA::project(Data& dat, unsigned int block_size,
    if(maf_file != "")
    {
       // TODO: missing/non-numeric values?
-      verbose && STDOUT << timestamp() << " Reading MAF file "
+      verbose && STDOUT << timestamp() << "Reading MAF file "
 	 << maf_file << std::endl;
       NamedMatrixWrapper M2 = read_text(maf_file.c_str(), 2, -1, 1);   
       dat.X_meansd = maf2meansd(M2.X);

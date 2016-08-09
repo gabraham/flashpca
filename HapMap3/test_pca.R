@@ -48,10 +48,21 @@ system(paste0("../flashpca --rand --bfile data --online --ndim ", k,
    " --suffix .rand.online.txt --tol ", tol, " --outload loadings.rand.online.txt",
    " --outmeansd meansd.rand.online.txt --precision 10"))
 
-# Projection
+# Projection onto same data
 system(paste0("../flashpca --bfile data --project --inmeansd meansd.online.txt",
    " --outproj projections.online.txt --inload loadings.online.txt -v",
    " --precision 10"))
+
+# Projection onto other data
+system(paste0("../flashpca --bfile data --project --inmeansd meansd.online.txt",
+   " --outproj projections.online.txt --inload loadings.online.txt -v",
+   " --precision 10"))
+
+# PCA checking mode
+d.chk <- read.table(pipe(paste0("../flashpca --bfile data --check",
+   " --outval eigenvalues.online.txt --outvec eigenvectors.online.txt -v",
+   " --precision 10 --notime | awk -F',| ' '/eval/{print $2, $7}'")),
+   header=FALSE, sep="", stringsAsFactors=FALSE)
 
 evec3 <- as.matrix(read.table("eigenvectors.batch.txt", header=FALSE))
 evec4 <- as.matrix(read.table("eigenvectors.online.txt", header=FALSE))
@@ -84,6 +95,14 @@ msd5 <- read.table("meansd.rand.batch.txt", header=TRUE, row.names=1)
 msd6 <- read.table("meansd.rand.online.txt", header=TRUE, row.names=1)
 
 proj4 <- read.table("projections.online.txt", header=TRUE)
+
+# X is already divided by sqrt(p)
+XXU4 <- X %*% crossprod(X, evec4)
+UD4 <- evec4 %*% diag(eval4)
+sse4 <- colSums((XXU4 - UD4)^2)
+rmse4 <- sqrt(sum(sse4) / (nrow(XXU4) * ncol(XXU4)))
+colnames(d.chk) <- c("eigenvalue", "sse_observed")
+d.chk$sse_expected <- sse4
 
 err.tol <- 1e-9
 
@@ -195,4 +214,11 @@ proj.rmse <- sapply(1:4, function(i) {
    })
 })
 stopifnot(all(proj.rmse < err.tol))
+
+################################################################################
+# Check the PCA-checking, i.e., the sum squared errors for
+# (X X' U / div - U D)^2 in each dimension.
+check.mse <- with(d.chk, (sse_observed - sse_expected)^2)
+stopifnot(all(check.mse < err.tol))
+
 
