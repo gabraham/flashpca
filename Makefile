@@ -30,14 +30,7 @@ else
    CXXFLAGS += -march=native -fopenmp -std=c++0x
 endif
 
-#BOOST = -L${BOOST_LIB} \
-#   -lboost_system \
-#   -lboost_iostreams \
-#   -lboost_filesystem \
-#   -lboost_program_options
-
-BOOST = -L${BOOST_LIB} \
-   -lboost_program_options
+BOOST = -L${BOOST_LIB} -lboost_program_options
 
 debug: LDFLAGS = $(BOOST)
 debug: CXXFLAGS += -O0 -ggdb3 -DVERSION=\"$(VERSION)\"
