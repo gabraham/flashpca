@@ -74,6 +74,7 @@ class Data {
       std::vector<std::string> indiv_ids;
       std::vector<std::string> snp_ids;
       bool use_preloaded_maf;
+      int stand_method_x;
       
       Data(long seed);
       ~Data();

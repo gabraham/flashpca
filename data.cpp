@@ -279,7 +279,13 @@ void Data::read_snp_block(unsigned int start_idx, unsigned int stop_idx,
 
 	    // Store the 4 possible standardized genotypes for each SNP
 	    P = snp_avg / 2.0;
-	    sd = sqrt(2.0 * P * (1 - P));
+	    if(stand_method_x == STANDARDIZE_BINOM)
+	       sd = sqrt(P * (1 - P));
+	    else if(stand_method_x == STANDARDIZE_BINOM2)
+	       sd = sqrt(2.0 * P * (1 - P));
+	    else
+	       throw std::runtime_error("unknown standardisation method");
+
 	    X_meansd(k, 0) = snp_avg;
 	    X_meansd(k, 1) = sd;
 	 }

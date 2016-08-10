@@ -385,10 +385,13 @@ int main(int argc, char * argv[])
       }
    }
 
-   if(stand_method_x != STANDARDIZE_BINOM2 && mem_mode == MEM_MODE_ONLINE)
+   if(stand_method_x != STANDARDIZE_BINOM2
+      && stand_method_x != STANDARDIZE_BINOM
+      && mem_mode == MEM_MODE_ONLINE)
    {
-      std::cerr << "Error: in online mode (--online), only --stand binom2"
-	 << " is supported" << std::endl;
+      std::cerr << "Error: in online mode (--online), "
+	 << "only --stand binom and binom2 are supported"
+	 << std::endl;
       return EXIT_FAILURE;
    }
 
@@ -730,6 +733,7 @@ int main(int argc, char * argv[])
    {
       Data data(seed);
       data.verbose = verbose;
+      data.stand_method_x = stand_method_x; //TODO: duplication with RandomPCA
       std::cout << timestamp() << "seed: " << data.seed << std::endl;
    
       if(mode == MODE_CCA || mode == MODE_SCCA || mode == MODE_UCCA)
