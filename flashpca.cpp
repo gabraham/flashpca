@@ -910,7 +910,7 @@ int main(int argc, char * argv[])
          std::cout << timestamp() << "Writing " << n_dim <<
 	    " PCs to file " << pcfile << std::endl;
          std::vector<std::string> v(n_dim);
-         for(unsigned int i = 0 ; i < n_dim ; i++)
+         for(int i = 0 ; i < n_dim ; i++)
 	    v[i] = "PC" + std::to_string(i + 1);
          save_text(rpca.Px, v,	 
 	    std::vector<std::string>(),
@@ -976,7 +976,7 @@ int main(int argc, char * argv[])
       else if(mode == MODE_PREDICT_PCA)
       {
          std::vector<std::string> v(rpca.Px.cols());
-         for(unsigned int i = 0 ; i < rpca.Px.cols() ; i++)
+         for(int i = 0 ; i < rpca.Px.cols() ; i++)
 	    v[i] = "PC" + std::to_string(i + 1);
 	 save_text(rpca.Px, v, std::vector<std::string>(),
 	    projfile.c_str(), precision);
