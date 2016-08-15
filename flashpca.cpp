@@ -46,7 +46,7 @@ int main(int argc, char * argv[])
       ("project,p", "project new samples onto existing principal components")
       ("batch,b", "load all genotypes into RAM at once")
       ("rand,r", "use the legacy randomised algorithm")
-      ("memory,m", po::value<int>(), "size of block for online algorithm, in GB")
+      ("memory,m", po::value<int>(), "size of block for online algorithm, in MB")
       ("blocksize,b", po::value<int>(),
 	 "size of block for online algorithm, in number of SNPs")
       ("numthreads,n", po::value<int>(), "set number of OpenMP threads")
@@ -261,7 +261,7 @@ int main(int argc, char * argv[])
       if(memory < 1)
       {
 	 std::cerr
-	    << "Error: memory (GB) must be >=1"
+	    << "Error: memory (MB) must be >=1"
 	    << std::endl;
 	 return EXIT_FAILURE;
       }
@@ -792,15 +792,44 @@ int main(int argc, char * argv[])
       if(n_extra == 0)
          n_extra = fminl(max_dim - n_dim, 200 - n_dim);
 
-      double mem = (double)memory * 1073741824;
+      //double mem = (double)memory * 1073741824;
+      long long mem = (long long)memory * 1048576;
 
+      // Memory required:
+      // 1. block of SNPs: block_size * N (N=#samples)
+      // 2. Average + stdev for each SNP
+      // 3. N * ndim left eigenvectors U
+      // 4. p * ndim right eigenvectors V (if computing loadings)
+      // 5. Some auxiliary Spectra vectors of size N?
       if(block_size == 0)
-	 block_size = mem / ((double)data.N * 8.0);
+      {
+	 //block_size = mem / ((double)data.N * 8.0);
+	 long long mem_req_bytes =
+	      2 * data.nsnps * 8
+	    + data.N * n_dim * 8
+	    + (do_loadings ? data.nsnps * n_dim * 8 : 0) 
+	    + data.N * 8;
+	 long long mem_remain_bytes = mem - mem_req_bytes;
+
+	 verbose && STDOUT << timestamp() << "Reserving " << mem_req_bytes <<
+	    " bytes, leaving " << mem_remain_bytes
+	    << " bytes for SNP blocks" << std::endl;
+
+	 block_size = (unsigned int)floor(mem_remain_bytes / ((double)data.N * 8.0));
+	 if(block_size < 1)
+	 {
+	    std::cerr <<
+	       "The memory specified using --memory is not sufficient, try"
+	       << " increasing it" << std::endl;
+	    return EXIT_FAILURE;
+	 }
+      }
 
       block_size = fminl(block_size, data.nsnps);
 
       std::cout << timestamp() << "blocksize: " << block_size 
-	 << " (" << (double)block_size * 8.0 * data.N << " bytes)" << std::endl;
+	 << " (" << (long long)block_size * 8 * data.N
+	 << " bytes per block)" << std::endl;
    
       ////////////////////////////////////////////////////////////////////////////////
       // The main analysis
