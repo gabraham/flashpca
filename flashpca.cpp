@@ -808,7 +808,7 @@ int main(int argc, char * argv[])
 	      2 * data.nsnps * 8
 	    + data.N * n_dim * 8
 	    + (do_loadings ? data.nsnps * n_dim * 8 : 0) 
-	    + data.N * 8;
+	    + data.N * n_dim * 8;
 	 long long mem_remain_bytes = mem - mem_req_bytes;
 
 	 verbose && STDOUT << timestamp() << "Reserving " << mem_req_bytes <<
