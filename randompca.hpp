@@ -20,7 +20,7 @@
 #include <boost/math/distributions.hpp>
 #include <boost/math/distributions/fisher_f.hpp>
 
-#include "spectra/SymEigsSolver.h"
+#include <include/SymEigsSolver.h>
 
 
 #include "data.hpp"
