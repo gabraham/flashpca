@@ -252,8 +252,7 @@ int main(int argc, char * argv[])
    if(mode == MODE_CHECK_PCA || mode == MODE_PREDICT_PCA)
       mem_mode = MEM_MODE_ONLINE;
 
-   //unsigned long long const MAX_MEM = _8GiB;
-   int memory = 8;
+   int memory = 2048;
    
    if(vm.count("memory"))
    {
@@ -796,20 +795,37 @@ int main(int argc, char * argv[])
       long long mem = (long long)memory * 1048576;
 
       // Memory required:
-      // 1. block of SNPs: block_size * N (N=#samples)
-      // 2. Average + stdev for each SNP
+      // 0. block of SNPs: block_size * N (N=#samples), not counted here
+      // 1. Average + stdev for each SNP, twice (...)
+      // 2. Scaled genotypes for each SNP
       // 3. N * ndim left eigenvectors U
       // 4. p * ndim right eigenvectors V (if computing loadings)
-      // 5. Some auxiliary Spectra vectors of size N?
+      // 5. N/4-sized char buffer + N sized char buffer for, round up to 2x
+      // 6. Misc overheads, some auxiliary Spectra vectors of size N?
       if(block_size == 0)
       {
 	 //block_size = mem / ((double)data.N * 8.0);
 	 long long mem_req_bytes =
-	      2 * data.nsnps * 8
-	    + data.N * n_dim * 8
-	    + (do_loadings ? data.nsnps * n_dim * 8 : 0) 
-	    + data.N * n_dim * 8;
+	      2 * data.nsnps * 8 * 2			 // avg+stdev
+	    + 3 * data.nsnps * 8			 // genotypes
+	    + data.N * n_dim * 8			 // left eigenvectors U
+	    + (do_loadings ? data.nsnps * n_dim * 8 : 0) // eigenvectors V
+	    + 2 * data.N				 // PLINK buffers
+	    + 2 * (data.N + data.nsnps) * n_dim * 8      // Spectra overheads?
+	    + 2 * 1024 * 1024;			         // extra space
 	 long long mem_remain_bytes = mem - mem_req_bytes;
+
+	 verbose && STDOUT << "mem: " << mem << " mem_req_bytes: " << mem_req_bytes
+	    << " mem_remain_bytes: " << mem_remain_bytes << std::endl;
+
+	 if(mem_remain_bytes <= 0)
+	 {
+	    std::cerr <<
+	       "The memory specified using --memory is not sufficient, try"
+	       << " increasing it to at least " << (mem_req_bytes + data.N * 8) / 1048576
+	       << " MB" << std::endl;
+	    return EXIT_FAILURE;
+	 }
 
 	 verbose && STDOUT << timestamp() << "Reserving " << mem_req_bytes <<
 	    " bytes, leaving " << mem_remain_bytes
