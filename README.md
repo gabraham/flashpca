@@ -1,4 +1,4 @@
-# flashpca
+# FlashPCA
 
 FlashPCA performs fast principal component analysis (PCA) of single nucleotide
 polymorphism (SNP) data, similar to smartpca from EIGENSOFT
@@ -8,8 +8,7 @@ polymorphism (SNP) data, similar to smartpca from EIGENSOFT
 
 Main features:
 
-* Fast: PCA of 15,000 individuals over 43,000 SNPs in &lt;10 min
- (multi-threaded)
+* Fast: PCA of 500,000 individuals with 100,000 SNPs in &lt;1h using 4GB RAM
 * Natively reads PLINK bed/bim/fam files
 * Easy to use
 
@@ -131,26 +130,6 @@ To run on the pruned dataset:
    ./flashpca --bfile data_pruned
    ```
 
-We highly recommend using multi-threading, to run in multi-threaded mode with 8 threads:
-   ```
-   ./flashpca --bfile data_pruned --numthreads 8
-   ```
-
-Eigensoft-scaling of genotypes (default):
-   ```
-   ./flashpca --stand binom ...
-   ```
-
-To use genotype centering (compatible with R prcomp):
-   ```
-   ./flashpca --stand center ...
-   ```
-
-To use the low-memory version:
-   ```
-   ./flashpca --mem low ...
-   ```
-
 To append a custom suffix '_mysuffix.txt' to all output files:
    ```
    ./flashpca --suffix _mysuffix.txt ...
@@ -166,16 +145,16 @@ To see all options
 flashpca produces the following files:
 
 * `eigenvectors.txt`: the top k eigenvectors of the covariance
-   X X<sup>T</sup> / (n - 1), same as matrix U from the SVD of the genotype matrix
-   X=UDV<sup>T</sup>.
+   X X<sup>T</sup> / p, same as matrix U from the SVD of the genotype matrix
+   X=UDV<sup>T</sup>/p (where p is the number of SNPs).
 * `pcs.txt`: the top k principal components (the projection of the data on the
 eigenvectors, scaled by the eigenvalues,  same as XV (or UD). This is the file
 you will want to plot the PCA plot from.
-* `eigenvalues.txt`: the top k eigenvalues of X X<sup>T</sup> / (n - 1). These are the
+* `eigenvalues.txt`: the top k eigenvalues of X X<sup>T</sup> / p. These are the
     square of the singular values D (square of sdev from prcomp).
 * `pve.txt`: the proportion of total variance explained by *each of the top k*
    eigenvectors (the total variance is given by the trace of the covariance
-   matrix X X<sup>T</sup> / (n - 1), which is the same as the sum of all eigenvalues).
+   matrix X X<sup>T</sup> / p, which is the same as the sum of all eigenvalues).
    To get the cumulative variance explained, simply
    do the cumulative sum of the variances (`cumsum` in R).
 
@@ -197,8 +176,6 @@ spurious results otherwise.
    the FAM file*.
 * The L1 penalty for the SNPs is `--lambda1` and for the phenotypes is
  `--lambda2`.
-* Two versions: low memory (`--mem low`, roughly 8 x \#Samples x (\#SNPs + \#Phenotypes))
-   and high memory (`--mem high`, roughly 8bytes &times; \#SNPs &times; \#Phenotypes).
 
 #### Quick example
    ```
