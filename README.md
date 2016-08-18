@@ -1,10 +1,10 @@
 # flashpca
 
-flashpca performs fast principal component analysis (PCA) of single nucleotide
+FlashPCA performs fast principal component analysis (PCA) of single nucleotide
 polymorphism (SNP) data, similar to smartpca from EIGENSOFT
 (http://www.hsph.harvard.edu/alkes-price/software/) and shellfish
-(https://github.com/dandavison/shellfish). flashpca is based on the randomized
-PCA algorithm (Alg. 3) of Halko et al. 2011 (http://arxiv.org/abs/1007.5510).
+(https://github.com/dandavison/shellfish). FlashPCA is based on the
+[https://github.com/yixuan/spectra/](Spectra) library.
 
 Main features:
 
@@ -12,10 +12,6 @@ Main features:
  (multi-threaded)
 * Natively reads PLINK bed/bim/fam files
 * Easy to use
-* Two variants: the original high-memory version, and a slightly slower
-   version that uses less RAM (proportional to data size), useful for large datasets with many samples
-* flashpcaR, an R version is [available](#R)
-* Experimental: [kernel PCA](#kpca), [sparse CCA](#scca)
 
 ## Help
 
@@ -43,20 +39,6 @@ Portions of this code are based on SparSNP
 (https://github.com/gabraham/SparSNP), Copyright (C) 2011-2012 Gad Abraham
 and National ICT Australia (http://www.nicta.com.au).
 
-## Note on running flashpca large datasets
-
-* As of v1.2.5, flashpca supports loading PLINK datasets limited only by RAM
-  (fixing an overflow bug in previous versions which lead to reading an incorrect
-  number of SNPs, see [issue #9](https://github.com/gabraham/flashpca/issues/9)).
-* For example, we have successfully run flashpca on Linux on a dataset consisting of
-  160,000 individuals and 139,000 SNPs, requiring 166GB RAM, in 3-4 hours
-  (depending on required accuracy of the solution).
-* To analyze large datasets, use the option <code>--mem low</code>
-* Future versions of flashpca will aim to reduce the memory requirements by not loading
-  all data into RAM at once.
-* Note: the R package _flashpcaR_ is limited by the maximum matrix dimensions in R, and
-  running it on such large data may not be supported or practical.
-
 ## Download statically linked version (stable versions only)
 
 * We recommend compiling from source for best performance.
@@ -65,15 +47,7 @@ and National ICT Australia (http://www.nicta.com.au).
 See [Releases](https://github.com/gabraham/flashpca/releases) for statically-linked version for Linux x86-64 &ge; 2.6.15
 
 ### System requirements
-* 64-bit Linux or Mac ([flashpcaR](#R) supported on Linux, Mac, and Windows)
-* Using the original version (`--mem high`, the default), large datasets will require
-   large amounts of RAM, e.g. for 15,000 individuals (43K SNPs) you'll need
-   about 14GB RAM, for 150,000 individuals (43K SNPs) you'll need about 145GB
-   RAM (estimated using https://github.com/jhclark/memusg), roughly 8 &times;
-   min(n <sup>2</sup> &times; p + n &times; p, p <sup>2</sup> &times; n + n &times; p\)
-   bytes, where p is number of SNPs and n is number of individuals.
-   Using `--mem low`, you will only need about 8 &times; n &times; p bytes of
-   RAM.
+* 64-bit Linux or Mac
 
 ## Building from source
 
@@ -90,10 +64,8 @@ On Linux:
 * g++ compiler
 * Eigen (http://eigen.tuxfamily.org), v3.2 or higher
    (if you get a compile error ``error: no match for 'operator/' in '1 / ((Eigen::MatrixBase...`` you'll need a more recent Eigen)
-* Boost (http://www.boost.org/), specifically boost_system/boost_system-mt,
-   boost_iostreams/boost_iostreams-mt,
-   boost_filesystem/boost_filesystem-mt,
-   boost_program_options/boost_program_options-mt.
+* Spectra (https://github.com/yixuan/spectra/)
+* Boost (http://www.boost.org/), specifically boost_program_options/boost_program_options-mt.
 * libgomp for openmp support
 * Recommended: plink2 (https://www.cog-genomics.org/plink2) for SNP
    thinning
@@ -102,6 +74,7 @@ On Mac:
 
 * Homebrew (http://brew.sh) to install gcc/g++ and boost
 * Eigen, as above
+* Spectra, as above
 * Set CXX to whatever g++ version you're using before calling make, e.g.:
 ```
 export CXX=/usr/local/bin/g++-4.7
@@ -115,6 +88,7 @@ headers and Boost headers and libraries on your system. The default values for t
    EIGEN_INC=/usr/local/include/eigen
    BOOST_INC=/usr/local/include/boost
    BOOST_LIB=/usr/local/lib
+   SPECTRA_INC=spectra
    ```
    
  If your system has these libraries and header files in those locations, you can simply run make:
@@ -210,21 +184,6 @@ you will want to plot the PCA plot from.
 You must perform quality control using PLINK (at least filter using --geno, --mind,
 --maf, --hwe) before running flashpca on your data. You will likely get
 spurious results otherwise.
-
-## Experimental features
-
-### <a name="kpca"></a>Kernel PCA
-
-* flashpca now experimentally supports low-rank [**kernel
-PCA**](http://en.wikipedia.org/wiki/Kernel_principal_component_analysis) using an RBF
-(Gaussian) kernel K(x, x') = exp(-||x - x'||<sub>2</sub><sup>2</sup> / sigma<sup>2</sup>) (specify using `--kernel
-rbf`).
-* The kernel is double-centred.
-* The default kernel parameter sigma is the median of the pairwise Euclidean distances of a random subset
-   of samples (controlled by `--rbfsample`, default=min(1000, n)), and can also
-   be specified using `--sigma`.
-* The rest of the options are the same as for standard PCA.
-* Currently, the proportion of variation explained is not computed for kPCA.
 
 ### <a name="scca"></a>Sparse Canonical Correlation Analysis (SCCA)
 
