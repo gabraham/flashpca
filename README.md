@@ -146,7 +146,7 @@ flashpca produces the following files:
 
 * `eigenvectors.txt`: the top k eigenvectors of the covariance
    X X<sup>T</sup> / p, same as matrix U from the SVD of the genotype matrix
-   X=UDV<sup>T</sup>/p (where p is the number of SNPs).
+   X/sqrt(p)=UDV<sup>T</sup> (where p is the number of SNPs).
 * `pcs.txt`: the top k principal components (the projection of the data on the
 eigenvectors, scaled by the eigenvalues,  same as XV (or UD). This is the file
 you will want to plot the PCA plot from.
