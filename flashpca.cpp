@@ -108,7 +108,7 @@ int main(int argc, char * argv[])
       return EXIT_SUCCESS;
    }
 
-   show_timestamp = !vm.count("nostamp");
+   show_timestamp = !vm.count("notime");
 
    std::cout << timestamp() << "arguments: flashpca ";
    for(int i = 0 ; i < argc ; i++)
@@ -450,13 +450,6 @@ int main(int argc, char * argv[])
    if(vm.count("outpve"))
       eigpvefile = vm["outpve"].as<std::string>();
 
-   std::string whitefile = "whitened" + suffix;
-   if(vm.count("outwhite"))
-   {
-      std::cerr << "Note: whitening currently disabled" << std::endl;
-      whitefile = vm["outwhite"].as<std::string>();
-   }
-
    std::string meansdfile = "meansd" + suffix;
    bool save_meansd = false;
    if(vm.count("outmeansd"))
@@ -469,10 +462,7 @@ int main(int argc, char * argv[])
    if(vm.count("outproj"))
       projfile = vm["outproj"].as<std::string>();
 
-   bool whiten = vm.count("whiten");
    bool verbose = vm.count("verbose");
-
-   std::cout << "verbose: " << verbose << std::endl;
 
    int maxiter = 500;
    bool debug = vm.count("debug");
@@ -907,18 +897,6 @@ int main(int argc, char * argv[])
          save_text(rpca.X_meansd, v, data.snp_ids, meansdfile.c_str(),
 	    precision);
       }
-   
-      ////////////////////////////////////////////////////////////////////////////////
-      // Whiten if required
-   
-      //if(mode == MODE_PCA && whiten)
-      //{
-      //   std::cout << timestamp() << "ZCA whitening data" << std::endl;
-      //   rpca.zca_whiten(transpose);
-      //   std::cout << timestamp() << "Writing whitened data to file "
-      //      << whitefile << std::endl;
-      //   save_text(whitefile.c_str(), rpca.W);
-      //}
    
       std::cout << timestamp() << "Goodbye!" << std::endl;
    }
