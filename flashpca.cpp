@@ -45,7 +45,6 @@ int main(int argc, char * argv[])
       ("ucca", "perform per-SNP canonical correlation analysis")
       ("project,p", "project new samples onto existing principal components")
       ("batch,b", "load all genotypes into RAM at once")
-      ("rand,r", "use the legacy randomised algorithm")
       ("memory,m", po::value<int>(), "size of block for online algorithm, in MB")
       ("blocksize,b", po::value<int>(),
 	 "size of block for online algorithm, in number of SNPs")
@@ -64,7 +63,6 @@ int main(int argc, char * argv[])
       ("standy", po::value<std::string>(),
 	 "standardization method for phenotypes [sd | binom2 | binom | none | center]")
       ("method", po::value<std::string>(), "PCA method [eigen | svd]")
-      ("orth", po::value<std::string>(), "use orthornormalization [yes | no]")
       ("div", po::value<std::string>(),
 	 "whether to divide the eigenvalues by p, n - 1, or don't divide [p | n1 | none]")
       ("outpc", po::value<std::string>(), "PC output file")
@@ -83,17 +81,9 @@ int main(int argc, char * argv[])
       ("inmeansd", po::value<std::string>(),
 	 "mean+SD (used to standardize SNPs) input file")
       ("inmaf", po::value<std::string>(), "MAF input file")
-      ("whiten", "whiten the data")
-      ("outwhite", po::value<std::string>(), "whitened data output file")
       ("verbose,v", "verbose")
       ("maxiter", po::value<int>(), "maximum number of randomized PCA iterations")
       ("tol", po::value<double>(), "tolerance for randomized PCA iterations")
-      ("transpose", "force a transpose of the data, if possible")
-      ("kernel", po::value<std::string>(), "kernel type [rbf | linear]")
-      ("sigma", po::value<double>(), "sigma for RBF kernel")
-      ("rbfcenter", po::value<std::string>(), "center the RBF kernel [yes | no]")
-      ("rbfsample", po::value<int>(), "sample size for estimating RBF kernel width")
-      ("savekernel", "save the kernel as text file")
       ("lambda1", po::value<double>(), "1st penalty for CCA/SCCA")
       ("lambda2", po::value<double>(), "2nd penalty for CCA/SCCA")
       ("debug", "debug, dumps all intermediate data (WARNING: slow, call only on small data)")
@@ -239,16 +229,7 @@ int main(int argc, char * argv[])
    }
 
    int mem_mode = vm.count("batch") ? MEM_MODE_OFFLINE : MEM_MODE_ONLINE;
-   bool fast_mode = !vm.count("rand");
    
-   //if(mem_mode == MEM_MODE_ONLINE && !fast_mode)
-   //{
-   //   std::cerr
-   //      << "Error: --online only supported in fast mode (--fast)"
-   //      << std::endl;
-   //   return EXIT_FAILURE;
-   //}
-
    if(mode == MODE_CHECK_PCA || mode == MODE_PREDICT_PCA)
       mem_mode = MEM_MODE_ONLINE;
 
@@ -490,25 +471,9 @@ int main(int argc, char * argv[])
 
    bool whiten = vm.count("whiten");
    bool verbose = vm.count("verbose");
-   bool transpose = vm.count("transpose");
 
    std::cout << "verbose: " << verbose << std::endl;
 
-   bool do_orth = true;
-   if(vm.count("orth"))
-   {
-      std::string s = vm["orth"].as<std::string>();
-      if(s == "yes")
-	 do_orth = true;
-      else if(s == "no")
-	 do_orth = false;
-      else
-      {
-	 std::cerr << "Error: unknown option for orth " << s << std::endl;
-	 return EXIT_FAILURE;
-      }
-   }
-  
    int maxiter = 500;
    bool debug = vm.count("debug");
    
@@ -535,79 +500,13 @@ int main(int argc, char * argv[])
       }
    }
 
-   int kernel = KERNEL_LINEAR;
-   if(vm.count("kernel"))
-   {
-      std::string s = vm["kernel"].as<std::string>();
-      if(s == "rbf")
-	 kernel = KERNEL_RBF;
-      else if(s == "linear")
-	 kernel = KERNEL_LINEAR;
-      else
-      {
-	 std::cerr << "Error: unknown kernel " << s << std::endl;
-	 return EXIT_FAILURE;
-      }
-   }
-
    bool do_loadings = false;
    std::string loadingsfile = "";
    if(vm.count("outload"))
    {
-      if(kernel == KERNEL_LINEAR)
-      {
-	 loadingsfile = vm["outload"].as<std::string>();
-	 do_loadings = true;
-      }
-      else
-      {
-	 std::cerr
-	    << "Error: won't save SNP loadings with non-linear kernel "
-	    << std::endl;
-	 return EXIT_FAILURE;
-      }
+      loadingsfile = vm["outload"].as<std::string>();
+      do_loadings = true;
    }
-
-   double sigma = 0;
-   if(vm.count("sigma"))
-   {
-      sigma = vm["sigma"].as<double>();
-      if(sigma <= 0)
-      {
-	 std::cerr << "Error: --sigma can't be zero or negative"
-	    << std::endl;
-	 return EXIT_FAILURE;
-      }
-   }
-
-   bool rbf_center = true;
-   if(vm.count("rbfcenter"))
-   {
-      std::string rc = vm["rbfcenter"].as<std::string>();
-      if(rc == "yes")
-	 rbf_center = true;
-      else if(rc == "no")
-	 rbf_center = false;
-      else
-      {
-	 std::cerr << "Error: --rbfcenter must be either 'yes' or 'no'" <<
-	    std::endl;
-	 return EXIT_FAILURE;
-      }
-   }
-
-   unsigned int rbf_sample = 1000;
-   if(vm.count("rbfsample"))
-   {
-      rbf_sample = vm["rbfsample"].as<int>();
-      if(rbf_sample <= 1)
-      {
-	 std::cerr << "Error: --rbfsample too small, must be >1" << std::endl;
-	 return EXIT_FAILURE;
-      }
-   }
-
-   bool save_kernel = vm.count("savekernel");
 
    double lambda1 = 0;
    if(vm.count("lambda1"))
@@ -745,15 +644,11 @@ int main(int argc, char * argv[])
          
       data.geno_filename = geno_file.c_str();
       data.get_size();
-      //transpose = mode == MODE_PCA && (transpose || data.N > data.nsnps);
-      transpose = false;
-   
-      std::cout << "warning: transpose disabled" << std::endl;
    
       if(mem_mode == MEM_MODE_OFFLINE)
       {
          data.prepare();
-         data.read_bed(transpose);
+         data.read_bed(false);
       }
       else if(mem_mode == MEM_MODE_ONLINE)
       {
@@ -855,38 +750,15 @@ int main(int argc, char * argv[])
    
          if(mem_mode == MEM_MODE_OFFLINE)
          {
-	    if(fast_mode)
-   	    {
-	       // New Spectra algorithm
-   	       rpca.pca_fast(data.X, block_size, method, transpose, n_dim,
-		  n_extra, maxiter, tol, seed, kernel, sigma,
-		  rbf_center, rbf_sample, save_kernel, do_orth,
-		  do_loadings, mem);
-   	    }
-   	    else
-   	    {
-	       // Old randomised algorithm
-   	       rpca.pca(data.X, method, transpose, n_dim, n_extra, maxiter,
-   	          tol, seed, kernel, sigma, rbf_center, rbf_sample, save_kernel,
-   	          do_orth, do_loadings, HIGHMEM);
-   	    }
+	    // New Spectra algorithm
+	    rpca.pca_fast(data.X, block_size, method, n_dim,
+	       n_extra, maxiter, tol, seed, do_loadings, mem);
          }
 	 else
 	 {
-	    if(fast_mode)
-	    {
-	       // New Spectra algorithm
-	       rpca.pca_fast(data, block_size, method, transpose,
-		  n_dim, n_extra, maxiter, tol, seed, kernel, sigma,
-		  rbf_center, rbf_sample, save_kernel, do_orth, do_loadings, mem);
-	    }
-	    else
-	    {
-	       // Old randomised algorithm
-	       rpca.pca(data, method, transpose, n_dim, n_extra, maxiter,
-		  tol, seed, kernel, sigma, rbf_center, rbf_sample, save_kernel,
-		  do_orth, do_loadings, block_size);
-	    }
+	    // New Spectra algorithm
+	    rpca.pca_fast(data, block_size, method, 
+	       n_dim, n_extra, maxiter, tol, seed, do_loadings, mem);
 	 }
 	 std::cout << timestamp() << "PCA done" << std::endl;
       }
