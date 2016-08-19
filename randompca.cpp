@@ -66,7 +66,8 @@ class SVDWideOnline
 	 block_size = block_size_;
 	 stand_method = stand_method_;
 	 nblocks = (unsigned int)ceil((double)p / block_size);
-	 verbose && STDOUT << "Using blocksize " << block_size << ", " <<
+	 verbose && STDOUT << timestamp()
+	    << "Using blocksize " << block_size << ", " <<
 	    nblocks << " blocks"<< std::endl;
 	 start = new unsigned int[nblocks];
 	 stop = new unsigned int[nblocks];

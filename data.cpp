@@ -429,8 +429,9 @@ NamedMatrixWrapper read_text(const char *filename,
 
    if(!in)
    {
-      std::cerr << "[Data::read_text] Error reading file " 
-	 << filename << std::endl;
+      std::cerr << "[Data::read_text] Error reading file '" 
+	 << filename << "': '"
+	 << strerror(errno) << std::endl;
       throw std::string("io error");
    }
    std::vector<std::string> lines;
@@ -447,12 +448,12 @@ NamedMatrixWrapper read_text(const char *filename,
       }
    }
 
-   verbose && STDOUT << timestamp() << "Detected pheno file " <<
-      filename << ", " << lines.size() << " samples" << std::endl;
+   verbose && STDOUT << timestamp() << "Detected text file " <<
+      filename << ", " << lines.size() << " rows" << std::endl;
 
    in.close();
 
-   unsigned int numtok = 0, numfields;
+   unsigned int numtok = 0, numfields, numfields_1st = 0;
 
    M.X = MatrixXd(0, 0);
 
@@ -468,11 +469,39 @@ NamedMatrixWrapper read_text(const char *filename,
       numtok = tokens.size();
       numfields = numtok - firstcol + 1;
       if(i == 0)
+      {
 	 M.X.resize(lines.size(), numfields);
+	 numfields_1st = numfields;
+      }
+      else if(numfields_1st != numfields)
+      {
+	 std::cerr << timestamp()
+	    << "Error reading file '"
+	    << filename << "': "
+	    << "inconsistent number of columns"
+	    << std::endl;
+	 throw std::runtime_error("io error");
+      }
 
       VectorXd y(numfields);
+      char* err;
+      errno = 0;
       for(unsigned int j = 0 ; j < numfields ; j++)
-	 y(j) = std::atof(tokens[j + firstcol - 1].c_str());
+      {
+	 //y(j) = std::atof(tokens[j + firstcol - 1].c_str());
+	 double m = std::strtod(tokens[j + firstcol - 1].c_str(), &err);
+	 if(*err != '\0' || errno != 0)
+	 {
+	    std::cerr << timestamp()
+	       << "Error reading file '"
+	       << filename << "' "
+	       << ", line " << (i + 1)
+	       << ": '" << tokens[j + firstcol - 1] << "'"
+	       << " cannot be parsed as a number" << std::endl;
+	    throw std::runtime_error("io error");
+	 }
+	 y(j) = m;
+      }
       M.X.row(i) = y;
    }
 

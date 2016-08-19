@@ -902,7 +902,7 @@ int main(int argc, char * argv[])
    }
    catch(std::exception& e)
    {
-      std::cerr << "Terminating" << std::endl;
+      std::cerr << timestamp() << "Terminating" << std::endl;
       return EXIT_FAILURE;
    }
    catch(...)
