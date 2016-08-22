@@ -692,19 +692,6 @@ void scca_lowmem(MatrixXd& X, MatrixXd &Y, MatrixXd& U, MatrixXd& V,
       {
 	 X2.row(X.rows() + j) = sqrt(d[j - 1]) * U.col(j - 1).transpose();
 	 Y2.row(Y.rows() + j) = -sqrt(d[j - 1]) * V.col(j - 1).transpose();
-	 
-	 // At least up to Eigen 3.2.1, the QR produces full Q matrices, i.e.,
-	 // U.rows() x U.rows() instead of U.rows() x ndim, so we use
-	 // an indirect to get back the original dimensions.
-	 // We purposefully don't use column pivoting QR, as this could break
-	 // ordering of columns of U wrt columns of V.
-	 //HouseholderQR<MatrixXd> qrU(U.leftCols(j + 1)), qrV(V.leftCols(j + 1));
-	 //MatrixXd Iu = MatrixXd::Identity(U.rows(), j + 1);
-	 //MatrixXd Iv = MatrixXd::Identity(V.rows(), j + 1);
-	 //U.leftCols(j + 1) = qrU.householderQ() * Iu;
-	 //V.leftCols(j + 1) = qrV.householderQ() * Iv;
-	 //U.conservativeResize(NoChange, Iu.cols());
-	 //V.conservativeResize(NoChange, Iv.cols());
       }
 
       unsigned int iter = 0;
@@ -773,17 +760,7 @@ void scca_highmem(MatrixXd& X, MatrixXd &Y, MatrixXd& U, MatrixXd& V,
       if(j == 0)
 	 XYj = XY;
       else
-      {
 	 XYj = XYj - d[j - 1] * U.col(j - 1) * V.col(j - 1).transpose();
-
-	 //HouseholderQR<MatrixXd> qrU(U.leftCols(j + 1)), qrV(V.leftCols(j + 1));
-	 //MatrixXd Iu = MatrixXd::Identity(U.rows(), j + 1);
-	 //MatrixXd Iv = MatrixXd::Identity(V.rows(), j + 1);
-	 //U.leftCols(j + 1) = qrU.householderQ() * Iu;
-	 //V.leftCols(j + 1) = qrV.householderQ() * Iv;
-	 //U.conservativeResize(NoChange, Iu.cols());
-	 //V.conservativeResize(NoChange, Iv.cols());
-      }
 	 
       unsigned int iter = 0;
       for(; iter < maxiter ; iter++)
@@ -840,36 +817,139 @@ void RandomPCA::scca(MatrixXd &X, MatrixXd &Y, double lambda1, double lambda2,
    MatrixXd &V0)
 {
    if(stand_method_x != STANDARDIZE_NONE)
-   {
       X_meansd = standardize(X, stand_method_x);
-      Y_meansd = standardize(Y, stand_method_x);
-   }
 
-   verbose && STDOUT << timestamp() << " dim(X): " << dim(X) << std::endl;
-   verbose && STDOUT << timestamp() << " dim(Y): " << dim(Y) << std::endl;
-   verbose && STDOUT << timestamp() << " lambda1: " << lambda1 
+   if(stand_method_y != STANDARDIZE_NONE)
+      Y_meansd = standardize(Y, stand_method_y);
+
+   verbose && STDOUT << timestamp() << "dim(X): " << dim(X) << std::endl;
+   verbose && STDOUT << timestamp() << "dim(Y): " << dim(Y) << std::endl;
+   verbose && STDOUT << timestamp() << "lambda1: " << lambda1 
       << " lambda2: " << lambda2 << std::endl;
 
    unsigned int p = X.cols();
 
    //V = make_gaussian(k, ndim, seed);
+   this->V0 = V0;
    V = V0;
    U = MatrixXd::Zero(p, ndim);
    d = VectorXd::Zero(ndim); 
 
-   if(mem == HIGHMEM)
-      scca_highmem(X, Y, U, V, d, lambda1, lambda2, maxiter, tol, verbose);
-   else
+   //if(mem == HIGHMEM)
+   //   scca_highmem(X, Y, U, V, d, lambda1, lambda2, maxiter, tol, verbose);
+   //else
       scca_lowmem(X, Y, U, V, d, lambda1, lambda2, maxiter, tol, verbose);
 
    Px = X * U;
    Py = Y * V;
 }
 
-//void RandomPCA::scca(Data& dat, double lambda1, double lambda2, long seed)
-//{
-//   
-//}
+void RandomPCA::scca(Data &dat, MatrixXd &Y, double lambda1, double lambda2,
+   long seed, unsigned int ndim, int mem, unsigned int maxiter, double tol)
+{
+   unsigned int k = Y.cols();
+   MatrixXd M = make_gaussian(k, ndim, seed);
+   this->scca(dat, Y, lambda1, lambda2, seed, ndim, mem, maxiter, tol, M);
+}
+
+// Block loading of X (genotypes)
+void RandomPCA::scca(Data &dat, MatrixXd &Y, double lambda1, double lambda2,
+   long seed, unsigned int ndim, int mem, unsigned int maxiter, double tol,
+   MatrixXd &V0)
+{
+   //if(stand_method_x != STANDARDIZE_NONE)
+   //   X_meansd = standardize(X, stand_method_x);
+
+   if(stand_method_y != STANDARDIZE_NONE)
+      Y_meansd = standardize(Y, stand_method_y);
+
+   //verbose && STDOUT << timestamp() << "dim(X): " << dim(X) << std::endl;
+   verbose && STDOUT << timestamp() << "dim(Y): " << dim(Y) << std::endl;
+   verbose && STDOUT << timestamp() << "lambda1: " << lambda1 
+      << " lambda2: " << lambda2 << std::endl;
+
+   unsigned int p = X.cols();
+
+   this->V0 = V0;
+   V = V0;
+   U = MatrixXd::Zero(p, ndim);
+   d = VectorXd::Zero(ndim); 
+
+   VectorXd u, v, u_old, v_old;
+  
+   for(unsigned int j = 0 ; j < U.cols() ; j++)
+   {
+      unsigned int iter = 0;
+      for( ; iter < maxiter ; iter++)
+      {
+	 u_old = u = U.col(j);
+	 v_old = v = V.col(j);
+
+	 if(j == 0)
+	 {
+	    //u = X.transpose() * (Y * v);
+	    MatrixXd Yv = Y * v;
+	    u = crossprod2(Yv);
+	 }
+	 else // deflation
+	 {
+	  TODO: broken
+	    u = (X.array() + sqrt(d[j - 1]) * u.transpose()).transpose() 
+	       * (Y.array() - sqrt(d[j - 1] * v.transpose())  * v);
+	 }
+	 u = norm_thresh(u, lambda1);
+	 U.col(j) = u;
+
+	 if(j == 0)
+	 {
+	    //v = Y.transpose() * (X * u);
+	    VectorXd Xu = prod2(u);
+	    v = Y.transpose() * Xu;
+	 }
+	 else // deflation
+	 {
+	    TODO: broken
+	    // (Y - sqrt(d[j-1)) * v')' * ((X - sqrt(d[j-1]) * u') * u)
+	    v = (Y.array() - sqrt(d[j - 1]) * v.transpose()).transpose() 
+	       * (X.array() + sqrt(d[j - 1] * u.transpose())  * u);
+	 }
+
+	 v = norm_thresh(v, lambda2);
+	 V.col(j) = v;
+
+	 if(iter > 0 
+	    && (v_old.array() - v.array()).abs().maxCoeff() < tol
+	       && (u_old.array() - u.array()).abs().maxCoeff() < tol)
+	 {
+	    verbose && STDOUT << timestamp() << "dim " << j << " finished in "
+	       << iter << " iterations" << std::endl;
+
+	    break;
+	 }
+      }
+
+      if(iter >= maxiter)
+      {
+	 verbose && STDOUT << timestamp()
+	    << " SCCA did not converge in " << maxiter
+	    << " iterations" << std::endl;
+      }
+
+      long long nzu = (U.col(j).array() != 0).count();
+      long long nzv = (V.col(j).array() != 0).count();
+
+      verbose && STDOUT << timestamp() << "U_" << j 
+	 << " non-zeros: " << nzu << ", V_" << j
+	 << " non-zeros: " << nzv << std::endl;
+
+      d[j] = (X * U.col(j)).transpose() * (Y * V.col(j)); 
+      verbose && STDOUT << timestamp() << "d[" << j << "]: "
+	 << d[j] << std::endl;
+   }
+
+   //Px = X * U;
+   //Py = Y * V;
+}
 
 // Single-SNP CCA (like plink.multivariate), offline version (loading all SNPs
 // into memory)
@@ -989,13 +1069,13 @@ void RandomPCA::check(Data& dat, unsigned int block_size,
 
    MatrixXd XXU = op.perform_op_mat(evec);
    XXU /= div;
-   MatrixXd UD = evec * eval.asDiagonal();
+   MatrixXd UD2 = evec * eval.asDiagonal();
 
    VectorXd err(eval.size());
 
    for(unsigned int j = 0 ; j < K ; j++)
    {
-      err(j) = (XXU.col(j).array() - UD.col(j).array()).square().sum();
+      err(j) = (XXU.col(j).array() - UD2.col(j).array()).square().sum();
    }
 
    for(unsigned int j = 0 ; j < K ; j++)

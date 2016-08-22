@@ -24,7 +24,7 @@ norm.thresh <- function(x, a)
    x
 }
 
-cca <- function(X, Y, lambdax=0, lambday=0, ndim=10, V=NULL,
+scca <- function(X, Y, lambdax=0, lambday=0, ndim=10, V=NULL,
    maxiter=100)
 {
    k <- ncol(Y)
@@ -40,7 +40,8 @@ cca <- function(X, Y, lambdax=0, lambday=0, ndim=10, V=NULL,
    XY <- crossprod(X, Y)
 
    for(j in 1:ndim) {
-      cat("dim ", j, "\n")
+
+      # Deflation
       if(j == 1) {
          XYj <- XY
       } else {
@@ -48,14 +49,12 @@ cca <- function(X, Y, lambdax=0, lambday=0, ndim=10, V=NULL,
       }
 
       for(iter in 1:maxiter) {
-	 cat(iter, " ")
          U[,j] <- XYj %*% V[, j]
          U[,j] <- norm.thresh(U[,j], lambdax)
 
          V[,j] <- crossprod(XYj, U[, j])
          V[,j] <- norm.thresh(V[,j], lambday)
       }
-      cat("\n")
       #d[j] <- crossprod(X %*% U[,j], Y %*% V[,j])
       d[j] <- crossprod(U[,j], XYj) %*% V[,j]
    }
@@ -106,7 +105,6 @@ d.ucca <- read.table("ucca.txt", header=TRUE, sep="", stringsAsFactors=FALSE)
 d.ucca <- d.ucca[w, ]
 
 r <- lapply(w, function(j) {
-   cat(j, " ")
    s <- summary(lm(X[,j] ~ Y))
    data.frame(SNP=dat$bim[j, 2], R=sqrt(s$r.squared),
       Fstat=s$fstatistic[1],
@@ -115,11 +113,13 @@ r <- lapply(w, function(j) {
 })
 d.lm <- do.call(rbind, r)
 
+cat("Testing UCCA:\n")
 err.tol <- 1e-6
 stopifnot(all(d.ucca$SNP == d.lm$SNP))
 stopifnot(mean((d.ucca$R - d.lm$R)^2) < err.tol)
 stopifnot(mean((d.ucca$Fstat - d.lm$Fstat)^2) < err.tol)
 stopifnot(mean((d.ucca$P - d.lm$P)^2) < err.tol)
+cat("ok!\n")
 
 ################################################################################
 # Test sparse canonical correlation analysis (SCCA)
@@ -128,11 +128,11 @@ l1 <- 2e-2
 l2 <- 2e-2
 
 system(paste0(
-   "../flashpca --bfile data --pheno pheno.txt --scca",
+   "../flashpca --bfile data --pheno pheno.txt --scca --seed 1",
    " --lambda1 ", l1, " --lambda2 ", l2, " --ndim 10 --verbose",
-   " --maxiter 100 --tol 1e-10 --precision 20"))
+   " --maxiter 100 --tol 1e-10 --precision 20 --save-vinit"))
 v0 <- matrix(scan("scca_v0.txt"), byrow=TRUE, nrow=k)
-c1 <- cca(X, Y, lambdax=l1, lambday=l2, ndim=10, V=v0)
+c1 <- scca(X, Y, lambdax=l1, lambday=l2, ndim=10, V=v0)
 
 evecx <- matrix(scan("eigenvectorsX.txt"), byrow=TRUE, ncol=10)
 evecy <- matrix(scan("eigenvectorsY.txt"), byrow=TRUE, ncol=10)

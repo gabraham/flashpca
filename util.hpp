@@ -113,7 +113,6 @@ std::string dim(Eigen::MatrixBase<Derived>& m)
    return ss.str();
 }
 
-double myatof(char* c);
 std::string timestamp();
 
 template <typename T>

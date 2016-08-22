@@ -166,13 +166,6 @@ MatrixXd standardize_transpose(MatrixXd& X, int method, bool verbose)
    return P;
 }
 
-double myatof(char* c)
-{
-   if(c == 0)
-      return 0;
-   return atof(c);
-}
-
 std::string timestamp()
 {
    if(show_timestamp)

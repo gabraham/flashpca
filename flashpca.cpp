@@ -34,7 +34,6 @@ int main(int argc, char * argv[])
    std::cout << "******* Running in Debug mode *******" << std::endl;
 #endif
 
-
    ////////////////////////////////////////////////////////////////////////////////
    // Parse commandline arguments
 
@@ -91,6 +90,7 @@ int main(int argc, char * argv[])
       ("check,c", "check eigenvalues/eigenvectors")
       ("precision", po::value<int>(), "digits of precision for output")
       ("notime", "don't print timestamp in output")
+      ("save-vinit", "saves the initial v eigenvector for SCCA")
       ("version,V", "version")
    ;
 
@@ -109,6 +109,7 @@ int main(int argc, char * argv[])
    }
 
    show_timestamp = !vm.count("notime");
+   bool save_vinit = vm.count("save_vinit");
 
    std::cout << timestamp() << "arguments: flashpca ";
    for(int i = 0 ; i < argc ; i++)
@@ -764,10 +765,11 @@ int main(int argc, char * argv[])
          rpca.scca(data.X, data.Y, lambda1, lambda2, seed, n_dim, mem,
 	    maxiter, tol);
          std::cout << timestamp() << "SCCA done" << std::endl;
-         save_text(rpca.V0,
-	    std::vector<std::string>(),
-	    std::vector<std::string>(),
-	    std::string("scca_v0.txt").c_str(), precision);
+	 if(save_vinit)
+	    save_text(rpca.V0,
+	       std::vector<std::string>(),
+	       std::vector<std::string>(),
+	       std::string("scca_v0.txt").c_str(), precision);
       }
       else if(mode == MODE_UCCA)
       {
