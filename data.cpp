@@ -541,6 +541,23 @@ void Data::read_plink_bim(const char *filename)
       while(ss >> s)
 	 tokens.push_back(s);
       snp_ids.push_back(tokens[1]);
+      ref_alleles.push_back(tokens[4]);
+      alt_alleles.push_back(tokens[5]);
+
+      char* err;
+      errno = 0;
+      unsigned long long m = std::strtol(tokens[3].c_str(), &err, 10);
+      if(*err != '\0' || errno != 0)
+      {
+	 std::cerr << timestamp()
+	    << "Error reading file '"
+	    << filename << "' "
+	    << ", line " << (i + 1)
+	    << ": '" << tokens[3] << "'"
+	    << " cannot be parsed as a number" << std::endl;
+	 throw std::runtime_error("io error");
+      }
+      bp.push_back(m);
    }
 }
 

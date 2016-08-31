@@ -73,6 +73,9 @@ class Data {
       std::vector<std::string> fam_ids;
       std::vector<std::string> indiv_ids;
       std::vector<std::string> snp_ids;
+      std::vector<unsigned long long> bp;
+      std::vector<std::string> ref_alleles;
+      std::vector<std::string> alt_alleles;
       bool use_preloaded_maf;
       int stand_method_x;
       

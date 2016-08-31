@@ -895,7 +895,11 @@ int main(int argc, char * argv[])
       {
          std::cout << timestamp() << "Writing mean + sd file "
 	    << meansdfile << std::endl;
-	 std::vector<std::string> v = {"SNP", "Mean", "SD"};
+	 std::vector<std::string> v =
+	    {std::string("SNP") + TXT_SEP + "RefAllele", "Mean", "SD"};
+	 std::vector<std::string> rownames(data.snp_ids.size());
+	 for(int i = 0 ; i < rownames.size() ; i++)
+	    rownames[i] = data.snp_ids[i] + TXT_SEP + data.ref_alleles[i];
          save_text(rpca.X_meansd, v, data.snp_ids, meansdfile.c_str(),
 	    precision);
       }

@@ -58,6 +58,11 @@ system(paste0("../flashpca --bfile data --project --inmeansd meansd.online.txt",
    " --outproj projections.online.txt --inload loadings.online.txt -v",
    " --precision 10"))
 
+# Projection onto other data, using MAF instead of means+sd
+#system(paste0("../flashpca --bfile data --project --inmeansd meansd.online.txt",
+#   " --outproj projections.online.txt --inload loadings.online.txt -v",
+#   " --precision 10"))
+
 # PCA checking mode
 d.chk <- read.table(pipe(paste0("../flashpca --bfile data --check",
    " --outval eigenvalues.online.txt --outvec eigenvectors.online.txt -v",

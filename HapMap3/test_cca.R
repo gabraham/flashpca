@@ -24,6 +24,7 @@ norm.thresh <- function(x, a)
    x
 }
 
+# basic version
 scca <- function(X, Y, lambdax=0, lambday=0, ndim=10, V=NULL,
    maxiter=100)
 {
@@ -57,6 +58,42 @@ scca <- function(X, Y, lambdax=0, lambday=0, ndim=10, V=NULL,
       }
       #d[j] <- crossprod(X %*% U[,j], Y %*% V[,j])
       d[j] <- crossprod(U[,j], XYj) %*% V[,j]
+   }
+
+   list(u=U, d=d, v=V)
+}
+
+# version where we don't explicitly compute X'Y, which can be very large
+scca2 <- function(X, Y, lambdax=0, lambday=0, ndim=10, V=NULL,
+   maxiter=100)
+{
+   k <- ncol(Y)
+   p <- ncol(X)
+   U <- matrix(0, p, ndim)
+   d <- numeric(ndim)
+   
+   if(is.null(V)) {
+      V <- matrix(rnorm(ncol(Y) * ndim), ncol(Y), ndim)
+      cat("setting random V\n")
+   }
+
+   for(j in 1:ndim) {
+      # Deflation
+      #if(j == 1) {
+      #   XYj <- XY
+      #} else {
+      #   XYj <- XYj - d[j - 1] * tcrossprod(U[, j - 1], V[, j - 1])
+      #}
+
+      for(iter in 1:maxiter) {
+         U[,j] <- crossprod(X, Y %*% V[, j])
+         U[,j] <- norm.thresh(U[,j], lambdax)
+
+	 V[,j] <- crossprod(Y, X %*% U[,j])
+         V[,j] <- norm.thresh(V[,j], lambday)
+      }
+      #d[j] <- crossprod(X %*% U[,j], Y %*% V[,j])
+      d[j] <- crossprod(X %*% U[,j], Y %*% V[,j])
    }
 
    list(u=U, d=d, v=V)

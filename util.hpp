@@ -37,6 +37,8 @@
 #define STANDARDIZE_BINOM2 3
 #define STANDARDIZE_CENTER 4
 
+#define TXT_SEP "\t"
+
 using namespace Eigen;
 
 typedef Array<bool, Dynamic, Dynamic> ArrayXXb;
@@ -89,15 +91,15 @@ bool save_text(Eigen::MatrixBase<Derived>& m,
       if(i == colnames.size() - 1) 
 	 out << std::endl;
       else
-         out << "\t";
+         out << TXT_SEP;
    }
    
-   const IOFormat fmt(precision , DontAlignCols, "\t", "\n", "", "", "", "");
+   const IOFormat fmt(precision , DontAlignCols, TXT_SEP, "\n", "", "", "", "");
 
    for(unsigned int j = 0 ; j < m.rows() ; j++)
    {
       if(rownames.size() > 0)
-	 out << rownames[j] << "\t";
+	 out << rownames[j] << TXT_SEP;
       out << m.row(j).format(fmt) << std::endl;
    }
 
