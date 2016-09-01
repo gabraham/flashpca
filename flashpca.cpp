@@ -40,8 +40,8 @@ int main(int argc, char * argv[])
    po::options_description desc("Options");
    desc.add_options()
       ("help", "produce help message")
-      ("scca", "perform sparse canonical correlation analysis (SCCA)")
-      ("ucca", "perform per-SNP canonical correlation analysis")
+      ("scca", "perform sparse canonical correlation analysis (SCCA) [EXPERIMENTAL]")
+      ("ucca", "perform per-SNP canonical correlation analysis [EXPERIMENTAL]")
       ("project,p", "project new samples onto existing principal components")
       ("batch,b", "load all genotypes into RAM at once")
       ("memory,m", po::value<int>(), "size of block for online algorithm, in MB")
@@ -91,6 +91,7 @@ int main(int argc, char * argv[])
       ("precision", po::value<int>(), "digits of precision for output")
       ("notime", "don't print timestamp in output")
       ("save-vinit", "saves the initial v eigenvector for SCCA")
+      ("experimental", "allow experimental features")
       ("version,V", "version")
    ;
 
@@ -143,6 +144,13 @@ int main(int argc, char * argv[])
    
    if(vm.count("cca"))
    {
+      if(!vm.count("experimental"))
+      {
+	 std::cerr << "Error: CCA is exprimental, must specify --experimental"
+	    " to enable" << std::endl;
+	 return EXIT_FAILURE;
+      }
+
       for(int i = 0 ; i < modes.size() ; i++)
       {
 	 if(modes[i] != std::string("cca") && vm.count(modes[i]))
@@ -159,6 +167,13 @@ int main(int argc, char * argv[])
    }
    else if(vm.count("scca"))
    {
+      if(!vm.count("experimental"))
+      {
+	 std::cerr << "Error: SCCA is exprimental, must specify --experimental"
+	    " to enable" << std::endl;
+	 return EXIT_FAILURE;
+      }
+
       for(int i = 0 ; i < modes.size() ; i++)
       {
 	 if(modes[i] != std::string("scca") && vm.count(modes[i]))
@@ -173,6 +188,13 @@ int main(int argc, char * argv[])
    }
    else if(vm.count("ucca"))
    {
+      if(!vm.count("experimental"))
+      {
+	 std::cerr << "Error: UCCA is exprimental, must specify --experimental"
+	    " to enable" << std::endl;
+	 return EXIT_FAILURE;
+      }
+
       for(int i = 0 ; i < modes.size() ; i++)
       {
 	 if(modes[i] != std::string("ucca") && vm.count(modes[i]))
@@ -234,7 +256,7 @@ int main(int argc, char * argv[])
    if(mode == MODE_CHECK_PCA || mode == MODE_PREDICT_PCA)
       mem_mode = MEM_MODE_ONLINE;
 
-   int memory = 2048;
+   int memory = 2048; // Megabytes
    
    if(vm.count("memory"))
    {

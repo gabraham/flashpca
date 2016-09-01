@@ -999,7 +999,8 @@ void RandomPCA::ucca(Data& data)
    double varx;
    RowVectorXd covXY;
 
-   STDOUT << "ucca online mode, N=" << n << " p=" << p << std::endl;
+   verbose && STDOUT << timestamp()
+      << "ucca online mode, N=" << n << " p=" << p << std::endl;
 
    // QR might be faster here
    JacobiSVD<MatrixXd> svd(data.Y, ComputeThinU | ComputeThinV);
