@@ -909,6 +909,7 @@ int main(int argc, char * argv[])
          std::vector<std::string> v(rpca.Px.cols());
          for(int i = 0 ; i < rpca.Px.cols() ; i++)
 	    v[i] = "PC" + std::to_string(i + 1);
+	 // TODO: add sample names
 	 save_text(rpca.Px, v, std::vector<std::string>(),
 	    projfile.c_str(), precision);
       }
@@ -922,7 +923,7 @@ int main(int argc, char * argv[])
 	 std::vector<std::string> rownames(data.snp_ids.size());
 	 for(int i = 0 ; i < rownames.size() ; i++)
 	    rownames[i] = data.snp_ids[i] + TXT_SEP + data.ref_alleles[i];
-         save_text(rpca.X_meansd, v, data.snp_ids, meansdfile.c_str(),
+         save_text(rpca.X_meansd, v, rownames, meansdfile.c_str(),
 	    precision);
       }
    

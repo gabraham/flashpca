@@ -1113,9 +1113,7 @@ void RandomPCA::project(Data& dat, unsigned int block_size,
 {
    std::cout << "[project] loadings_file " << loadings_file << std::endl;
 
-   // Read the PCs
-   // TODO: expects no rownames etc, just numeric
-   // TODO: missing values?
+   // Read the loadings
    // TODO: check that SNP ids match
    NamedMatrixWrapper M = read_text(loadings_file.c_str(), 2, -1, 1);
    V = M.X;
