@@ -856,13 +856,24 @@ int main(int argc, char * argv[])
 	    eigpvefile.c_str(),
 	    precision);
    
+	 // Write out PCA SNP loadings, i.e., the V matrix
          if(do_loadings)
          {
 	    std::cout << timestamp() << "Writing" <<
 	       " SNP loadings to file " << loadingsfile << std::endl;
 	    std::cout << rpca.V.rows() << " x " << rpca.V.cols() << std::endl;
 	    std::cout << data.snp_ids.size() << std::endl;
-	    save_text(rpca.V, v, data.snp_ids, loadingsfile.c_str(), precision); 
+
+	    std::vector<std::string> v =
+	       {std::string("SNP") + TXT_SEP + "RefAllele"};
+
+	    for(int i = 0 ; i < rpca.V.cols() ; i++)
+	       v.push_back(std::string("V") + std::to_string(i + 1));
+
+	    std::vector<std::string> rownames(data.snp_ids.size() + 2);
+	    for(int i = 0 ; i < rownames.size() ; i++)
+	       rownames[i] = data.snp_ids[i] + TXT_SEP + data.ref_alleles[i];
+	    save_text(rpca.V, v, rownames, loadingsfile.c_str(), precision); 
          }
       }
       else if(mode == MODE_CCA || mode == MODE_SCCA)
