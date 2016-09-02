@@ -553,7 +553,7 @@ ArrayXXd wilks(const ArrayXd& r2, unsigned int n, unsigned int k)
 }
 
 void RandomPCA::pca_fast(MatrixXd& X, unsigned int block_size, int method,
-   unsigned int ndim, unsigned int nextra, unsigned int maxiter,
+   unsigned int ndim, unsigned int maxiter,
    double tol, long seed, bool do_loadings, int mem)
 {
    unsigned int N, p;
@@ -599,8 +599,8 @@ void RandomPCA::pca_fast(MatrixXd& X, unsigned int block_size, int method,
 }
 
 void RandomPCA::pca_fast(Data& dat, unsigned int block_size, int method,
-   unsigned int ndim, unsigned int nextra,
-   unsigned int maxiter, double tol, long seed, bool do_loadings, int mem)
+   unsigned int ndim, unsigned int maxiter, double tol,
+   long seed, bool do_loadings, int mem)
 {
    unsigned int N = dat.N, p = dat.nsnps;
    SVDWideOnline op(dat, block_size, stand_method_x, verbose);
@@ -1035,14 +1035,21 @@ void RandomPCA::check(Data& dat, unsigned int block_size,
 {
    SVDWideOnline op(dat, block_size, 1, verbose);
 
-   NamedMatrixWrapper M1 = read_text(
-      eval_file.c_str(), 1, -1, 0);
+   // Read eigenvalues
+   // Expects no header, no rownames, one eigenvalue per row
+   verbose && STDOUT << timestamp() << "Loading eigenvalue file '"
+       << eval_file << "'" << std::endl;
+   NamedMatrixWrapper M1 = read_text(eval_file.c_str(), 1, -1, 0);
    MatrixXd ev = M1.X;
    if(ev.rows() == 0)
       throw std::runtime_error("No eigenvalues found in file");
-
    VectorXd eval = ev.col(0);
-   NamedMatrixWrapper M2 = read_text(evec_file.c_str(), 1, -1, 0);
+
+   // Read eigenvectors
+   // Expects header (colnames), FID and IID cols
+   verbose && STDOUT << timestamp() << "Loading eigenvector file '"
+       << evec_file << "'" << std::endl;
+   NamedMatrixWrapper M2 = read_text(evec_file.c_str(), 3, -1, 1);
    MatrixXd evec = M2.X;
    MatrixXd out = MatrixXd::Zero(evec.rows(), 1);
    VectorXd uexp;

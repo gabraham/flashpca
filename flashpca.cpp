@@ -55,8 +55,6 @@ int main(int argc, char * argv[])
       ("pheno", po::value<std::string>(), "PLINK phenotype file")
       ("bfile", po::value<std::string>(), "PLINK root name")
       ("ndim,d", po::value<int>(), "number of PCs to output")
-      ("nextra", po::value<int>(),
-	 "number of extra dimensions to use in randomized PCA")
       ("standx,s", po::value<std::string>(),
 	 "standardization method for genotypes [binom2 | binom | none | sd | center]")
       ("standy", po::value<std::string>(),
@@ -81,8 +79,7 @@ int main(int argc, char * argv[])
 	 "mean+SD (used to standardize SNPs) input file")
       ("inmaf", po::value<std::string>(), "MAF input file")
       ("verbose,v", "verbose")
-      ("maxiter", po::value<int>(), "maximum number of randomized PCA iterations")
-      ("tol", po::value<double>(), "tolerance for randomized PCA iterations")
+      ("tol", po::value<double>(), "tolerance for PCA iterations")
       ("lambda1", po::value<double>(), "1st penalty for CCA/SCCA")
       ("lambda2", po::value<double>(), "2nd penalty for CCA/SCCA")
       ("debug", "debug, dumps all intermediate data (WARNING: slow, call only on small data)")
@@ -355,17 +352,6 @@ int main(int argc, char * argv[])
       }
    }
 
-   int n_extra = 0;
-   if(vm.count("nextra"))
-   {
-      n_extra = vm["nextra"].as<int>();
-      if(n_extra < 1)
-      {
-	 std::cerr << "Error: --n_extra can't be less than 1" << std::endl;
-	 return EXIT_FAILURE;
-      }
-   }
-   
    int stand_method_x = STANDARDIZE_BINOM2;
    if(vm.count("standx"))
    {
@@ -694,11 +680,6 @@ int main(int argc, char * argv[])
          n_dim = max_dim;
       }
    
-      // Only relevant for randomised algorithm, Spectra code uses
-      // n_extra = 2 n_dim + 1
-      if(n_extra == 0)
-         n_extra = fminl(max_dim - n_dim, 200 - n_dim);
-
       //double mem = (double)memory * 1073741824;
       long long mem = (long long)memory * 1048576;
 
@@ -723,7 +704,8 @@ int main(int argc, char * argv[])
 	    + 2 * 1024 * 1024;			         // extra space
 	 long long mem_remain_bytes = mem - mem_req_bytes;
 
-	 verbose && STDOUT << "mem: " << mem << " mem_req_bytes: " << mem_req_bytes
+	 verbose && STDOUT << timestamp() << "mem: "
+	    << mem << " mem_req_bytes: " << mem_req_bytes
 	    << " mem_remain_bytes: " << mem_remain_bytes << std::endl;
 
 	 if(mem_remain_bytes <= 0)
@@ -765,13 +747,13 @@ int main(int argc, char * argv[])
          {
 	    // New Spectra algorithm
 	    rpca.pca_fast(data.X, block_size, method, n_dim,
-	       n_extra, maxiter, tol, seed, do_loadings, mem);
+	       maxiter, tol, seed, do_loadings, mem);
          }
 	 else
 	 {
 	    // New Spectra algorithm
 	    rpca.pca_fast(data, block_size, method, 
-	       n_dim, n_extra, maxiter, tol, seed, do_loadings, mem);
+	       n_dim, maxiter, tol, seed, do_loadings, mem);
 	 }
 	 std::cout << timestamp() << "PCA done" << std::endl;
       }
@@ -832,24 +814,29 @@ int main(int argc, char * argv[])
       if(mode == MODE_PCA)
       {
          std::cout << timestamp() << "Writing " << n_dim << 
-   	 " eigenvectors to file " << eigvecfile << std::endl;
-         save_text(rpca.U,
-	    std::vector<std::string>(),
-   	    std::vector<std::string>(),
-   	    eigvecfile.c_str(), precision);
+	    " eigenvectors to file " << eigvecfile << std::endl;
+
+	 std::vector<std::string> rownames(rpca.Px.rows());
+	 for(int i = 0 ; i < rpca.Px.rows() ; i++)
+	    rownames[i] = data.fam_ids[i] + TXT_SEP + data.indiv_ids[i];
+
+         std::vector<std::string> colnames(rpca.Px.cols() + 1);
+	 colnames[0] = std::string("FID") + TXT_SEP + "IID";
+         for(int i = 0 ; i < rpca.Px.cols() ; i++)
+	    colnames[i + 1] = "U" + std::to_string(i + 1);
+
+         save_text(rpca.U, colnames, rownames, eigvecfile.c_str(), precision);
    
          std::cout << timestamp() << "Writing " << n_dim <<
 	    " PCs to file " << pcfile << std::endl;
-         std::vector<std::string> v(n_dim);
-         for(int i = 0 ; i < n_dim ; i++)
-	    v[i] = "PC" + std::to_string(i + 1);
-         save_text(rpca.Px, v,	 
-	    std::vector<std::string>(),
-	    pcfile.c_str(),
-	    precision);
+         for(int i = 0 ; i < rpca.Px.cols() ; i++)
+	    colnames[i + 1] = "PC" + std::to_string(i + 1);
+
+         save_text(rpca.Px, colnames, rownames, pcfile.c_str(), precision);
    
-         std::cout << timestamp() << "Writing " << n_dim << 
-   	 " proportion variance explained to file " << eigpvefile << std::endl;
+         std::cout << timestamp() << "Writing " << n_dim
+	    << " proportion variance explained to file "
+	    << eigpvefile << std::endl;
          save_text(rpca.pve,
 	    std::vector<std::string>(),
 	    std::vector<std::string>(),
@@ -864,16 +851,16 @@ int main(int argc, char * argv[])
 	    std::cout << rpca.V.rows() << " x " << rpca.V.cols() << std::endl;
 	    std::cout << data.snp_ids.size() << std::endl;
 
-	    std::vector<std::string> v =
+	    std::vector<std::string> colnames =
 	       {std::string("SNP") + TXT_SEP + "RefAllele"};
 
 	    for(int i = 0 ; i < rpca.V.cols() ; i++)
-	       v.push_back(std::string("V") + std::to_string(i + 1));
+	       colnames.push_back(std::string("V") + std::to_string(i + 1));
 
 	    std::vector<std::string> rownames(data.snp_ids.size() + 2);
 	    for(int i = 0 ; i < rownames.size() ; i++)
 	       rownames[i] = data.snp_ids[i] + TXT_SEP + data.ref_alleles[i];
-	    save_text(rpca.V, v, rownames, loadingsfile.c_str(), precision); 
+	    save_text(rpca.V, colnames, rownames, loadingsfile.c_str(), precision); 
          }
       }
       else if(mode == MODE_CCA || mode == MODE_SCCA)
@@ -917,12 +904,17 @@ int main(int argc, char * argv[])
       }
       else if(mode == MODE_PREDICT_PCA)
       {
-         std::vector<std::string> v(rpca.Px.cols());
+	 std::vector<std::string> rownames(rpca.Px.rows());
+	 for(int i = 0 ; i < rpca.Px.rows() ; i++)
+	    rownames[i] = data.fam_ids[i] + TXT_SEP + data.indiv_ids[i];
+
+         std::vector<std::string> colnames(rpca.Px.cols() + 1);
+	 colnames[0] = std::string("FID") + TXT_SEP + "IID";
          for(int i = 0 ; i < rpca.Px.cols() ; i++)
-	    v[i] = "PC" + std::to_string(i + 1);
+	    colnames[i + 1] = "PC" + std::to_string(i + 1);
+
 	 // TODO: add sample names
-	 save_text(rpca.Px, v, std::vector<std::string>(),
-	    projfile.c_str(), precision);
+	 save_text(rpca.Px, colnames, rownames, projfile.c_str(), precision);
       }
    
       if(save_meansd)

@@ -28,78 +28,68 @@ tol <- 1e-6
 s1 <- svd(X, nu=k, nv=k)
 s2 <- svds(X, k=k, tol=tol)
 
-# Spectra / batch
-system(paste0("../flashpca --bfile data --ndim ", k, " --suffix .batch.txt ",
-   "--tol ", tol, " --outload loadings.batch.txt",
-   " --outmeansd meansd.batch.txt --precision 10"))
+maf <- colMeans(dat$bed, na.rm=TRUE) / 2
+write.table(data.frame(SNP=colnames(X), MAF=round(maf, 6)),
+   file="maf.txt", col.names=TRUE, row.names=FALSE, quote=FALSE)
 
-# Spectra / online
-system(paste0("../flashpca --bfile data --online --ndim ", k,
-   " --suffix .online.txt --tol ", tol, " --outload loadings.online.txt",
-   " --outmeansd meansd.online.txt --precision 10"))
-
-# Randomised / batch
-system(paste0("../flashpca --rand --bfile data --ndim ", k, " --suffix .rand.batch.txt ",
-   "--tol ", tol, " --outload loadings.rand.batch.txt",
-   " --outmeansd meansd.rand.batch.txt --precision 10"))
-
-# Randomised / online
-system(paste0("../flashpca --rand --bfile data --online --ndim ", k,
-   " --suffix .rand.online.txt --tol ", tol, " --outload loadings.rand.online.txt",
-   " --outmeansd meansd.rand.online.txt --precision 10"))
+# Spectra
+system(paste0("../flashpca --bfile data --ndim ", k,
+   "--tol ", tol, " --outload loadings.txt",
+   " --outmeansd meansd.txt --precision 10"))
 
 # Projection onto same data
-system(paste0("../flashpca --bfile data --project --inmeansd meansd.online.txt",
-   " --outproj projections.online.txt --inload loadings.online.txt -v",
+system(paste0("../flashpca --bfile data --project --inmeansd meansd.txt",
+   " --outproj projections.txt --inload loadings.txt -v",
    " --precision 10"))
 
 # Projection onto other data
-system(paste0("../flashpca --bfile data --project --inmeansd meansd.online.txt",
-   " --outproj projections.online.txt --inload loadings.online.txt -v",
-   " --precision 10"))
-
-# Projection onto other data, using MAF instead of means+sd
-#system(paste0("../flashpca --bfile data --project --inmeansd meansd.online.txt",
-#   " --outproj projections.online.txt --inload loadings.online.txt -v",
+# TODO: other data...
+#system(paste0("../flashpca --bfile data --project --inmeansd meansd.txt",
+#   " --outproj projections.other.txt --inload loadings.txt -v",
 #   " --precision 10"))
+
+# Projection using MAF instead of means+sd
+system(paste0("../flashpca --bfile data --project --inmaf maf.txt",
+   " --outproj projections.maf.txt --inload loadings.txt -v",
+   " --precision 10"))
 
 # PCA checking mode
 d.chk <- read.table(pipe(paste0("../flashpca --bfile data --check",
-   " --outval eigenvalues.online.txt --outvec eigenvectors.online.txt -v",
+   " --outval eigenvalues.txt --outvec eigenvectors.txt -v",
    " --precision 10 --notime | awk -F',| ' '/eval/{print $2, $7}'")),
    header=FALSE, sep="", stringsAsFactors=FALSE)
 
-evec3 <- as.matrix(read.table("eigenvectors.batch.txt", header=FALSE))
-evec4 <- as.matrix(read.table("eigenvectors.online.txt", header=FALSE))
-evec5 <- as.matrix(read.table("eigenvectors.rand.batch.txt", header=FALSE))
-evec6 <- as.matrix(read.table("eigenvectors.rand.online.txt", header=FALSE))
+evec3 <- as.matrix(read.table("eigenvectors.txt", header=FALSE))
+evec4 <- as.matrix(read.table("eigenvectors.txt", header=FALSE))
+evec5 <- as.matrix(read.table("eigenvectors.rand.txt", header=FALSE))
+evec6 <- as.matrix(read.table("eigenvectors.rand.txt", header=FALSE))
 
-eval3 <- scan("eigenvalues.batch.txt")
-eval4 <- scan("eigenvalues.online.txt")
-eval5 <- scan("eigenvalues.rand.batch.txt")
-eval6 <- scan("eigenvalues.rand.online.txt")
+eval3 <- scan("eigenvalues.txt")
+eval4 <- scan("eigenvalues.txt")
+eval5 <- scan("eigenvalues.rand.txt")
+eval6 <- scan("eigenvalues.rand.txt")
 
-load3 <- as.matrix(read.table("loadings.batch.txt", header=TRUE, row.names=1))
-load4 <- as.matrix(read.table("loadings.online.txt", header=TRUE, row.names=1))
-load5 <- as.matrix(read.table("loadings.rand.batch.txt", header=TRUE, row.names=1))
-load6 <- as.matrix(read.table("loadings.rand.online.txt", header=TRUE, row.names=1))
+load3 <- as.matrix(read.table("loadings.txt", header=TRUE, row.names=1))
+load4 <- as.matrix(read.table("loadings.txt", header=TRUE, row.names=1))
+load5 <- as.matrix(read.table("loadings.rand.txt", header=TRUE, row.names=1))
+load6 <- as.matrix(read.table("loadings.rand.txt", header=TRUE, row.names=1))
 
-pc3 <- as.matrix(read.table("pcs.batch.txt", header=TRUE))
-pc4 <- as.matrix(read.table("pcs.online.txt", header=TRUE))
-pc5 <- as.matrix(read.table("pcs.rand.batch.txt", header=TRUE))
-pc6 <- as.matrix(read.table("pcs.rand.online.txt", header=TRUE))
+pc3 <- as.matrix(read.table("pcs.txt", header=TRUE))
+pc4 <- as.matrix(read.table("pcs.txt", header=TRUE))
+pc5 <- as.matrix(read.table("pcs.rand.txt", header=TRUE))
+pc6 <- as.matrix(read.table("pcs.rand.txt", header=TRUE))
 
-pve3 <- scan("pve.batch.txt")
-pve4 <- scan("pve.online.txt")
-pve5 <- scan("pve.rand.batch.txt")
-pve6 <- scan("pve.rand.online.txt")
+pve3 <- scan("pve.txt")
+pve4 <- scan("pve.txt")
+pve5 <- scan("pve.rand.txt")
+pve6 <- scan("pve.rand.txt")
 
-msd3 <- read.table("meansd.batch.txt", header=TRUE, row.names=1)
-msd4 <- read.table("meansd.online.txt", header=TRUE, row.names=1)
-msd5 <- read.table("meansd.rand.batch.txt", header=TRUE, row.names=1)
-msd6 <- read.table("meansd.rand.online.txt", header=TRUE, row.names=1)
+msd3 <- read.table("meansd.txt", header=TRUE, row.names=1)
+msd4 <- read.table("meansd.txt", header=TRUE, row.names=1)
+msd5 <- read.table("meansd.rand.txt", header=TRUE, row.names=1)
+msd6 <- read.table("meansd.rand.txt", header=TRUE, row.names=1)
 
-proj4 <- read.table("projections.online.txt", header=TRUE)
+proj4 <- read.table("projections.txt", header=TRUE)
 
 # X is already divided by sqrt(p)
 XXU4 <- X %*% crossprod(X, evec4)
