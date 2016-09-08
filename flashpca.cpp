@@ -857,7 +857,7 @@ int main(int argc, char * argv[])
 	    for(int i = 0 ; i < rpca.V.cols() ; i++)
 	       colnames.push_back(std::string("V") + std::to_string(i + 1));
 
-	    std::vector<std::string> rownames(data.snp_ids.size() + 2);
+	    std::vector<std::string> rownames(data.snp_ids.size());
 	    for(int i = 0 ; i < rownames.size() ; i++)
 	       rownames[i] = data.snp_ids[i] + TXT_SEP + data.ref_alleles[i];
 	    save_text(rpca.V, colnames, rownames, loadingsfile.c_str(), precision); 
