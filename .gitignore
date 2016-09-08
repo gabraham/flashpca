@@ -3,3 +3,7 @@
 .RDataTmp
 .Rhistory
 .Rproj.user
+*.bed
+*.bim
+*.fam
+*.log
