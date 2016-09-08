@@ -701,7 +701,7 @@ int main(int argc, char * argv[])
 	    + (do_loadings ? data.nsnps * n_dim * 8 : 0) // eigenvectors V
 	    + 2 * data.N				 // PLINK buffers
 	    + 2 * (data.N + data.nsnps) * n_dim * 8      // Spectra overheads?
-	    + 2 * 1024 * 1024;			         // extra space
+	    + 2 * 1024 * 1024 + data.N * 8;		 // extra space
 	 long long mem_remain_bytes = mem - mem_req_bytes;
 
 	 verbose && STDOUT << timestamp() << "mem: "
