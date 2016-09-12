@@ -334,10 +334,10 @@ int main(int argc, char * argv[])
 
    if(vm.count("pheno"))
       pheno_file = vm["pheno"].as<std::string>();
-   else if(mode == MODE_CCA || mode == MODE_UCCA) 
+   else if(mode == MODE_CCA || mode == MODE_UCCA || mode == MODE_SCCA) 
    {
       std::cerr << "Error: you must specify a phenotype file "
-	 "in CCA mode using --pheno" << std::endl;
+	 "in CCA/UCCA/SCCA mode using --pheno" << std::endl;
       return EXIT_FAILURE;
    }
 
@@ -913,7 +913,6 @@ int main(int argc, char * argv[])
          for(int i = 0 ; i < rpca.Px.cols() ; i++)
 	    colnames[i + 1] = "PC" + std::to_string(i + 1);
 
-	 // TODO: add sample names
 	 save_text(rpca.Px, colnames, rownames, projfile.c_str(), precision);
       }
    

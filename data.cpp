@@ -429,7 +429,7 @@ NamedMatrixWrapper read_text(const char *filename,
 
    if(!in)
    {
-      std::cerr << "[Data::read_text] Error reading file '" 
+      std::cerr << "Error reading file '" 
 	 << filename << "': '"
 	 << strerror(errno) << std::endl;
       throw std::string("io error");
@@ -514,7 +514,7 @@ void Data::read_plink_bim(const char *filename)
 
    if(!in)
    {
-      std::cerr << "[Data::read_plink_bim] Error reading file " 
+      std::cerr << "Error reading file " 
 	 << filename << std::endl;
       throw std::string("io error");
    }
