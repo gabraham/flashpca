@@ -144,7 +144,7 @@ To see all options
 
 ## Output
 
-flashpca produces the following files:
+By default, flashpca produces the following files:
 
 * `eigenvectors.txt`: the top k eigenvectors of the covariance
    X X<sup>T</sup> / p, same as matrix U from the SVD of the genotype matrix
@@ -165,6 +165,37 @@ you will want to plot the PCA plot from.
 You must perform quality control using PLINK (at least filter using --geno, --mind,
 --maf, --hwe) before running flashpca on your data. You will likely get
 spurious results otherwise.
+
+## Projection
+
+flashpca can project new samples onto existing principal components:
+   ```
+   ./flashpca --bfile newdata --project --inmeansd meansd.txt \
+      --outproj projections.txt --inload loadings.txt -v
+   ```
+
+To project data, you must ensure:
+
+* The old and new PLINK files contain _exactly_ the same SNPs and alleles (you
+can use `plink --reference-allele ...` to ensure consistent allele ordering).
+* You have previously run flashpca and saved the SNP loadings
+(`--outload loadings.txt`) and their means and standard deviations
+(`--outmeansd meansd.txt`).
+* You are using the same standardisation (`--standx`) for the old and new
+data. 
+
+
+## Checking accuracy of results
+
+flashpca can check how accurate a decomposition is, where accuracy is defined
+as || X X<sup>T</sup> / p - U D<sup>2</sup> ||<sub>F</sub><sup>2</sup> / (n
+&times; k).
+
+This is done using
+
+   ```
+   ./flashpca --bfile data --check
+   ```
 
 ### <a name="scca"></a>Sparse Canonical Correlation Analysis (SCCA) (_experimental_)
 
