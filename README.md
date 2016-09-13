@@ -1,4 +1,4 @@
-# FlashPCA
+# FlashPCA (_alpha version_)
 
 FlashPCA performs fast principal component analysis (PCA) of single nucleotide
 polymorphism (SNP) data, similar to smartpca from EIGENSOFT
@@ -40,7 +40,7 @@ Portions of this code are based on SparSNP
 (https://github.com/gabraham/SparSNP), Copyright (C) 2011-2012 Gad Abraham
 and National ICT Australia (http://www.nicta.com.au).
 
-## Download statically linked version (stable versions only)
+## Download statically linked version (stable versions only, not for alpha versions)
 
 * We recommend compiling from source for best performance.
 * To get the devel version, you'll need to compile yourself
