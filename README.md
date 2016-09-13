@@ -194,8 +194,11 @@ as || X X<sup>T</sup> / p - U D<sup>2</sup> ||<sub>F</sub><sup>2</sup> / (n
 This is done using
 
    ```
-   ./flashpca --bfile data --check
+   ./flashpca --bfile data --check --outvec eigenvectors.txt --outval
+   eigenvalues.txt
    ```
+
+The final mean squared error should be low (e.g., <1e-8).
 
 ### <a name="scca"></a>Sparse Canonical Correlation Analysis (SCCA) (_experimental_)
 
