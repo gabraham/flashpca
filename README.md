@@ -24,7 +24,7 @@ Gad Abraham, gad.abraham@unimelb.edu.au
 
 ## Citation
 G. Abraham and M. Inouye, Fast Principal Component Analysis of Large-Scale
-Genome-Wide Data, PLos ONE 9(4): e93766. [doi:10.1371/journal.pone.0093766](http://www.plosone.org/article/info:doi/10.1371/journal.pone.0093766)
+Genome-Wide Data, PLOS ONE 9(4): e93766. [doi:10.1371/journal.pone.0093766](http://www.plosone.org/article/info:doi/10.1371/journal.pone.0093766)
 
 (preprint: http://biorxiv.org/content/early/2014/03/11/002238)
 
