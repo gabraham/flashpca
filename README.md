@@ -8,7 +8,9 @@ polymorphism (SNP) data, similar to smartpca from EIGENSOFT
 
 Main features:
 
-* Fast: PCA of 500,000 individuals with 100,000 SNPs in &lt;1h using 4GB RAM
+* Fast: partial PCA of 500,000 individuals with 100,000 SNPs in &lt;6h using 2GB RAM
+* Memory requirements are bounded
+* Highly accurate results 
 * Natively reads PLINK bed/bim/fam files
 * Easy to use
 
