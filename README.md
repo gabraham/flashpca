@@ -8,7 +8,7 @@ polymorphism (SNP) data, similar to smartpca from EIGENSOFT
 
 Main features:
 
-* Fast: partial PCA of 500,000 individuals with 100,000 SNPs in &lt;6h using 2GB RAM
+* Fast: partial PCA (_k_=20 dimensions) of 500,000 individuals with 100,000 SNPs in &lt;6h using 2GB RAM
 * Memory requirements are bounded
 * Highly accurate results 
 * Natively reads PLINK bed/bim/fam files
@@ -166,7 +166,7 @@ You must perform quality control using PLINK (at least filter using --geno, --mi
 --maf, --hwe) before running flashpca on your data. You will likely get
 spurious results otherwise.
 
-### <a name="scca"></a>Sparse Canonical Correlation Analysis (SCCA)
+### <a name="scca"></a>Sparse Canonical Correlation Analysis (SCCA) (_experimental_)
 
 * flashpca now experimentally supports sparse CCA
    ([Parkhomenko 2009](http://dx.doi.org/10.2202/1544-6115.1406),
