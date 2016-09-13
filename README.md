@@ -201,6 +201,8 @@ of the canonical components cor(X U, Y V) in independent test data.
 
 flashpca is now available as an independent R package.
 
+## _Sep 13 2016: flashpcaR is not yet available for this alpha version of flashpca_
+
 
 ## Prebuilt R packages
 
