@@ -252,6 +252,8 @@ int main(int argc, char * argv[])
    
    if(mode == MODE_CHECK_PCA || mode == MODE_PREDICT_PCA)
       mem_mode = MEM_MODE_ONLINE;
+   else if(mode == MODE_SCCA) // TODO: SCCA only runs in batch mode currently
+      mem_mode = MEM_MODE_OFFLINE;
 
    int memory = 2048; // Megabytes
    
@@ -774,6 +776,7 @@ int main(int argc, char * argv[])
 	       std::vector<std::string>(),
 	       std::vector<std::string>(),
 	       std::string("scca_v0.txt").c_str(), precision);
+
       }
       else if(mode == MODE_UCCA)
       {
