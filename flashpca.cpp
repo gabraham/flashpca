@@ -252,6 +252,8 @@ int main(int argc, char * argv[])
    
    if(mode == MODE_CHECK_PCA || mode == MODE_PREDICT_PCA)
       mem_mode = MEM_MODE_ONLINE;
+   else if(mode == MODE_SCCA) // TODO: SCCA only runs in batch mode currently
+      mem_mode = MEM_MODE_OFFLINE;
 
    int memory = 2048; // Megabytes
    
@@ -334,10 +336,10 @@ int main(int argc, char * argv[])
 
    if(vm.count("pheno"))
       pheno_file = vm["pheno"].as<std::string>();
-   else if(mode == MODE_CCA || mode == MODE_UCCA) 
+   else if(mode == MODE_CCA || mode == MODE_UCCA || mode == MODE_SCCA) 
    {
       std::cerr << "Error: you must specify a phenotype file "
-	 "in CCA mode using --pheno" << std::endl;
+	 "in CCA/UCCA/SCCA mode using --pheno" << std::endl;
       return EXIT_FAILURE;
    }
 
@@ -774,6 +776,7 @@ int main(int argc, char * argv[])
 	       std::vector<std::string>(),
 	       std::vector<std::string>(),
 	       std::string("scca_v0.txt").c_str(), precision);
+
       }
       else if(mode == MODE_UCCA)
       {
@@ -913,7 +916,6 @@ int main(int argc, char * argv[])
          for(int i = 0 ; i < rpca.Px.cols() ; i++)
 	    colnames[i + 1] = "PC" + std::to_string(i + 1);
 
-	 // TODO: add sample names
 	 save_text(rpca.Px, colnames, rownames, projfile.c_str(), precision);
       }
    

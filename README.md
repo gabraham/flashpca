@@ -1,4 +1,4 @@
-# FlashPCA
+# FlashPCA (_alpha version_)
 
 FlashPCA performs fast principal component analysis (PCA) of single nucleotide
 polymorphism (SNP) data, similar to smartpca from EIGENSOFT
@@ -8,7 +8,9 @@ polymorphism (SNP) data, similar to smartpca from EIGENSOFT
 
 Main features:
 
-* Fast: PCA of 500,000 individuals with 100,000 SNPs in &lt;1h using 4GB RAM
+* Fast: partial PCA (_k_=20 dimensions) of 500,000 individuals with 100,000 SNPs in &lt;6h using 2GB RAM
+* Scalable: memory requirements are bounded, scales to at least 1M individuals
+* Highly accurate results 
 * Natively reads PLINK bed/bim/fam files
 * Easy to use
 
@@ -22,7 +24,7 @@ Gad Abraham, gad.abraham@unimelb.edu.au
 
 ## Citation
 G. Abraham and M. Inouye, Fast Principal Component Analysis of Large-Scale
-Genome-Wide Data, PLos ONE 9(4): e93766. [doi:10.1371/journal.pone.0093766](http://www.plosone.org/article/info:doi/10.1371/journal.pone.0093766)
+Genome-Wide Data, PLOS ONE 9(4): e93766. [doi:10.1371/journal.pone.0093766](http://www.plosone.org/article/info:doi/10.1371/journal.pone.0093766)
 
 (preprint: http://biorxiv.org/content/early/2014/03/11/002238)
 
@@ -38,7 +40,7 @@ Portions of this code are based on SparSNP
 (https://github.com/gabraham/SparSNP), Copyright (C) 2011-2012 Gad Abraham
 and National ICT Australia (http://www.nicta.com.au).
 
-## Download statically linked version (stable versions only)
+## Download statically linked version (stable versions only, not for alpha versions)
 
 * We recommend compiling from source for best performance.
 * To get the devel version, you'll need to compile yourself
@@ -142,7 +144,7 @@ To see all options
 
 ## Output
 
-flashpca produces the following files:
+By default, flashpca produces the following files:
 
 * `eigenvectors.txt`: the top k eigenvectors of the covariance
    X X<sup>T</sup> / p, same as matrix U from the SVD of the genotype matrix
@@ -164,7 +166,41 @@ You must perform quality control using PLINK (at least filter using --geno, --mi
 --maf, --hwe) before running flashpca on your data. You will likely get
 spurious results otherwise.
 
-### <a name="scca"></a>Sparse Canonical Correlation Analysis (SCCA)
+## Projection
+
+flashpca can project new samples onto existing principal components:
+   ```
+   ./flashpca --bfile newdata --project --inmeansd meansd.txt \
+      --outproj projections.txt --inload loadings.txt -v
+   ```
+
+To project data, you must ensure:
+
+* The old and new PLINK files contain _exactly_ the same SNPs and alleles (you
+can use `plink --reference-allele ...` to ensure consistent allele ordering).
+* You have previously run flashpca and saved the SNP loadings
+(`--outload loadings.txt`) and their means and standard deviations
+(`--outmeansd meansd.txt`).
+* You are using the same standardisation (`--standx`) for the old and new
+data. 
+
+
+## Checking accuracy of results
+
+flashpca can check how accurate a decomposition is, where accuracy is defined
+as || X X<sup>T</sup> / p - U D<sup>2</sup> ||<sub>F</sub><sup>2</sup> / (n
+&times; k).
+
+This is done using
+
+   ```
+   ./flashpca --bfile data --check \
+   --outvec eigenvectors.txt --outval eigenvalues.txt
+   ```
+
+The final mean squared error should be low (e.g., <1e-8).
+
+### <a name="scca"></a>Sparse Canonical Correlation Analysis (SCCA) (_experimental_)
 
 * flashpca now experimentally supports sparse CCA
    ([Parkhomenko 2009](http://dx.doi.org/10.2202/1544-6115.1406),
@@ -200,6 +236,8 @@ of the canonical components cor(X U, Y V) in independent test data.
 # <a name="R"></a>flashpcaR: flashpca in R
 
 flashpca is now available as an independent R package.
+
+## _Sep 13 2016: flashpcaR is not yet available for this alpha version of flashpca_
 
 
 ## Prebuilt R packages

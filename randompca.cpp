@@ -589,6 +589,8 @@ void RandomPCA::pca_fast(MatrixXd& X, unsigned int block_size, int method,
       trace = X.array().square().sum() / div;
       pve = d / trace;
       Px = U * d.array().sqrt().matrix().asDiagonal();
+
+      verbose && STDOUT << timestamp() << "GRM trace: " << trace << std::endl;
    }
    else
    {
@@ -639,6 +641,8 @@ void RandomPCA::pca_fast(Data& dat, unsigned int block_size, int method,
       pve = d / trace;
       Px = U * d.array().sqrt().matrix().asDiagonal();
       X_meansd = dat.X_meansd; // TODO: duplication
+
+      verbose && STDOUT << timestamp() << "GRM trace: " << trace << std::endl;
    }
    else
    {
@@ -836,9 +840,9 @@ void RandomPCA::scca(MatrixXd &X, MatrixXd &Y, double lambda1, double lambda2,
    d = VectorXd::Zero(ndim); 
 
    //if(mem == HIGHMEM)
-   //   scca_highmem(X, Y, U, V, d, lambda1, lambda2, maxiter, tol, verbose);
+      scca_highmem(X, Y, U, V, d, lambda1, lambda2, maxiter, tol, verbose);
    //else
-      scca_lowmem(X, Y, U, V, d, lambda1, lambda2, maxiter, tol, verbose);
+   //   scca_lowmem(X, Y, U, V, d, lambda1, lambda2, maxiter, tol, verbose);
 
    Px = X * U;
    Py = Y * V;
