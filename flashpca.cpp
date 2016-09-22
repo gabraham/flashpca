@@ -851,8 +851,6 @@ int main(int argc, char * argv[])
          {
 	    std::cout << timestamp() << "Writing" <<
 	       " SNP loadings to file " << loadingsfile << std::endl;
-	    std::cout << rpca.V.rows() << " x " << rpca.V.cols() << std::endl;
-	    std::cout << data.snp_ids.size() << std::endl;
 
 	    std::vector<std::string> colnames =
 	       {std::string("SNP") + TXT_SEP + "RefAllele"};

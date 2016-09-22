@@ -1126,7 +1126,7 @@ void RandomPCA::project(Data& dat, unsigned int block_size,
 
    // Read the loadings
    // TODO: check that SNP ids match
-   NamedMatrixWrapper M = read_text(loadings_file.c_str(), 2, -1, 1);
+   NamedMatrixWrapper M = read_text(loadings_file.c_str(), 3, -1, 1);
    V = M.X;
 
    // Read the means+sds or the MAF (and convert MAF to means+sds)
@@ -1135,7 +1135,7 @@ void RandomPCA::project(Data& dat, unsigned int block_size,
       // TODO: missing/non-numeric values?
       verbose && STDOUT << timestamp() << "Reading MAF file "
 	 << maf_file << std::endl;
-      NamedMatrixWrapper M2 = read_text(maf_file.c_str(), 2, -1, 1);   
+      NamedMatrixWrapper M2 = read_text(maf_file.c_str(), 3, -1, 1);   
       dat.X_meansd = maf2meansd(M2.X);
       dat.use_preloaded_maf = true;
    }
@@ -1143,7 +1143,7 @@ void RandomPCA::project(Data& dat, unsigned int block_size,
    {
       verbose && STDOUT << timestamp()
 	 << " Reading mean/stdev file " << meansd_file << std::endl;
-      NamedMatrixWrapper M2 = read_text(meansd_file.c_str(), 2, -1, 1);   
+      NamedMatrixWrapper M2 = read_text(meansd_file.c_str(), 3, -1, 1);   
       dat.X_meansd = M2.X;
       dat.use_preloaded_maf = true;
    }
