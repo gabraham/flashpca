@@ -1060,7 +1060,9 @@ void RandomPCA::check(Data& dat, unsigned int block_size,
 
    if(evec.rows() != dat.N)
       throw std::runtime_error(
-	 "Eigenvector dimension doesn't match data dimension");
+	 std::string("Eigenvector dimension doesn't match data dimension")
+	    + " (evec.rows = " + std::to_string(evec.rows()) 
+	    + "; dat.N = " + std::to_string(dat.N) + ")");
 
    if(eval.size() != evec.cols())
       throw std::runtime_error(
