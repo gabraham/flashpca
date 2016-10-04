@@ -140,7 +140,7 @@ class SVDWideOnline
       }
 
       // y = X X' * x
-      MatrixXd perform_op_mat(MatrixXd x)
+      MatrixXd perform_op_mat(const MatrixXd x)
       {
 	 unsigned int actual_block_size;
 
@@ -185,8 +185,9 @@ class SVDWideOnline
 	 nops++;
 	 return Y;
       }
+
       // Like R crossprod(): y = X' * x
-      // Note: size of x must be number of samples, size y must number of SNPs
+      // Note: size of x must be number of samples, size y must be number of SNPs
       void crossprod(double *x_in, double *y_out)
       {
 	 Map<VectorXd> x(x_in, n);
@@ -219,7 +220,7 @@ class SVDWideOnline
 
       // Like R crossprod(): y = X' * x
       // Note: size of x must be number of samples, size y must number of SNPs
-      MatrixXd crossprod2(MatrixXd& x)
+      MatrixXd crossprod2(const MatrixXd& x)
       {
 	 unsigned int actual_block_size = stop[0] - start[0] + 1;
 
@@ -251,7 +252,7 @@ class SVDWideOnline
 
       // Like y = X %*% x
       // Note: size of x must be number of SNPs,
-      // size y must number of samples
+      // size of y must be the number of samples
       void prod(double *x_in, double *y_out)
       {
 	 Map<VectorXd> x(x_in, p);
@@ -285,7 +286,7 @@ class SVDWideOnline
       }
 
       // return Y = X * X' * x where x is a matrix (despite x being lower case)
-      MatrixXd perform_op_multi(MatrixXd& x)
+      MatrixXd perform_op_multi(const MatrixXd& x)
       {
 	 unsigned int actual_block_size;
 
@@ -331,7 +332,7 @@ class SVDWideOnline
       }
 
       // Like Y = x' * X, where X is genotypes, x is a matrix
-      MatrixXd prod2(MatrixXd& x)
+      MatrixXd prod2(const MatrixXd& x)
       {
 	 unsigned int actual_block_size = stop[0] - start[0] + 1;
 
@@ -362,7 +363,7 @@ class SVDWideOnline
       }
 
       // Like Y = X * x, where X is genotypes, x is a matrix
-      MatrixXd prod3(MatrixXd& x)
+      MatrixXd prod3(const MatrixXd& x)
       {
 	 unsigned int actual_block_size = stop[0] - start[0] + 1;
 
