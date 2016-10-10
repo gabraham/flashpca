@@ -14,6 +14,8 @@ static: flashpca_x86-64
 OBJ = \
    randompca.o \
    flashpca.o \
+   svdwide.o \
+   svdtall.o \
    data.o \
    util.o
 
@@ -40,7 +42,7 @@ debug: $(OBJ)
 flashpca: LDFLAGS = $(BOOST)
 flashpca: CXXFLAGS += -g -O3 -DNDEBUG -DVERSION=\"$(VERSION)\" \
    -funroll-loops -ftree-vectorize -ffast-math
-flashpca: flashpca.o randompca.o data.o util.o
+flashpca: flashpca.o randompca.o data.o util.o svdwide.o svdtall.o
 	$(CXX) $(CXXFLAGS) -o flashpca $^ $(LDFLAGS)
 
 flashpca_x86-64: LDFLAGS = $(BOOST) -Wl,--whole-archive -lpthread -Wl,--no-whole-archive
