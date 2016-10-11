@@ -164,7 +164,7 @@ You must perform quality control using PLINK (at least filter using --geno, --mi
 --maf, --hwe) before running flashpca on your data. You will likely get
 spurious results otherwise.
 
-## Projection
+## Projection of new samples onto PCs
 
 flashpca can project new samples onto existing principal components:
    ```bash
