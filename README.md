@@ -26,8 +26,6 @@ Gad Abraham, gad.abraham@unimelb.edu.au
 G. Abraham and M. Inouye, Fast Principal Component Analysis of Large-Scale
 Genome-Wide Data, PLOS ONE 9(4): e93766. [doi:10.1371/journal.pone.0093766](http://www.plosone.org/article/info:doi/10.1371/journal.pone.0093766)
 
-(preprint: http://biorxiv.org/content/early/2014/03/11/002238)
-
 ## License
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -53,7 +51,7 @@ See [Releases](https://github.com/gabraham/flashpca/releases) for statically-lin
 ## Building from source
 
 To get the latest version:
-   ```
+   ```bash
    git clone git://github.com/gabraham/flashpca
    ```
 
@@ -85,7 +83,7 @@ export CXX=/usr/local/bin/g++-4.7
 
 The [Makefile](Makefile) contains three variables that need to be set according to where you have installed the Eigen
 headers and Boost headers and libraries on your system. The default values for these are: 
-   ```
+   ```bash
    EIGEN_INC=/usr/local/include/eigen
    BOOST_INC=/usr/local/include/boost
    BOOST_LIB=/usr/local/lib
@@ -93,13 +91,13 @@ headers and Boost headers and libraries on your system. The default values for t
    ```
    
  If your system has these libraries and header files in those locations, you can simply run make:
-   ```
+   ```bash
    cd flashpca
    make all
    ```
    
  If not, you can override their values on the make command line. For example, if you have the Eigen source in `/opt/eigen-3.2.5` and Boost 1.59.0 installed into `/opt/boost-1.59.0`, you could run: 
-   ```
+   ```bash
    cd flashpca
    make all EIGEN_INC=/opt/eigen-3.2.5 BOOST_INC=/opt/boost-1.59.0/include BOOST_LIB=/opt/boost-1.59.0/lib
    ```
@@ -113,7 +111,7 @@ for Eigen), although those available through apt-get tend to be older versions.
 
 First thin the data by LD (highly recommend
 [plink2](https://www.cog-genomics.org/plink2) for this):
-   ```
+   ```bash
    plink --bfile data --indep-pairwise 1000 50 0.05 --exclude range exclusion_regions_hg19.txt
    plink --bfile data --extract plink.prune.in --make-bed --out data_pruned
    ```
@@ -128,17 +126,17 @@ where [exclusion_regions_hg19.txt](exclusion_regions_hg19.txt) contains:
 number of SNPs for you dataset, 10,000-50,000 is usually enough.)
 
 To run on the pruned dataset:
-   ```
+   ```bash
    ./flashpca --bfile data_pruned
    ```
 
 To append a custom suffix '_mysuffix.txt' to all output files:
-   ```
+   ```bash
    ./flashpca --suffix _mysuffix.txt ...
    ```
 
 To see all options
-   ```
+   ```bash
    ./flashpca --help 
    ```
 
@@ -169,7 +167,7 @@ spurious results otherwise.
 ## Projection
 
 flashpca can project new samples onto existing principal components:
-   ```
+   ```bash
    ./flashpca --bfile newdata --project --inmeansd meansd.txt \
       --outproj projections.txt --inload loadings.txt -v
    ```
@@ -193,7 +191,7 @@ as || X X<sup>T</sup> / p - U D<sup>2</sup> ||<sub>F</sub><sup>2</sup> / (n
 
 This is done using
 
-   ```
+   ```bash
    ./flashpca --bfile data --check \
    --outvec eigenvectors.txt --outval eigenvalues.txt
    ```
@@ -214,7 +212,7 @@ The final mean squared error should be low (e.g., <1e-8).
  `--lambda2`.
 
 #### Quick example
-   ```
+   ```bash
    ./flashpca --scca --bfile data --pheno pheno.txt \
    --lambda1 1e-3 --lambda2 1e-2 --ndim 10 --numthreads 8
    ```
@@ -235,78 +233,8 @@ of the canonical components cor(X U, Y V) in independent test data.
 
 # <a name="R"></a>flashpcaR: flashpca in R
 
-flashpca is now available as an independent R package.
-
-## _Sep 13 2016: flashpcaR is not yet available for this alpha version of flashpca_
-
-
-## Prebuilt R packages
-
-Ssee [Releases](https://github.com/gabraham/flashpca/releases) for prebuilt
-Mac/Windows binary packages and a source package for Linux.
-
-## Building from source
-
-### Requirements
-
-* R packages: Rcpp, RcppEigen, BH
-* C++ compiler
-
-As of version v1.2.5, flashpcaR will compile on Mac with either clang++ or g++.
-However, OpenMP multi-threading won't work with clang (see
-https://github.com/gabraham/flashpca/issues/5).
-
-### Several ways to install from source:
-
-* If you downloaded the Release source code:
-   ```
-   R CMD INSTALL flashpcaR_1.2.5.tar.gz
-   ```
-
-* To install the latest (potentially unstable) version on Mac or Linux,
-   you can also use devtools::install_github:
-   ```
-   library(devtools)
-   install_github("gabraham/flashpca/flashpcaR")
-   ```
-
-* Alternatively, after cloning the git archive, install using:
-   ```
-   R CMD INSTALL flashpcaR
-   ```
-
-
-## PCA
-
-Example usage, assuming `X` is a 100-sample by 1000-SNP matrix in dosage
-coding (0, 1, 2) (an actual matrix, not a path to PLINK data)
-   ```
-   dim(X)
-   [1]  100 1000
-   library(flashpcaR)
-   r <- flashpca(X, do_loadings=TRUE, verbose=TRUE, stand="binom", ndim=10,
-   nextra=100)
-   ```
-
-PLINK data can be loaded into R either by recoding the data into raw format (`recode A`) or using package [plink2R](https://github.com/gabraham/plink2R).
-
-Output:
-   * `values`: eigenvalues
-   * `vectors`: eigenvectors
-   * `projection`: projection of sample onto eigenvectors (X V)
-   * `loadings`: SNP loadings, if using a linear kernel
-
-## Sparse CCA
-
-Sparse CCA of matrices X and Y, with 5 components, penalties lambda1=0.1 and lambda2=0.1:
-
-   ```
-   dim(X)
-   [1]  100 1000
-   dim(Y)
-   [1]  100 50
-   r <- scca(X, Y, ndim=5, lambda1=0.1, lambda2=0.1)
-   ```
+flashpcaR is deprecated; you can use
+[RSpectra](https://cran.r-project.org/package=RSpectra) for fast SVD.
 
 # LD-pruned HapMap3 example data
 
