@@ -104,11 +104,6 @@ headers and Boost headers and libraries on your system. The default values for t
       SPECTRA_INC=/opt/spectra
    ```
  
-Note: the compilation process will first look for a local directory named
-Eigen. It should contain the file signature_of_eigen3_matrix_library. Next,
-it will look for the directory /usr/include/eigen3 (Debian/Ubuntu location
-for Eigen), although those available through apt-get tend to be older versions.
-
 ## Quick start
 
 First thin the data by LD (highly recommend
