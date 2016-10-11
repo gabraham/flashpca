@@ -71,13 +71,10 @@ On Linux:
 
 On Mac:
 
-* Homebrew (http://brew.sh) to install gcc/g++ and boost
+* Homebrew (http://brew.sh) to install boost
 * Eigen, as above
 * Spectra, as above
-* Set CXX to whatever g++ version you're using before calling make, e.g.:
-```
-export CXX=/usr/local/bin/g++-4.7
-```
+* clang C++ compiler
 
 ### To install
 
@@ -96,10 +93,15 @@ headers and Boost headers and libraries on your system. The default values for t
    make all
    ```
    
- If not, you can override their values on the make command line. For example, if you have the Eigen source in `/opt/eigen-3.2.5` and Boost 1.59.0 installed into `/opt/boost-1.59.0`, you could run: 
+ If not, you can override their values on the make command line. For example,
+ if you have the Eigen source in `/opt/eigen-3.2.5`, spectra headers in
+ `/opt/spectra`, and Boost 1.59.0 installed into `/opt/boost-1.59.0`, you could run: 
    ```bash
    cd flashpca
-   make all EIGEN_INC=/opt/eigen-3.2.5 BOOST_INC=/opt/boost-1.59.0/include BOOST_LIB=/opt/boost-1.59.0/lib
+   make all EIGEN_INC=/opt/eigen-3.2.5 \
+      BOOST_INC=/opt/boost-1.59.0/include \
+      BOOST_LIB=/opt/boost-1.59.0/lib \
+      SPECTRA_INC=/opt/spectra
    ```
  
 Note: the compilation process will first look for a local directory named
