@@ -43,7 +43,7 @@ int main(int argc, char * argv[])
       ("scca", "perform sparse canonical correlation analysis (SCCA) [EXPERIMENTAL]")
       ("ucca", "perform per-SNP canonical correlation analysis [EXPERIMENTAL]")
       ("project,p", "project new samples onto existing principal components")
-      ("batch,b", "load all genotypes into RAM at once")
+      ("batch", "load all genotypes into RAM at once")
       ("memory,m", po::value<int>(), "size of block for online algorithm, in MB")
       ("blocksize,b", po::value<int>(),
 	 "size of block for online algorithm, in number of SNPs")
