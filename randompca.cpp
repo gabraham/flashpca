@@ -19,12 +19,10 @@ MatrixXd make_gaussian(unsigned int rows, unsigned int cols, long seed)
    rng.seed(seed);
    boost::random::normal_distribution<double> nrm;
    boost::random::variate_generator<boost::random::mt19937&,
-      boost::random::normal_distribution<double> > rand(rng, nrm);
+      boost::random::normal_distribution<double> > randn(rng, nrm);
 
    MatrixXd G(rows, cols);
-   for(unsigned int i = 0 ; i < rows ; i++)
-      for(unsigned int j = 0 ; j < cols ; j++)
-	 G(i, j) = rand();
+   std::generate(G.data(), G.data() + G.size(), randn);
    return G;
 }
 
