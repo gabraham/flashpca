@@ -671,9 +671,7 @@ void RandomPCA::check(Data& dat, unsigned int block_size,
    verbose && STDOUT << timestamp() << "Loading eigenvector file '"
        << evec_file << "'" << std::endl;
    NamedMatrixWrapper M2 = read_text(evec_file.c_str(), 3, -1, 1);
-   MatrixXd evec = M2.X;
-   MatrixXd out = MatrixXd::Zero(evec.rows(), 1);
-   VectorXd uexp;
+   const MatrixXd& evec = M2.X;
 
    if(evec.rows() != dat.N)
       throw std::runtime_error(
@@ -685,7 +683,7 @@ void RandomPCA::check(Data& dat, unsigned int block_size,
       throw std::runtime_error(
 	 "Eigenvector dimension doesn't match the number of eigenvalues");
 
-   unsigned int K = fminl(evec.cols(), eval.size());
+   unsigned int K = std::min(evec.cols(), eval.size());
 
    // X X' U / div = U D^2
    STDOUT << timestamp()
@@ -703,22 +701,17 @@ void RandomPCA::check(Data& dat, unsigned int block_size,
    XXU /= div;
    MatrixXd UD2 = evec * eval.asDiagonal();
 
-   VectorXd err(eval.size());
-
-   for(unsigned int j = 0 ; j < K ; j++)
-   {
-      err(j) = (XXU.col(j).array() - UD2.col(j).array()).square().sum();
-   }
+   RowVectorXd err = (XXU - UD2).colwise().squaredNorm();
 
    for(unsigned int j = 0 ; j < K ; j++)
    {
       STDOUT << timestamp() << "eval(" << (j + 1)
-	 << "): " << eval(j) << ", sum squared error: "
-	 << err(j) << std::endl;
+         << "): " << eval(j) << ", sum squared error: "
+         << err(j) << std::endl;
    }
 
-   double mse = err.array().sum() / (dat.N * K);
-   double rmse = sqrt(mse);
+   double mse = err.sum() / (dat.N * K);
+   double rmse = std::sqrt(mse);
 
    STDOUT << timestamp() << "Mean squared error: " << mse
       << ", Root mean squared error: " << rmse
