@@ -127,8 +127,8 @@ template <typename Derived>
 double var(const MatrixBase<Derived>& x)
 {
    const unsigned int n = x.size();
-   const double mean = x.array().sum() / n;
-   return (x.array() - mean).array().pow(2).sum() / (n - 1);
+   const double mean = x.mean();
+   return (x.array() - mean).square().sum() / (n - 1);
 }
 
 template <typename DerivedA, typename DerivedB>
