@@ -26,17 +26,6 @@ MatrixXd make_gaussian(unsigned int rows, unsigned int cols, long seed)
    return G;
 }
 
-// normalize each column of X to unit l2 norm
-inline void normalize(MatrixXd& X)
-{
-   unsigned int p = X.cols();
-   for(unsigned int j = 0 ; j < p ; j++)
-   {
-      double s = 1 / sqrt(X.col(j).array().pow(2).sum());
-      X.col(j) = X.col(j).array() * s;
-   }
-}
-
 void pca_small(MatrixXd &B, int method, MatrixXd& U, VectorXd &d, bool verbose)
 {
    if(method == METHOD_SVD)
