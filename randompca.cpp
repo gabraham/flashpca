@@ -35,7 +35,7 @@ void pca_small(MatrixXd &B, int method, MatrixXd& U, VectorXd &d, bool verbose)
       JacobiSVD<MatrixXd> svd(B, ComputeThinU | ComputeThinV);
       U = svd.matrixU();
       MatrixXd V = svd.matrixV();
-      d = svd.singularValues().array().pow(2);
+      d = svd.singularValues().array().square();
 
       verbose && STDOUT << timestamp() << "SVD done" << std::endl;
    }
@@ -135,8 +135,8 @@ template <typename DerivedA, typename DerivedB>
 RowVectorXd cov(const MatrixBase<DerivedA>& X, const MatrixBase<DerivedB>& Y)
 {
    const unsigned int n = X.rows();
-   const RowVectorXd xmean = X.colwise().sum() / n;
-   const RowVectorXd ymean = Y.colwise().sum() / n;
+   const RowVectorXd xmean = X.colwise().mean();
+   const RowVectorXd ymean = Y.colwise().mean();
 
    return (X.rowwise() - xmean).transpose() * (Y.rowwise() - ymean) / (n - 1);
 }
@@ -578,11 +578,9 @@ void RandomPCA::ucca(MatrixXd &X, MatrixXd &Y)
    RowVectorXd covXY;
 
    JacobiSVD<MatrixXd> svd(Y, ComputeThinU | ComputeThinV);
-   VectorXd d = svd.singularValues() / sqrt(n - 1);
-   VectorXd d2 = d.array().pow(-2);
+   ArrayXd d = svd.singularValues() / std::sqrt(double(n - 1));
    MatrixXd V = svd.matrixV();
-   MatrixXd covYinv =
-      svd.matrixV() * d2.asDiagonal() * svd.matrixV().transpose();
+   Array<double, 1, Dynamic> s(V.cols());
    ArrayXd r2 = ArrayXd(p);
 
    for(unsigned int j = 0 ; j < p ; j++)
@@ -592,7 +590,14 @@ void RandomPCA::ucca(MatrixXd &X, MatrixXd &Y)
 
       // take absolute value to prevent numerical issues with negative numbers
       // close to zero
-      r2(j) = fabs(1.0 / varx * covXY * covYinv * covXY.transpose());
+      // r2(j) = fabs(1.0 / varx * covXY * covYinv * covXY.transpose());
+
+      // covXY * covYinv * covXY'
+      // = covXY * (V * D^(-2) * V') * covXY'
+      // = ss'
+      // where s = covXY * V * D^(-1)
+      s = covXY * V;
+      r2(j) = std::abs(1.0 / varx * (s / d).square().sum());
    }
 
    res = wilks(r2, X.rows(), Y.cols());
@@ -615,24 +620,29 @@ void RandomPCA::ucca(Data& data)
 
    // QR might be faster here
    JacobiSVD<MatrixXd> svd(data.Y, ComputeThinU | ComputeThinV);
-   VectorXd d = svd.singularValues() / sqrt(n - 1);
-   VectorXd d2 = d.array().pow(-2);
+   ArrayXd d = svd.singularValues() / std::sqrt(double(n - 1));
    MatrixXd V = svd.matrixV();
-   MatrixXd covYinv
-      = svd.matrixV() * d2.asDiagonal() * svd.matrixV().transpose();
+   Array<double, 1, Dynamic> s(V.cols());
    ArrayXd r2 = ArrayXd(p);
 
    for(unsigned int j = 0 ; j < p ; j++)
    {
       data.read_snp_block(j, j, false, true);
       if(stand_method_x != STANDARDIZE_NONE)
-	 X_meansd = standardize(data.X, stand_method_x);
+         X_meansd = standardize(data.X, stand_method_x);
       varx = var(data.X.col(0));
       covXY = cov(data.X.col(0), data.Y);
 
       // take absolute value to prevent numerical issues with negative numbers
       // that are very close to zero
-      r2(j) = fabs(1.0 / varx * covXY * covYinv * covXY.transpose());
+      // r2(j) = fabs(1.0 / varx * covXY * covYinv * covXY.transpose());
+
+      // covXY * covYinv * covXY'
+      // = covXY * (V * D^(-2) * V') * covXY'
+      // = ss'
+      // where s = covXY * V * D^(-1)
+      s = covXY * V;
+      r2(j) = std::abs(1.0 / varx * (s / d).square().sum());
    }
 
    res = wilks(r2, n, data.Y.cols());
