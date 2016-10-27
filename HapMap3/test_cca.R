@@ -137,11 +137,11 @@ write.table(d, file="pheno.txt", col.names=FALSE, row.names=FALSE,
 # all phenotypes.
 
 system(
-   paste0("../flashpca --bfile data --pheno pheno.txt --ucca",
+   paste0("../flashpca --bfile data --pheno pheno.txt --ucca ",
       "--batch --suffix .batch.txt"))
 
 system(
-   paste0("../flashpca --bfile data --pheno pheno.txt --ucca",
+   paste0("../flashpca --bfile data --pheno pheno.txt --ucca ",
       "--suffix .online.txt"))
 
 # sample a subset, since lm() is a bit slow
