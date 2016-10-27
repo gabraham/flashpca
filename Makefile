@@ -27,7 +27,7 @@ ifeq ($(UNAME), Darwin)
    BOOST = ${BOOST_LIB}/libboost_program_options.a
 else
    CXXFLAGS += -march=native -fopenmp -std=c++0x
-   BOOST = -L${BOOST_LIB} lboost_program_options
+   BOOST = -L${BOOST_LIB} -lboost_program_options
 endif
 
 
