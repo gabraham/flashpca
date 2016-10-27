@@ -6,7 +6,7 @@ VERSION=2.0alpha
 EIGEN_INC=/usr/local/include/eigen
 BOOST_INC=/usr/local/include/boost
 BOOST_LIB=/usr/local/lib
-SPECTRA_INC=spectra
+SPECTRA_INC=spectra/include
 
 all: flashpca
 static: flashpca_x86-64
@@ -59,5 +59,3 @@ $(OBJ2): %.o: %.cpp
 
 clean:
 	rm -f $(OBJ) $(OBJ2) flashpca flashpca_x86-64
-
-

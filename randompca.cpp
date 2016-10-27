@@ -19,24 +19,11 @@ MatrixXd make_gaussian(unsigned int rows, unsigned int cols, long seed)
    rng.seed(seed);
    boost::random::normal_distribution<double> nrm;
    boost::random::variate_generator<boost::random::mt19937&,
-      boost::random::normal_distribution<double> > rand(rng, nrm);
+      boost::random::normal_distribution<double> > randn(rng, nrm);
 
    MatrixXd G(rows, cols);
-   for(unsigned int i = 0 ; i < rows ; i++)
-      for(unsigned int j = 0 ; j < cols ; j++)
-	 G(i, j) = rand();
+   std::generate(G.data(), G.data() + G.size(), randn);
    return G;
-}
-
-// normalize each column of X to unit l2 norm
-inline void normalize(MatrixXd& X)
-{
-   unsigned int p = X.cols();
-   for(unsigned int j = 0 ; j < p ; j++)
-   {
-      double s = 1 / sqrt(X.col(j).array().pow(2).sum());
-      X.col(j) = X.col(j).array() * s;
-   }
 }
 
 void pca_small(MatrixXd &B, int method, MatrixXd& U, VectorXd &d, bool verbose)
@@ -48,7 +35,7 @@ void pca_small(MatrixXd &B, int method, MatrixXd& U, VectorXd &d, bool verbose)
       JacobiSVD<MatrixXd> svd(B, ComputeThinU | ComputeThinV);
       U = svd.matrixU();
       MatrixXd V = svd.matrixV();
-      d = svd.singularValues().array().pow(2);
+      d = svd.singularValues().array().square();
 
       verbose && STDOUT << timestamp() << "SVD done" << std::endl;
    }
@@ -92,12 +79,12 @@ double median_dist(MatrixXd& X, unsigned int n, long seed, bool verbose)
    boost::random::uniform_real_distribution<> dist(0, 1);
    double prop = (double)X.rows() / n;
 
-   verbose && STDOUT << timestamp() << 
+   verbose && STDOUT << timestamp() <<
       " Computing median Euclidean distance (" << n << " samples)" <<
       std::endl;
 
    MatrixXd X2(n, X.cols());
-   if(n < X.rows()) 
+   if(n < X.rows())
    {
       verbose && STDOUT << timestamp() << "Sampling" << std::endl;
 
@@ -122,7 +109,7 @@ double median_dist(MatrixXd& X, unsigned int n, long seed, bool verbose)
 
    unsigned int m = D.size();
    double *d = D.data();
-   std::sort(d, d + m); 
+   std::sort(d, d + m);
    double med;
 
    if(m % 2 == 0)
@@ -140,16 +127,16 @@ template <typename Derived>
 double var(const MatrixBase<Derived>& x)
 {
    const unsigned int n = x.size();
-   const double mean = x.array().sum() / n;
-   return (x.array() - mean).array().pow(2).sum() / (n - 1);
+   const double mean = x.mean();
+   return (x.array() - mean).square().sum() / (n - 1);
 }
 
 template <typename DerivedA, typename DerivedB>
 RowVectorXd cov(const MatrixBase<DerivedA>& X, const MatrixBase<DerivedB>& Y)
 {
    const unsigned int n = X.rows();
-   const RowVectorXd xmean = X.colwise().sum() / n;
-   const RowVectorXd ymean = Y.colwise().sum() / n;
+   const RowVectorXd xmean = X.colwise().mean();
+   const RowVectorXd ymean = Y.colwise().mean();
 
    return (X.rowwise() - xmean).transpose() * (Y.rowwise() - ymean) / (n - 1);
 }
@@ -159,7 +146,7 @@ ArrayXXd wilks(const ArrayXd& r2, unsigned int n, unsigned int k)
    ArrayXd lambda = 1 - r2;
    boost::math::fisher_f pf(k, n - k - 1);
    ArrayXd pval(r2.size());
-   ArrayXXd res(r2.size(), 3); 
+   ArrayXXd res(r2.size(), 3);
    res.col(0) = r2.sqrt();
    res.col(1) = (1 - lambda) / lambda * (n - k - 1) / k;
 
@@ -214,8 +201,8 @@ void RandomPCA::pca_fast(MatrixXd& X, unsigned int block_size, int method,
    }
    else
    {
-      std::cerr 
-	 << "Spectra eigen-decomposition was not successful, status: " 
+      std::cerr
+	 << "Spectra eigen-decomposition was not successful, status: "
 	 << eigs.info() << std::endl;
    }
 }
@@ -255,7 +242,7 @@ void RandomPCA::pca_fast(Data& dat, unsigned int block_size, int method,
             op.crossprod(u.data(), v.data());
             double s = d(j);
             V.col(j) = v * (1.0 / sqrt(s)) / sqrt(div);
-         } 
+         }
       }
       trace = op.trace / div;
       pve = d / trace;
@@ -267,7 +254,7 @@ void RandomPCA::pca_fast(Data& dat, unsigned int block_size, int method,
    else
    {
       std::cerr
-	 << "Spectra eigen-decomposition was not successful, status: " 
+	 << "Spectra eigen-decomposition was not successful, status: "
 	 << eigs.info() << std::endl;
    }
 }
@@ -309,7 +296,7 @@ void scca_lowmem(MatrixXd& X, MatrixXd &Y, MatrixXd& U, MatrixXd& V,
    X2.block(0, 0, X.rows(), X.cols()) = X;
    Y2.block(0, 0, Y.rows(), Y.cols()) = Y;
    VectorXd u, v, u_old, v_old;
-  
+
    for(unsigned int j = 0 ; j < U.cols() ; j++)
    {
       if(j > 0)
@@ -332,7 +319,7 @@ void scca_lowmem(MatrixXd& X, MatrixXd &Y, MatrixXd& U, MatrixXd& V,
 	 v = norm_thresh(v, lambda2);
 	 V.col(j) = v;
 
-	 if(iter > 0 
+	 if(iter > 0
 	    && (v_old.array() - v.array()).abs().maxCoeff() < tol
 	       && (u_old.array() - u.array()).abs().maxCoeff() < tol)
 	 {
@@ -353,12 +340,12 @@ void scca_lowmem(MatrixXd& X, MatrixXd &Y, MatrixXd& U, MatrixXd& V,
       long long nzu = (U.col(j).array() != 0).count();
       long long nzv = (V.col(j).array() != 0).count();
 
-      verbose && STDOUT << timestamp() << "U_" << j 
+      verbose && STDOUT << timestamp() << "U_" << j
 	 << " non-zeros: " << nzu << ", V_" << j
 	 << " non-zeros: " << nzv << std::endl;
 
       // Use X and Y, not X2 and Y2
-      d[j] = (X * U.col(j)).transpose() * (Y * V.col(j)); 
+      d[j] = (X * U.col(j)).transpose() * (Y * V.col(j));
       verbose && STDOUT << timestamp() << "d[" << j << "]: "
 	 << d[j] << std::endl;
    }
@@ -385,7 +372,7 @@ void scca_highmem(MatrixXd& X, MatrixXd &Y, MatrixXd& U, MatrixXd& V,
 	 XYj = XY;
       else
 	 XYj = XYj - d[j - 1] * U.col(j - 1) * V.col(j - 1).transpose();
-	 
+
       unsigned int iter = 0;
       for(; iter < maxiter ; iter++)
       {
@@ -420,11 +407,11 @@ void scca_highmem(MatrixXd& X, MatrixXd &Y, MatrixXd& U, MatrixXd& V,
       long long nzu = (U.col(j).array() != 0).count();
       long long nzv = (V.col(j).array() != 0).count();
 
-      verbose && STDOUT << timestamp() << "U_" << j 
+      verbose && STDOUT << timestamp() << "U_" << j
 	 << " non-zeros: " << nzu << ", V_" << j
 	 << " non-zeros: " << nzv << std::endl;
 
-      d[j] = U.col(j).transpose() * XYj * V.col(j); 
+      d[j] = U.col(j).transpose() * XYj * V.col(j);
    }
 }
 
@@ -448,7 +435,7 @@ void RandomPCA::scca(MatrixXd &X, MatrixXd &Y, double lambda1, double lambda2,
 
    verbose && STDOUT << timestamp() << "dim(X): " << dim(X) << std::endl;
    verbose && STDOUT << timestamp() << "dim(Y): " << dim(Y) << std::endl;
-   verbose && STDOUT << timestamp() << "lambda1: " << lambda1 
+   verbose && STDOUT << timestamp() << "lambda1: " << lambda1
       << " lambda2: " << lambda2 << std::endl;
 
    unsigned int p = X.cols();
@@ -457,7 +444,7 @@ void RandomPCA::scca(MatrixXd &X, MatrixXd &Y, double lambda1, double lambda2,
    this->V0 = V0;
    V = V0;
    U = MatrixXd::Zero(p, ndim);
-   d = VectorXd::Zero(ndim); 
+   d = VectorXd::Zero(ndim);
 
    //if(mem == HIGHMEM)
       scca_highmem(X, Y, U, V, d, lambda1, lambda2, maxiter, tol, verbose);
@@ -489,7 +476,7 @@ void RandomPCA::scca(Data &dat, MatrixXd &Y, double lambda1, double lambda2,
 //
 //   //verbose && STDOUT << timestamp() << "dim(X): " << dim(X) << std::endl;
 //   verbose && STDOUT << timestamp() << "dim(Y): " << dim(Y) << std::endl;
-//   verbose && STDOUT << timestamp() << "lambda1: " << lambda1 
+//   verbose && STDOUT << timestamp() << "lambda1: " << lambda1
 //      << " lambda2: " << lambda2 << std::endl;
 //
 //   unsigned int p = dat.nsnps;
@@ -497,10 +484,10 @@ void RandomPCA::scca(Data &dat, MatrixXd &Y, double lambda1, double lambda2,
 //   this->V0 = V0;
 //   V = V0;
 //   U = MatrixXd::Zero(p, ndim);
-//   d = VectorXd::Zero(ndim); 
+//   d = VectorXd::Zero(ndim);
 //
 //   VectorXd u, v, u_old, v_old;
-//  
+//
 //   for(unsigned int j = 0 ; j < U.cols() ; j++)
 //   {
 //      unsigned int iter = 0;
@@ -518,7 +505,7 @@ void RandomPCA::scca(Data &dat, MatrixXd &Y, double lambda1, double lambda2,
 //	 else // deflation
 //	 {
 //	  TODO: broken
-//	    u = (X.array() + sqrt(d[j - 1]) * u.transpose()).transpose() 
+//	    u = (X.array() + sqrt(d[j - 1]) * u.transpose()).transpose()
 //	       * (Y.array() - sqrt(d[j - 1] * v.transpose())  * v);
 //	 }
 //	 u = norm_thresh(u, lambda1);
@@ -534,14 +521,14 @@ void RandomPCA::scca(Data &dat, MatrixXd &Y, double lambda1, double lambda2,
 //	 {
 //	    TODO: broken
 //	    // (Y - sqrt(d[j-1)) * v')' * ((X - sqrt(d[j-1]) * u') * u)
-//	    v = (Y.array() - sqrt(d[j - 1]) * v.transpose()).transpose() 
+//	    v = (Y.array() - sqrt(d[j - 1]) * v.transpose()).transpose()
 //	       * (X.array() + sqrt(d[j - 1] * u.transpose())  * u);
 //	 }
 //
 //	 v = norm_thresh(v, lambda2);
 //	 V.col(j) = v;
 //
-//	 if(iter > 0 
+//	 if(iter > 0
 //	    && (v_old.array() - v.array()).abs().maxCoeff() < tol
 //	       && (u_old.array() - u.array()).abs().maxCoeff() < tol)
 //	 {
@@ -562,11 +549,11 @@ void RandomPCA::scca(Data &dat, MatrixXd &Y, double lambda1, double lambda2,
 //      long long nzu = (U.col(j).array() != 0).count();
 //      long long nzv = (V.col(j).array() != 0).count();
 //
-//      verbose && STDOUT << timestamp() << "U_" << j 
+//      verbose && STDOUT << timestamp() << "U_" << j
 //	 << " non-zeros: " << nzu << ", V_" << j
 //	 << " non-zeros: " << nzv << std::endl;
 //
-//      d[j] = (X * U.col(j)).transpose() * (Y * V.col(j)); 
+//      d[j] = (X * U.col(j)).transpose() * (Y * V.col(j));
 //      verbose && STDOUT << timestamp() << "d[" << j << "]: "
 //	 << d[j] << std::endl;
 //   }
@@ -591,21 +578,26 @@ void RandomPCA::ucca(MatrixXd &X, MatrixXd &Y)
    RowVectorXd covXY;
 
    JacobiSVD<MatrixXd> svd(Y, ComputeThinU | ComputeThinV);
-   VectorXd d = svd.singularValues() / sqrt(n - 1);
-   VectorXd d2 = d.array().pow(-2);
+   ArrayXd d = svd.singularValues() / std::sqrt(double(n - 1));
    MatrixXd V = svd.matrixV();
-   MatrixXd covYinv =
-      svd.matrixV() * d2.asDiagonal() * svd.matrixV().transpose();
+   Array<double, 1, Dynamic> s(V.cols());
    ArrayXd r2 = ArrayXd(p);
 
    for(unsigned int j = 0 ; j < p ; j++)
    {
       varx = var(X.col(j));
       covXY = cov(X.col(j), Y);
-      
+
       // take absolute value to prevent numerical issues with negative numbers
       // close to zero
-      r2(j) = fabs(1.0 / varx * covXY * covYinv * covXY.transpose());
+      // r2(j) = fabs(1.0 / varx * covXY * covYinv * covXY.transpose());
+
+      // covXY * covYinv * covXY'
+      // = covXY * (V * D^(-2) * V') * covXY'
+      // = ss'
+      // where s = covXY * V * D^(-1)
+      s = covXY * V;
+      r2(j) = std::abs(1.0 / varx * (s / d).square().sum());
    }
 
    res = wilks(r2, X.rows(), Y.cols());
@@ -628,24 +620,29 @@ void RandomPCA::ucca(Data& data)
 
    // QR might be faster here
    JacobiSVD<MatrixXd> svd(data.Y, ComputeThinU | ComputeThinV);
-   VectorXd d = svd.singularValues() / sqrt(n - 1);
-   VectorXd d2 = d.array().pow(-2);
+   ArrayXd d = svd.singularValues() / std::sqrt(double(n - 1));
    MatrixXd V = svd.matrixV();
-   MatrixXd covYinv
-      = svd.matrixV() * d2.asDiagonal() * svd.matrixV().transpose();
+   Array<double, 1, Dynamic> s(V.cols());
    ArrayXd r2 = ArrayXd(p);
 
    for(unsigned int j = 0 ; j < p ; j++)
    {
       data.read_snp_block(j, j, false, true);
       if(stand_method_x != STANDARDIZE_NONE)
-	 X_meansd = standardize(data.X, stand_method_x);
+         X_meansd = standardize(data.X, stand_method_x);
       varx = var(data.X.col(0));
       covXY = cov(data.X.col(0), data.Y);
 
       // take absolute value to prevent numerical issues with negative numbers
       // that are very close to zero
-      r2(j) = fabs(1.0 / varx * covXY * covYinv * covXY.transpose());
+      // r2(j) = fabs(1.0 / varx * covXY * covYinv * covXY.transpose());
+
+      // covXY * covYinv * covXY'
+      // = covXY * (V * D^(-2) * V') * covXY'
+      // = ss'
+      // where s = covXY * V * D^(-1)
+      s = covXY * V;
+      r2(j) = std::abs(1.0 / varx * (s / d).square().sum());
    }
 
    res = wilks(r2, n, data.Y.cols());
@@ -674,21 +671,19 @@ void RandomPCA::check(Data& dat, unsigned int block_size,
    verbose && STDOUT << timestamp() << "Loading eigenvector file '"
        << evec_file << "'" << std::endl;
    NamedMatrixWrapper M2 = read_text(evec_file.c_str(), 3, -1, 1);
-   MatrixXd evec = M2.X;
-   MatrixXd out = MatrixXd::Zero(evec.rows(), 1);
-   VectorXd uexp;
+   const MatrixXd& evec = M2.X;
 
    if(evec.rows() != dat.N)
       throw std::runtime_error(
 	 std::string("Eigenvector dimension doesn't match data dimension")
-	    + " (evec.rows = " + std::to_string(evec.rows()) 
+	    + " (evec.rows = " + std::to_string(evec.rows())
 	    + "; dat.N = " + std::to_string(dat.N) + ")");
 
    if(eval.size() != evec.cols())
       throw std::runtime_error(
 	 "Eigenvector dimension doesn't match the number of eigenvalues");
 
-   unsigned int K = fminl(evec.cols(), eval.size());
+   unsigned int K = std::min(evec.cols(), eval.size());
 
    // X X' U / div = U D^2
    STDOUT << timestamp()
@@ -706,27 +701,22 @@ void RandomPCA::check(Data& dat, unsigned int block_size,
    XXU /= div;
    MatrixXd UD2 = evec * eval.asDiagonal();
 
-   VectorXd err(eval.size());
+   RowVectorXd err = (XXU - UD2).colwise().squaredNorm();
 
    for(unsigned int j = 0 ; j < K ; j++)
    {
-      err(j) = (XXU.col(j).array() - UD2.col(j).array()).square().sum();
+      STDOUT << timestamp() << "eval(" << (j + 1)
+         << "): " << eval(j) << ", sum squared error: "
+         << err(j) << std::endl;
    }
 
-   for(unsigned int j = 0 ; j < K ; j++)
-   {
-      STDOUT << timestamp() << "eval(" << (j + 1) 
-	 << "): " << eval(j) << ", sum squared error: "
-	 << err(j) << std::endl;
-   }
-
-   double mse = err.array().sum() / (dat.N * K);
-   double rmse = sqrt(mse);
+   double mse = err.sum() / (dat.N * K);
+   double rmse = std::sqrt(mse);
 
    STDOUT << timestamp() << "Mean squared error: " << mse
       << ", Root mean squared error: " << rmse
       << " (n=" << dat.N << ")" << std::endl;
-   
+
 }
 
 MatrixXd maf2meansd(MatrixXd maf)
@@ -757,7 +747,7 @@ void RandomPCA::project(Data& dat, unsigned int block_size,
       // TODO: missing/non-numeric values?
       verbose && STDOUT << timestamp() << "Reading MAF file "
 	 << maf_file << std::endl;
-      NamedMatrixWrapper M2 = read_text(maf_file.c_str(), 3, -1, 1);   
+      NamedMatrixWrapper M2 = read_text(maf_file.c_str(), 3, -1, 1);
       dat.X_meansd = maf2meansd(M2.X);
       dat.use_preloaded_maf = true;
    }
@@ -765,7 +755,7 @@ void RandomPCA::project(Data& dat, unsigned int block_size,
    {
       verbose && STDOUT << timestamp()
 	 << " Reading mean/stdev file " << meansd_file << std::endl;
-      NamedMatrixWrapper M2 = read_text(meansd_file.c_str(), 3, -1, 1);   
+      NamedMatrixWrapper M2 = read_text(meansd_file.c_str(), 3, -1, 1);
       dat.X_meansd = M2.X;
       dat.use_preloaded_maf = true;
    }
@@ -776,8 +766,8 @@ void RandomPCA::project(Data& dat, unsigned int block_size,
       dat.use_preloaded_maf = false;
    }
 
-   // Check that the SNPs in the data match 
-   
+   // Check that the SNPs in the data match
+
    SVDWideOnline op(dat, block_size, 1, verbose);
 
    unsigned int k = V.cols();
@@ -797,4 +787,3 @@ void RandomPCA::project(Data& dat, unsigned int block_size,
       Px.col(i) = pxi.array() / sqrt(div); // X V = U D
    }
 }
-

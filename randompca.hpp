@@ -20,7 +20,7 @@
 #include <boost/math/distributions.hpp>
 #include <boost/math/distributions/fisher_f.hpp>
 
-#include <include/SymEigsSolver.h>
+#include <SymEigsSolver.h>
 
 
 #include "data.hpp"
@@ -97,4 +97,3 @@ class RandomPCA {
 	 std::string loadings_file, std::string maf_file,
 	 std::string meansd_file);
 };
-
