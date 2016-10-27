@@ -185,12 +185,12 @@ int main(int argc, char * argv[])
    }
    else if(vm.count("ucca"))
    {
-      if(!vm.count("experimental"))
-      {
-	 std::cerr << "Error: UCCA is exprimental, must specify --experimental"
-	    " to enable" << std::endl;
-	 return EXIT_FAILURE;
-      }
+      //if(!vm.count("experimental"))
+      //{
+      //   std::cerr << "Error: UCCA is exprimental, must specify --experimental"
+      //      " to enable" << std::endl;
+      //   return EXIT_FAILURE;
+      //}
 
       for(int i = 0 ; i < modes.size() ; i++)
       {
@@ -472,6 +472,8 @@ int main(int argc, char * argv[])
    std::string projfile = "projection" + suffix;
    if(vm.count("outproj"))
       projfile = vm["outproj"].as<std::string>();
+
+   std::string uccafile = "ucca" + suffix;
 
    bool verbose = vm.count("verbose");
 
@@ -900,8 +902,7 @@ int main(int argc, char * argv[])
          MatrixXd res(rpca.res);
          std::string str[] = {"SNP", "R", "Fstat", "P"};
          std::vector<std::string> v(str, str + 4);
-         save_text(res, v, data.snp_ids, std::string("ucca.txt").c_str(),
-	    precision);
+         save_text(res, v, data.snp_ids, uccafile.c_str(), precision);
       }
       else if(mode == MODE_PREDICT_PCA)
       {

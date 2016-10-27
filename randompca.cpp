@@ -578,9 +578,9 @@ void RandomPCA::ucca(MatrixXd &X, MatrixXd &Y)
    RowVectorXd covXY;
 
    JacobiSVD<MatrixXd> svd(Y, ComputeThinU | ComputeThinV);
-   ArrayXd d = svd.singularValues() / std::sqrt(double(n - 1));
+   ArrayXd d = svd.singularValues();
    MatrixXd V = svd.matrixV();
-   Array<double, 1, Dynamic> s(V.cols());
+   ArrayXd s(V.cols());
    ArrayXd r2 = ArrayXd(p);
 
    for(unsigned int j = 0 ; j < p ; j++)
@@ -596,8 +596,11 @@ void RandomPCA::ucca(MatrixXd &X, MatrixXd &Y)
       // = covXY * (V * D^(-2) * V') * covXY'
       // = ss'
       // where s = covXY * V * D^(-1)
-      s = covXY * V;
-      r2(j) = std::abs(1.0 / varx * (s / d).square().sum());
+      //
+      // The factor of sqrt(n - 1) comes from the fact that we did SVD of Y,
+      // but cov(Y) is 1/(n-1) Y'Y when Y is standardised.
+      s = covXY * V * std::sqrt(double(n - 1));
+      r2(j) = std::abs((s / d.array()).square().sum() / varx);
    }
 
    res = wilks(r2, X.rows(), Y.cols());
@@ -616,13 +619,13 @@ void RandomPCA::ucca(Data& data)
    RowVectorXd covXY;
 
    verbose && STDOUT << timestamp()
-      << "ucca online mode, N=" << n << " p=" << p << std::endl;
+      << "UCCA online mode, N=" << n << " p=" << p << std::endl;
 
    // QR might be faster here
    JacobiSVD<MatrixXd> svd(data.Y, ComputeThinU | ComputeThinV);
-   ArrayXd d = svd.singularValues() / std::sqrt(double(n - 1));
+   ArrayXd d = svd.singularValues();
    MatrixXd V = svd.matrixV();
-   Array<double, 1, Dynamic> s(V.cols());
+   ArrayXd s(V.cols());
    ArrayXd r2 = ArrayXd(p);
 
    for(unsigned int j = 0 ; j < p ; j++)
@@ -641,8 +644,11 @@ void RandomPCA::ucca(Data& data)
       // = covXY * (V * D^(-2) * V') * covXY'
       // = ss'
       // where s = covXY * V * D^(-1)
-      s = covXY * V;
-      r2(j) = std::abs(1.0 / varx * (s / d).square().sum());
+      //
+      // The factor of sqrt(n - 1) comes from the fact that we did SVD of Y,
+      // but cov(Y) is 1/(n-1) Y'Y when Y is standardised.
+      s = covXY * V * std::sqrt(double(n - 1));
+      r2(j) = std::abs((s / d.array()).square().sum() / varx);
    }
 
    res = wilks(r2, n, data.Y.cols());

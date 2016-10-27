@@ -2,6 +2,8 @@ rm(list=ls())
 
 library(plink2R)
 
+set.seed(38792)
+
 ################################################################################
 # Sparse CCA implementation in R
 
@@ -134,12 +136,22 @@ write.table(d, file="pheno.txt", col.names=FALSE, row.names=FALSE,
 # Test univariate CCA (PLINK-multivariate). Equivalent to regression of SNP on
 # all phenotypes.
 
-system(paste0("../flashpca --bfile data --pheno pheno.txt --ucca"))
+system(
+   paste0("../flashpca --bfile data --pheno pheno.txt --ucca",
+      "--batch --suffix .batch.txt"))
 
-# sample a subset
+system(
+   paste0("../flashpca --bfile data --pheno pheno.txt --ucca",
+      "--suffix .online.txt"))
+
+# sample a subset, since lm() is a bit slow
 w <- sample(ncol(X), 1000)
-d.ucca <- read.table("ucca.txt", header=TRUE, sep="", stringsAsFactors=FALSE)
-d.ucca <- d.ucca[w, ]
+d.ucca.batch <- read.table("ucca.batch.txt",
+   header=TRUE, sep="", stringsAsFactors=FALSE)
+d.ucca.online <- read.table("ucca.online.txt",
+   header=TRUE, sep="", stringsAsFactors=FALSE)
+d.ucca.batch <- d.ucca.batch[w, ]
+d.ucca.online <- d.ucca.online[w, ]
 
 r <- lapply(w, function(j) {
    s <- summary(lm(X[,j] ~ Y))
@@ -152,10 +164,14 @@ d.lm <- do.call(rbind, r)
 
 cat("Testing UCCA:\n")
 err.tol <- 1e-6
-stopifnot(all(d.ucca$SNP == d.lm$SNP))
-stopifnot(mean((d.ucca$R - d.lm$R)^2) < err.tol)
-stopifnot(mean((d.ucca$Fstat - d.lm$Fstat)^2) < err.tol)
-stopifnot(mean((d.ucca$P - d.lm$P)^2) < err.tol)
+stopifnot(all(d.ucca.online$SNP == d.lm$SNP))
+stopifnot(all(d.ucca.batch$SNP == d.lm$SNP))
+stopifnot(mean((d.ucca.batch$R - d.lm$R)^2) < err.tol)
+stopifnot(mean((d.ucca.online$R - d.lm$R)^2) < err.tol)
+stopifnot(mean((d.ucca.batch$Fstat - d.lm$Fstat)^2) < err.tol)
+stopifnot(mean((d.ucca.online$Fstat - d.lm$Fstat)^2) < err.tol)
+stopifnot(mean((log(d.ucca.batch$P) - log(d.lm$P))^2) < err.tol)
+stopifnot(mean((log(d.ucca.online$P) - log(d.lm$P))^2) < err.tol)
 cat("ok!\n")
 
 ################################################################################
@@ -167,7 +183,8 @@ l2 <- 2e-2
 system(paste0(
    "../flashpca --bfile data --pheno pheno.txt --scca --seed 1",
    " --lambda1 ", l1, " --lambda2 ", l2, " --ndim 10 --verbose",
-   " --maxiter 100 --tol 1e-10 --precision 20 --save-vinit"))
+   " --maxiter 100 --tol 1e-10 --precision 20 --save-vinit",
+   " --experimental"))
 v0 <- matrix(scan("scca_v0.txt"), byrow=TRUE, nrow=k)
 c1 <- scca(X, Y, lambdax=l1, lambday=l2, ndim=10, V=v0)
 
