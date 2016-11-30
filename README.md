@@ -1,4 +1,4 @@
-# FlashPCA (_alpha version_)
+# FlashPCA2
 
 FlashPCA performs fast principal component analysis (PCA) of single nucleotide
 polymorphism (SNP) data, similar to smartpca from EIGENSOFT
@@ -23,8 +23,12 @@ Google Groups: [https://groups.google.com/forum/#!forum/flashpca-users](https://
 Gad Abraham, gad.abraham@unimelb.edu.au
 
 ## Citation
-G. Abraham and M. Inouye, Fast Principal Component Analysis of Large-Scale
-Genome-Wide Data, PLOS ONE 9(4): e93766. [doi:10.1371/journal.pone.0093766](http://www.plosone.org/article/info:doi/10.1371/journal.pone.0093766)
+
+version &geq;2: G. Abraham, Y. Qiu, and M. Inouye, ``FlashPCA2: principal
+component analysis of biobank-scale genotype datasets'', bioRxiv
+
+version &leq;1.2.6: G. Abraham and M. Inouye, ``Fast Principal Component
+Analysis of Large-Scale Genome-Wide Data'', PLOS ONE 9(4): e93766. [doi:10.1371/journal.pone.0093766](http://www.plosone.org/article/info:doi/10.1371/journal.pone.0093766)
 
 ## License
 This program is free software; you can redistribute it and/or modify
@@ -236,6 +240,8 @@ flashpcaR is deprecated; you can use
 # LD-pruned HapMap3 example data
 
 See the [HapMap3](HapMap3) directory
+
+# Test
 
 # Changelog (stable versions only)
 

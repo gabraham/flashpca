@@ -82,6 +82,7 @@ int main(int argc, char * argv[])
       ("tol", po::value<double>(), "tolerance for PCA iterations")
       ("lambda1", po::value<double>(), "1st penalty for CCA/SCCA")
       ("lambda2", po::value<double>(), "2nd penalty for CCA/SCCA")
+      ("maxiter", po::value<int>(), "maximum number of SCCA iterations")
       ("debug", "debug, dumps all intermediate data (WARNING: slow, call only on small data)")
       ("suffix,f", po::value<std::string>(), "suffix for all output files")
       ("check,c", "check eigenvalues/eigenvectors")
@@ -89,7 +90,7 @@ int main(int argc, char * argv[])
       ("notime", "don't print timestamp in output")
       ("save-vinit", "saves the initial v eigenvector for SCCA")
       ("experimental", "allow experimental features")
-      ("version,V", "version")
+      ("version", "version")
    ;
 
    po::variables_map vm;
@@ -107,7 +108,7 @@ int main(int argc, char * argv[])
    }
 
    show_timestamp = !vm.count("notime");
-   bool save_vinit = vm.count("save_vinit");
+   bool save_vinit = vm.count("save-vinit");
 
    std::cout << timestamp() << "arguments: flashpca ";
    for(int i = 0 ; i < argc ; i++)
@@ -774,11 +775,13 @@ int main(int argc, char * argv[])
 	    maxiter, tol);
          std::cout << timestamp() << "SCCA done" << std::endl;
 	 if(save_vinit)
+	 {
+	    std::cout << timestamp() << "Saving initial V0 vector" << std::endl;
 	    save_text(rpca.V0,
 	       std::vector<std::string>(),
 	       std::vector<std::string>(),
 	       std::string("scca_v0.txt").c_str(), precision);
-
+	 }
       }
       else if(mode == MODE_UCCA)
       {
