@@ -26,47 +26,6 @@ MatrixXd make_gaussian(unsigned int rows, unsigned int cols, long seed)
    return G;
 }
 
-void pca_small(MatrixXd &B, int method, MatrixXd& U, VectorXd &d, bool verbose)
-{
-   if(method == METHOD_SVD)
-   {
-      verbose && STDOUT << timestamp() << "SVD begin" << std::endl;
-
-      JacobiSVD<MatrixXd> svd(B, ComputeThinU | ComputeThinV);
-      U = svd.matrixU();
-      MatrixXd V = svd.matrixV();
-      d = svd.singularValues().array().square();
-
-      verbose && STDOUT << timestamp() << "SVD done" << std::endl;
-   }
-   else if(method == METHOD_EIGEN)
-   {
-      verbose && STDOUT << timestamp() << "Eigen-decomposition begin" << std::endl;
-
-      MatrixXd BBT = B * B.transpose();
-
-      verbose && STDOUT << timestamp() << "dim(BBT): " << dim(BBT) << std::endl;
-
-      SelfAdjointEigenSolver<MatrixXd> eig(BBT);
-
-      // The eigenvalues come out sorted in *increasing* order,
-      // but we need decreasing order
-      VectorXd eval = eig.eigenvalues();
-      MatrixXd evec = eig.eigenvectors();
-      d.resize(eval.size());
-      U.resize(BBT.rows(), BBT.rows());
-
-      unsigned int k = 0;
-      for(unsigned int i = d.size() - 1 ; i != -1 ; --i)
-      {
-	 // we get eigenvalues, which are the squared singular values
-	 d(k) = eval(i);
-	 U.col(k) = evec.col(i);
-	 k++;
-      }
-   }
-}
-
 // Compute median of pairwise distances on sample of size n from the matrix X
 // We're sampling with replacement
 // Based on http://www.machinedlearnings.com/2013/08/cosplay.html
@@ -159,9 +118,9 @@ ArrayXXd wilks(const ArrayXd& r2, unsigned int n, unsigned int k)
    return res;
 }
 
-void RandomPCA::pca_fast(MatrixXd& X, unsigned int block_size, int method,
+void RandomPCA::pca_fast(MatrixXd& X, unsigned int block_size,
    unsigned int ndim, unsigned int maxiter,
-   double tol, long seed, bool do_loadings, int mem)
+   double tol, long seed, bool do_loadings)
 {
    unsigned int N, p;
 
@@ -207,9 +166,9 @@ void RandomPCA::pca_fast(MatrixXd& X, unsigned int block_size, int method,
    }
 }
 
-void RandomPCA::pca_fast(Data& dat, unsigned int block_size, int method,
+void RandomPCA::pca_fast(Data& dat, unsigned int block_size,
    unsigned int ndim, unsigned int maxiter, double tol,
-   long seed, bool do_loadings, int mem)
+   long seed, bool do_loadings)
 {
    unsigned int N = dat.N, p = dat.nsnps;
    SVDWideOnline op(dat, block_size, stand_method_x, verbose);

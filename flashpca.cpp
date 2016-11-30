@@ -59,7 +59,6 @@ int main(int argc, char * argv[])
 	 "standardization method for genotypes [binom2 | binom | none | sd | center]")
       ("standy", po::value<std::string>(),
 	 "standardization method for phenotypes [sd | binom2 | binom | none | center]")
-      ("method", po::value<std::string>(), "PCA method [eigen | svd]")
       ("div", po::value<std::string>(),
 	 "whether to divide the eigenvalues by p, n - 1, or don't divide [p | n1 | none]")
       ("outpc", po::value<std::string>(), "PC output file")
@@ -409,22 +408,6 @@ int main(int argc, char * argv[])
       }
    }
 
-   int method = METHOD_EIGEN;
-   if(vm.count("method"))
-   {
-      std::string m = vm["method"].as<std::string>();
-      if(m == "svd")
-	 method = METHOD_SVD;
-      else if(m == "eigen")
-	 method = METHOD_EIGEN;
-      else
-      {
-	 std::cerr << "Error: unknown PCA method (--method): "
-	    << m << std::endl;
-	 return EXIT_FAILURE;
-      }
-   }
-
    std::string suffix = ".txt";
    if(vm.count("suffix"))
       suffix = vm["suffix"].as<std::string>();
@@ -751,14 +734,14 @@ int main(int argc, char * argv[])
          if(mem_mode == MEM_MODE_OFFLINE)
          {
 	    // New Spectra algorithm
-	    rpca.pca_fast(data.X, block_size, method, n_dim,
-	       maxiter, tol, seed, do_loadings, mem);
+	    rpca.pca_fast(data.X, block_size, n_dim,
+	       maxiter, tol, seed, do_loadings);
          }
 	 else
 	 {
 	    // New Spectra algorithm
-	    rpca.pca_fast(data, block_size, method,
-	       n_dim, maxiter, tol, seed, do_loadings, mem);
+	    rpca.pca_fast(data, block_size, 
+	       n_dim, maxiter, tol, seed, do_loadings);
 	 }
 	 std::cout << timestamp() << "PCA done" << std::endl;
       }

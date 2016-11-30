@@ -69,13 +69,13 @@ class RandomPCA {
       int divisor;
 
       void pca_fast(MatrixXd &X, unsigned int block_size,
-	    int method, unsigned int ndim,
+	    unsigned int ndim,
 	    unsigned int maxiter, double tol, long seed,
-	    bool do_loadings, int mem);
+	    bool do_loadings);
       void pca_fast(Data &dat, unsigned int block_size,
-	    int method, unsigned int ndim,
+	    unsigned int ndim,
 	    unsigned int maxiter, double tol, long seed,
-	    bool do_loadings, int mem);
+	    bool do_loadings);
       void scca(MatrixXd &X, MatrixXd &Y, double lambda1, double lambda2,
 	    long seed, unsigned int ndim, int mem,
 	    unsigned int maxiter, double tol);
