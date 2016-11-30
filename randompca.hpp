@@ -20,8 +20,11 @@
 #include <boost/math/distributions.hpp>
 #include <boost/math/distributions/fisher_f.hpp>
 
+#ifdef RENV
+#include <Spectra/SymEigsSolver.h> // one or the other will be available
+#else
 #include <SymEigsSolver.h>
-
+#endif
 
 #include "data.hpp"
 

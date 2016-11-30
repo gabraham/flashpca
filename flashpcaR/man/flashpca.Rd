@@ -4,31 +4,18 @@
 \alias{flashpca}
 \title{Principal Component Analysis using flashpca}
 \usage{
-flashpca(X, method = c("eigen", "svd"), stand = c("binom", "binom2", "sd",
-  "center", "none"), transpose = NULL, ndim = 10, nextra = 10,
-  maxiter = 100, tol = 1e-04, seed = 1, kernel = c("linear", "rbf"),
-  sigma = NULL, rbf_center = TRUE, rbf_sample = 1000,
-  save_kernel = FALSE, do_orth = TRUE, verbose = FALSE, num_threads = 1,
-  do_loadings = FALSE, mem = c("low", "high"), check_geno = TRUE,
-  return_scale = TRUE, divide_n = TRUE)
+flashpca(X, ndim = 10, stand = c("binom2", "binom", "sd", "center", "none"),
+  maxiter = 100, tol = 1e-04, seed = 1, verbose = FALSE,
+  do_loadings = FALSE, check_geno = TRUE, return_scale = TRUE)
 }
 \arguments{
 \item{X}{A numeric matrix to perform PCA on. X must not have any NAs.}
 
-\item{method}{A character string indicating which decomposition to use, one of "eigen"
-(eigen-decomposition of X'X / (n - 1) or X'X, or "svd" (SVD of X).}
+\item{ndim}{Integer. How many dimensions to return in results.}
 
 \item{stand}{A character string indicating how to standardize X before PCA,
 one of "binom" (old Eigenstrat-style), "binom2" (new Eigenstrat-style),
 "sd" (zero-mean unit-variance), "center" (zero mean), or "none".}
-
-\item{transpose}{Logical. If X is transposed (samples are on columns rather
-than rows), set to \code{TRUE}.}
-
-\item{ndim}{Integer. How many dimensions to return in results.}
-
-\item{nextra}{Integer. How many extra dimensions to use for doing PCA.
-Increasing this will increase accuracy.}
 
 \item{maxiter}{Integer. How many iterations to use in PCA.}
 
@@ -36,32 +23,9 @@ Increasing this will increase accuracy.}
 
 \item{seed}{Integer. Seed for random number generator.}
 
-\item{kernel}{A character string, one of "linear" or "rbf", indicating whether
-to do standard (linear) PCA or use a radial basis function (RBF) kernel.}
-
-\item{sigma}{numeric. The sigma parameter for the RBF kernel.}
-
-\item{rbf_center}{Logical. Whether to center the data in feature space.}
-
-\item{rbf_sample}{integer. How many observations will be randomly sampled to
-determine the default RBF sigma (unless sigma is specified).}
-
-\item{save_kernel}{logical. Save the kernel to disk? (hardcoded as "kernel.txt")}
-
-\item{do_orth}{logical. Whether to re-orthogonoalize during each PCA step,
-tends to increase accuracy.}
-
 \item{verbose}{logical. More verbose output.}
 
-\item{num_threads}{Integer. How many OpenMP threads to use, if compiled with
-OpenMP support.}
-
 \item{do_loadings}{Logical. Whether to compute loadings (matrix V from SVD).}
-
-\item{mem}{A character string, one of "high" or "low". "High" requires
-computing the X' X covariance matrix which is memory intensive but fast if
-using multiple threads. "Low" does not compute X' X and uses less memory,
-but it tends to be slightly slower.}
 
 \item{check_geno}{Logical. Whether to explicitly check if the matrix X
 contains values other than {0, 1, 2}, when stand="binom". This can be
@@ -70,16 +34,12 @@ be set to FALSE if you are sure your matrix only contains these values
 
 \item{return_scale}{Logical. Whether to return the means and standard
 deviations used in standardizing the matrix X.}
-
-\item{divide_n}{Logical. Whether to compute the eigendecomposition
-of  X' X / (n - 1) or of  X' X.}
 }
 \value{
 \code{flashpca} returns a list containing the following components:
 \describe{  
-   \item{values}{a numeric vector. The eigenvalues of X' X / (n - 1) or X' X.}
-   \item{vectors}{a numeric matrix. The eigenvectors 
- of X' X (n - 1) or X' X, i.e., U from SVD.}
+   \item{values}{a numeric vector. The eigenvalues of X X' / m.}
+   \item{vectors}{a numeric matrix. The eigenvectors of X X' / m.}
    \item{projection}{a numeric matrix. Equivalent to X V.}
    \item{loadings}{a numeric matrix. The matrix of variable loadings, i.e., V
    from SVD.}
@@ -91,8 +51,7 @@ of  X' X / (n - 1) or of  X' X.}
 Principal Component Analysis using flashpca
 }
 \details{
-The decomposition is either done on X'X or on X'X/(n-1), depending on
-   the \code{divide_n} argument. 
+The decomposition is of X X' / m, where m is the number of SNPs.
 
    The data is standardised by default. \code{stand = "binom"} uses the old Eigensoft
    (Price 2006) formulation of
@@ -113,20 +72,17 @@ n <- 200
 p <- 500
 x <- matrix(rnorm(n * p), n, p)
 ndim <- 20
-f1 <- flashpca(x, stand="sd", ndim=ndim, method="eigen")
-f2 <- flashpca(x, stand="sd", ndim=ndim, method="svd")
+f1 <- flashpca(x, stand="sd", ndim=ndim)
 
 r <- prcomp(x, center=TRUE, scale.=TRUE)
 
 ## Compare eigenvalues
-eval <- cbind(r$sdev[1:ndim]^2, f1$values, f2$values)
+eval <- cbind(r$sdev[1:ndim]^2, f1$values)
 cor(eval)
 mean((eval[,1] - eval[,2])^2)
-mean((eval[,1] - eval[,3])^2)
 
 ## Compare eigenvectors
-diag(cor(r$x[, 1:ndim], f1$projection))
-diag(cor(r$x[, 1:ndim], f2$projection))
+cor(r$x[, 1:ndim], f1$projection)
 
 \dontrun{
 ## First get data from
@@ -137,7 +93,7 @@ diag(cor(r$x[, 1:ndim], f2$projection))
 load("data.RData")
 ndim <- 20
 system.time({
-   f <- flashpca(hapmap3$bed, stand="center", ndim=ndim, nextra=50)
+   f <- flashpca(hapmap3$bed, stand="center", ndim=ndim)
 })
 system.time({
    r <- prcomp(hapmap3$bed)

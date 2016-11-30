@@ -22,6 +22,6 @@ Imports:
     Rcpp (>= 0.11.1),
     methods
 LinkingTo:
-   Rcpp, RcppEigen (>= 0.3.2.5.1), BH, RSpectra
+   Rcpp, RcppEigen (>= 0.3.2.5.1), BH, RSpectra, RSpectra
 RoxygenNote: 5.0.1
 Suggests: testthat

@@ -14,25 +14,25 @@ using namespace Eigen;
 #include "randompca.hpp"
 
 // [[Rcpp::export]]
-List flashpca_internal(Eigen::Map<Eigen::MatrixXd> X, int stand,
-   bool transpose, unsigned int ndim, unsigned int nextra,
-   unsigned int maxiter, double tol, long seed, int kernel,
-   double sigma, bool rbf_center, unsigned int rbf_sample,
-   bool save_kernel, bool do_orth, bool verbose, bool do_loadings,
-   int mem, bool return_scale, unsigned int num_threads)
+List flashpca_internal(
+   Eigen::Map<Eigen::MatrixXd> X,
+   int stand,
+   unsigned int ndim,
+   unsigned int maxiter,
+   double tol,
+   long seed,
+   bool verbose,
+   bool do_loadings,
+   bool return_scale)
 {
-
-#ifdef _OPENMP
-   omp_set_num_threads(num_threads);
-#endif
-
    Eigen::MatrixXd Xm = X;
 
    RandomPCA rpca;
    rpca.stand_method_x = stand;
    rpca.verbose = verbose;
 
-   rpca.pca_fast(Xm, block_size, ndim, maxiter, tol, seed, do_loadings, mem);
+   rpca.pca_fast(Xm, 0, ndim, maxiter,
+      tol, seed, do_loadings);
    
    NumericMatrix U(wrap(rpca.U));
    NumericMatrix P(wrap(rpca.Px));
@@ -50,6 +50,84 @@ List flashpca_internal(Eigen::Map<Eigen::MatrixXd> X, int stand,
    }
    
    Rcpp::List res;
+
+   if(do_loadings)
+   {
+      NumericMatrix V(wrap(rpca.V));
+      res = Rcpp::List::create(
+         Rcpp::Named("values")=d,
+         Rcpp::Named("vectors")=U,
+         Rcpp::Named("projection")=P,
+	 Rcpp::Named("loadings")=V,
+	 Rcpp::Named("center")=X_mean,
+	 Rcpp::Named("scale")=X_sd
+      );
+   }
+   else
+   {
+      res = Rcpp::List::create(
+         Rcpp::Named("values")=d,
+         Rcpp::Named("vectors")=U,
+         Rcpp::Named("projection")=P,
+	 Rcpp::Named("center")=X_mean,
+	 Rcpp::Named("scale")=X_sd
+      );
+   }
+
+   return res;
+}
+
+// [[Rcpp::export]]
+List flashpca_plink_internal(
+   std::string fn,
+   Eigen::Map<Eigen::MatrixXd> X,
+   int stand,
+   unsigned int ndim,
+   unsigned int maxiter,
+   unsigned int block_size,
+   double tol,
+   long seed,
+   bool verbose,
+   bool do_loadings,
+   bool return_scale)
+{
+   RandomPCA rpca;
+   rpca.stand_method_x = stand;
+   rpca.divisor = DIVISOR_P;
+   rpca.verbose = verbose;
+
+   NumericVector X_mean(0);
+   NumericVector X_sd(0);
+
+   std::string fam_file, geno_file, bim_file, pheno_file;
+   geno_file = fn  + std::string(".bed");
+   bim_file = fn + std::string(".bim");
+   fam_file = fn + std::string(".fam");
+
+   Data data(seed);
+   data.verbose = verbose;
+   data.read_pheno(fam_file.c_str(), 6);
+   data.read_plink_bim(bim_file.c_str());
+   data.geno_filename = geno_file.c_str();
+   data.get_size();
+   data.prepare();
+
+   rpca.pca_fast(data, block_size, ndim,
+      maxiter, tol, seed, do_loadings);
+   
+   NumericMatrix U(wrap(rpca.U));
+   NumericMatrix P(wrap(rpca.Px));
+   NumericVector d(wrap(rpca.d));
+
+   Rcpp::List res;
+
+   // STANDARDIZE_NONE: 0
+   if(return_scale && stand != 0)
+   {
+      NumericMatrix X_meansd(wrap(rpca.X_meansd));
+      X_mean = X_meansd(_, 0);
+      X_sd = X_meansd(_, 1);
+   }
 
    if(do_loadings)
    {
@@ -122,90 +200,3 @@ List scca_internal(Eigen::Map<Eigen::MatrixXd> X, Eigen::Map<Eigen::MatrixXd> Y,
    return res;
 }
 
-// [[Rcpp::export]]
-List flashpca_plink_internal(std::string fn, int stand_x,
-   int ndim, int maxiter, double tol, bool verbose)
-{
-
-#ifdef _OPENMP
-  // omp_set_num_threads(num_threads);
-#endif
-
-   RandomPCA rpca;
-   rpca.stand_method_x = stand_x;
-   rpca.divisor = DIVISOR_P;
-   rpca.verbose = verbose;
-
-   NumericVector X_mean(0);
-   NumericVector X_sd(0);
-
-   //// STANDARDIZE_NONE: 0
-   //if(return_scale && stand != 0)
-   //{
-   //   NumericMatrix X_meansd(wrap(rpca.X_meansd));
-   //   X_mean = X_meansd(_, 0);
-   //   X_sd = X_meansd(_, 1);
-   //}
-
-   bool save_kernel = false;
-   double sigma = 0;
-   int kernel = 0;
-   long seed = 1;
-   unsigned int n_extra = 0;
-   bool transpose = false;
-   int block_size = 1000;
-   int method = 0;
-   unsigned int rbf_sample = 0;
-   bool do_orth = false;
-   int mem = 0;
-   bool do_loadings = false;
-   bool rbf_center = false;
-
-   std::string fam_file, geno_file, bim_file, pheno_file;
-   geno_file = fn  + std::string(".bed");
-   bim_file = fn + std::string(".bim");
-   fam_file = fn + std::string(".fam");
-
-   Data data(seed);
-   data.verbose = verbose;
-   data.read_pheno(fam_file.c_str(), 6);
-   data.read_plink_bim(bim_file.c_str());
-   data.geno_filename = geno_file.c_str();
-   data.get_size();
-   data.prepare();
-
-   rpca.pca_fast(data, block_size, method, transpose, ndim, n_extra, maxiter,
-      tol, seed, kernel, sigma, rbf_center, rbf_sample, save_kernel,
-      do_orth, do_loadings, mem);
-   
-   NumericMatrix U(wrap(rpca.U));
-   NumericMatrix P(wrap(rpca.Px));
-   NumericVector d(wrap(rpca.d));
-
-   Rcpp::List res;
-
-   if(do_loadings)
-   {
-      NumericMatrix V(wrap(rpca.V));
-      res = Rcpp::List::create(
-         Rcpp::Named("values")=d,
-         Rcpp::Named("vectors")=U,
-         Rcpp::Named("projection")=P,
-	 Rcpp::Named("loadings")=V//,
-	 //Rcpp::Named("center")=X_mean,
-	 //Rcpp::Named("scale")=X_sd
-      );
-   }
-   else
-   {
-      res = Rcpp::List::create(
-         Rcpp::Named("values")=d,
-         Rcpp::Named("vectors")=U,
-         Rcpp::Named("projection")=P//,
-	 //Rcpp::Named("center")=X_mean,
-	 //Rcpp::Named("scale")=X_sd
-      );
-   }
-
-   return res;
-}

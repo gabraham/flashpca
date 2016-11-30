@@ -42,21 +42,13 @@ test_that("Testing PCA with stand='binom'", {
    S <- scale(X, center=2 * q, scale=sqrt(q * (1 - q)))
 
    f1 <- prcomp(S, center=FALSE, scale.=FALSE)
-   f2 <- flashpca(X, ndim=ndim, stand="binom",
-      mem="low", method="eigen", nextra=nextra, divide_n=FALSE)
-   f3 <- flashpca(X, ndim=ndim, stand="binom",
-      mem="high", method="eigen", nextra=nextra, divide_n=FALSE)
-   f4 <- flashpca(X, ndim=ndim, stand="binom",
-      mem="low", method="svd", nextra=nextra, divide_n=FALSE)
-   f5 <- flashpca(X, ndim=ndim, stand="binom",
-      mem="high", method="svd", nextra=nextra, divide_n=FALSE)
+   f2 <- flashpca(X, ndim=ndim, stand="binom")
 
    # Don't check prcomp scales because it returns the wrong scale
-   compare_scales(S, f2, f3, f4, f5)
+   compare_scales(S, f2)
 
    compare_projections(
-      f1$x[, 1:ndim], f2$projection, f3$projection,
-      f4$projection, f5$projection
+      f1$x[, 1:ndim], f2$projection
    )
 })
 
@@ -66,20 +58,12 @@ test_that("Testing PCA with stand='binom2'", {
    S <- scale(X, center=2 * q, scale=sqrt(2 * q * (1 - q)))
 
    f1 <- prcomp(S, center=FALSE, scale.=FALSE)
-   f2 <- flashpca(X, ndim=ndim, stand="binom2",
-      mem="low", method="eigen", nextra=nextra, divide_n=FALSE)
-   f3 <- flashpca(X, ndim=ndim, stand="binom2",
-      mem="high", method="eigen", nextra=nextra, divide_n=FALSE)
-   f4 <- flashpca(X, ndim=ndim, stand="binom2",
-      mem="low", method="svd", nextra=nextra, divide_n=FALSE)
-   f5 <- flashpca(X, ndim=ndim, stand="binom2",
-      mem="high", method="svd", nextra=nextra, divide_n=FALSE)
+   f2 <- flashpca(X, ndim=ndim, stand="binom2")
 
-   compare_scales(S, f1, f2, f3, f4, f5)
+   compare_scales(S, f1, f2)
 
    compare_projections(
-      f1$x[, 1:ndim], f2$projection, f3$projection,
-      f4$projection, f5$projection
+      f1$x[, 1:ndim], f2$projection
    )
 })
 
@@ -89,20 +73,12 @@ test_that("Testing PCA with stand='sd'", {
    S <- scale(X, center=TRUE, scale=TRUE)
 
    f1 <- prcomp(S, center=FALSE, scale.=FALSE)
-   f2 <- flashpca(X, ndim=ndim, stand="sd",
-      mem="low", method="eigen", nextra=nextra, divide_n=FALSE)
-   f3 <- flashpca(X, ndim=ndim, stand="sd",
-      mem="high", method="eigen", nextra=nextra, divide_n=FALSE)
-   f4 <- flashpca(X, ndim=ndim, stand="sd",
-      mem="low", method="svd", nextra=nextra, divide_n=FALSE)
-   f5 <- flashpca(X, ndim=ndim, stand="sd",
-      mem="high", method="svd", nextra=nextra, divide_n=FALSE)
+   f2 <- flashpca(X, ndim=ndim, stand="sd")
 
-   compare_scales(S, f2, f3, f4, f5)
+   compare_scales(S, f2)
 
    compare_projections(
-      f1$x[, 1:ndim], f2$projection, f3$projection,
-      f4$projection, f5$projection
+      f1$x[, 1:ndim], f2$projection
    )
 })
 
@@ -110,20 +86,10 @@ test_that("Testing PCA with stand='none'", {
    X <- matrix(rnorm(n * p), n, p)
 
    f1 <- prcomp(X, center=FALSE, scale.=FALSE)
-   f2 <- flashpca(X, ndim=ndim, stand="none",
-      mem="low", method="eigen", nextra=nextra, divide_n=FALSE)
-   f3 <- flashpca(X, ndim=ndim, stand="none",
-      mem="high", method="eigen", nextra=nextra, divide_n=FALSE)
-   f4 <- flashpca(X, ndim=ndim, stand="none",
-      mem="low", method="svd", nextra=nextra, divide_n=FALSE)
-   f5 <- flashpca(X, ndim=ndim, stand="none",
-      mem="high", method="svd", nextra=nextra, divide_n=FALSE)
-
-   #compare_scales(S, f2, f3, f4, f5)
+   f2 <- flashpca(X, ndim=ndim, stand="none")
 
    compare_projections(
-      f1$x[, 1:ndim], f2$projection, f3$projection,
-      f4$projection, f5$projection
+      f1$x[, 1:ndim], f2$projection
    )
 })
 
@@ -132,21 +98,13 @@ test_that("Testing PCA with stand='center'", {
    S <- scale(X, center=TRUE, scale=FALSE)
 
    f1 <- prcomp(S, center=FALSE, scale.=FALSE)
-   f2 <- flashpca(X, ndim=ndim, stand="center",
-      mem="low", method="eigen", nextra=nextra, divide_n=FALSE)
-   f3 <- flashpca(X, ndim=ndim, stand="center",
-      mem="high", method="eigen", nextra=nextra, divide_n=FALSE)
-   f4 <- flashpca(X, ndim=ndim, stand="center",
-      mem="low", method="svd", nextra=nextra, divide_n=FALSE)
-   f5 <- flashpca(X, ndim=ndim, stand="center",
-      mem="high", method="svd", nextra=nextra, divide_n=FALSE)
+   f2 <- flashpca(X, ndim=ndim, stand="center")
 
    attr(S, "scaled:scale") <- rep(1, p)
-   compare_scales(S, f2, f3, f4, f5)
+   compare_scales(S, f2)
 
    compare_projections(
-      f1$x[, 1:ndim], f2$projection, f3$projection,
-      f4$projection, f5$projection
+      f1$x[, 1:ndim], f2$projection
    )
 })
 

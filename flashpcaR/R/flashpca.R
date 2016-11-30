@@ -6,46 +6,17 @@
 #' one of "binom" (old Eigenstrat-style), "binom2" (new Eigenstrat-style),
 #' "sd" (zero-mean unit-variance), "center" (zero mean), or "none".
 #'
-#' @param transpose Logical. If X is transposed (samples are on columns rather
-#' than rows), set to \code{TRUE}.
-#'
 #' @param ndim Integer. How many dimensions to return in results.
 #' 
-#' @param nextra Integer. How many extra dimensions to use for doing PCA.
-#' Increasing this will increase accuracy.
-#'
 #' @param maxiter Integer. How many iterations to use in PCA.
 #'
 #' @param tol Numeric. Tolerance for determining PCA convergence.
 #'
 #' @param seed Integer. Seed for random number generator.
 #'
-#' @param kernel A character string, one of "linear" or "rbf", indicating whether
-#' to do standard (linear) PCA or use a radial basis function (RBF) kernel.
-#'
-#' @param sigma numeric. The sigma parameter for the RBF kernel.
-#'
-#' @param rbf_center Logical. Whether to center the data in feature space.
-#'
-#' @param rbf_sample integer. How many observations will be randomly sampled to
-#' determine the default RBF sigma (unless sigma is specified).
-#'
-#' @param save_kernel logical. Save the kernel to disk? (hardcoded as "kernel.txt")
-#'
-#' @param do_orth logical. Whether to re-orthogonoalize during each PCA step,
-#' tends to increase accuracy.
-#'
 #' @param verbose logical. More verbose output.
 #'
-#' @param num_threads Integer. How many OpenMP threads to use, if compiled with
-#' OpenMP support.
-#'
 #' @param do_loadings Logical. Whether to compute loadings (matrix V from SVD).
-#'
-#' @param mem A character string, one of "high" or "low". "High" requires
-#' computing the X' X covariance matrix which is memory intensive but fast if
-#' using multiple threads. "Low" does not compute X' X and uses less memory,
-#' but it tends to be slightly slower.
 #'
 #' @param check_geno Logical. Whether to explicitly check if the matrix X
 #' contains values other than {0, 1, 2}, when stand="binom". This can be
@@ -55,13 +26,8 @@
 #' @param return_scale Logical. Whether to return the means and standard
 #' deviations used in standardizing the matrix X.
 #'
-#' @param divide_n Logical. Whether to compute the eigendecomposition
-#' of  X' X / (n - 1) or of  X' X.
-#'
-#'
 #' @details
-#'    The decomposition is either done on X'X or on X'X/(n-1), depending on
-#'    the \code{divide_n} argument. 
+#'    The decomposition is of X X' / m, where m is the number of SNPs.
 #'
 #'    The data is standardised by default. \code{stand = "binom"} uses the old Eigensoft
 #'    (Price 2006) formulation of
@@ -75,9 +41,8 @@
 #' 
 #' @return \code{flashpca} returns a list containing the following components:
 #' \describe{  
-#'    \item{values}{a numeric vector. The eigenvalues of X' X / (n - 1) or X' X.}
-#'    \item{vectors}{a numeric matrix. The eigenvectors 
-#'	 of X' X (n - 1) or X' X, i.e., U from SVD.}
+#'    \item{values}{a numeric vector. The eigenvalues of X X' / m.}
+#'    \item{vectors}{a numeric matrix. The eigenvectors of X X' / m.}
 #'    \item{projection}{a numeric matrix. Equivalent to X V.}
 #'    \item{loadings}{a numeric matrix. The matrix of variable loadings, i.e., V
 #'    from SVD.}
@@ -115,7 +80,7 @@
 #' load("data.RData")
 #' ndim <- 20
 #' system.time({
-#'    f <- flashpca(hapmap3$bed, stand="center", ndim=ndim, nextra=50)
+#'    f <- flashpca(hapmap3$bed, stand="center", ndim=ndim)
 #' })
 #' system.time({
 #'    r <- prcomp(hapmap3$bed)
@@ -130,18 +95,12 @@
 #'}
 #'
 #' @export
-flashpca <- function(X,
-   stand=c("binom", "binom2", "sd", "center", "none"),
-   transpose=NULL, ndim=10,
-   nextra=10, maxiter=1e2, tol=1e-4, seed=1, kernel=c("linear", "rbf"),
-   sigma=NULL, rbf_center=TRUE, rbf_sample=1000, save_kernel=FALSE,
-   do_orth=TRUE, verbose=FALSE, num_threads=1, do_loadings=FALSE,
-   mem=c("low", "high"), check_geno=TRUE, return_scale=TRUE,
-   divide_n=TRUE)
+flashpca <- function(X, ndim=10,
+   stand=c("binom2", "binom", "sd", "center", "none"),
+   maxiter=1e2, tol=1e-4, seed=1, verbose=FALSE,
+   do_loadings=FALSE, check_geno=TRUE, return_scale=TRUE)
 {
    stand <- match.arg(stand)
-   kernel <- match.arg(kernel)
-   mem <- match.arg(mem)
    
    if(is.numeric(X)) {
       if(any(is.na(X))) {
@@ -160,10 +119,6 @@ flashpca <- function(X,
       stop("X must be a numeric matrix or a string naming a PLINK fileset")
    }
 
-   if(!is.logical(divide_n)) {
-      stop("divide_n must be a logical (TRUE/FALSE)")
-   }
-
    if(stand == "none") {
       stand_i <- 0L
    } else if(stand == "sd") {
@@ -176,32 +131,9 @@ flashpca <- function(X,
       stand_i <- 4L
    } 
 
-   if(kernel == "linear") {
-      kernel_i <- 1L
-   } else {
-      kernel_i <- 2L
-   }
-
-   # We only transpose if X is transposed, i.e., if X is SNPs by samples
-   if(is.null(transpose)) {
-      transpose <- FALSE
-   }
-
    if(is.numeric(X)) {
       maxdim <- min(dim(X))
       ndim <- min(maxdim, ndim)
-      nextra <- min(maxdim - ndim, nextra)
-      if(is.null(sigma)) {
-         sigma <- 0 # will be estimated from data
-      }
-
-      rbf_sample <- min(nrow(X), rbf_sample)
-   }
-
-   if(mem == "high") {
-      mem_i <- 2L
-   } else {
-      mem_i <- 1L
    }
 
    # otherwise Rcpp will throw an exception
@@ -211,11 +143,11 @@ flashpca <- function(X,
 
    res <- try(
       if(is.character(X)) {
-	 flashpca_plink_internal(X, stand_i, ndim, maxiter, tol, verbose)
+	 flashpca_plink_internal(X, stand_i, ndim, maxiter,
+	    tol, seed, verbose, do_loadings, return_scale)
       } else {
-	 flashpca_internal(X, stand_i, transpose, ndim, nextra, maxiter,
-	    tol, seed, kernel_i, sigma, rbf_center, rbf_sample, save_kernel, do_orth,
-	    verbose, do_loadings, mem_i, return_scale, num_threads)
+	 flashpca_internal(X, stand_i, ndim, maxiter,
+	    tol, seed, verbose, do_loadings, return_scale)
       }
    )
    if(is(res, "try-error")) {
