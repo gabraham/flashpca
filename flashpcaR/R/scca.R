@@ -72,11 +72,13 @@
 #'
 #' @export
 scca <- function(X, Y, lambda1=0, lambda2=0,
-   stand=c("binom", "binom2", "sd", "center", "none"),
+   standx=c("binom2", "binom", "sd", "center", "none"),
+   standy=c("binom2", "binom", "sd", "center", "none"),
    ndim=10, maxiter=1e3, tol=1e-4, seed=1L, verbose=FALSE, num_threads=1,
    mem=c("low", "high"), check_geno=TRUE, V=NULL)
 {
-   stand <- match.arg(stand)
+   standx <- match.arg(standx)
+   standy <- match.arg(standy)
    mem <- match.arg(mem)
 
    X <- cbind(X)
@@ -94,28 +96,36 @@ scca <- function(X, Y, lambda1=0, lambda2=0,
       stop("X and Y cannot contain any missing values")
    }
 
-   if(stand == "binom" && check_geno) {
+   if(standx %in% c("binom", "binom2") && check_geno) {
       wx <- X %in% 0:2
-      wy <- Y %in% 0:2
-      if(sum(wx) != length(X) || sum(wy) != length(Y)) {
+      if(sum(wx) != length(X)) {
 	 stop(
-	    "Your data contains values other than {0, 1, 2}, stand='binom' can't be used here")
+	    paste("Your X matrix contains values other than {0, 1, 2},
+	       stand='binom'/'binom2' can't be used here"))
       }
    }
 
-   if(stand == "none") {
-      stand_i <- 0L
-   } else if(stand == "sd") {
-      stand_i <- 1L
-   } else if(stand == "binom") {
-      stand_i <- 2L
-   } else if(stand == "binom2") {
-      stand_i <- 3L
-   } else if(stand == "center") {
-      stand_i <- 4L
+   if(standx %in% c("binom", "binom2") && check_geno) {
+      wy <- Y %in% 0:2
+      if(sum(wy) != length(Y)) {
+	 stop(
+	    paste("Your Y matrix contains values other than {0, 1, 2},
+	       stand='binom'/'binom2' can't be used here"))
+      }
    }
 
-   maxdim <- min(dim(X))
+   std <- c(
+      "none"=0L,
+      "sd"=1L,
+      "binom"=2L,
+      "binom2"=3L,
+      "center"=4L
+   )
+
+   standx_i <- std[standx]
+   standy_i <- std[standy]
+
+   maxdim <- min(dim(X), dim(Y))
    ndim <- min(maxdim, ndim)
 
    if(mem == "high") {
@@ -137,10 +147,12 @@ scca <- function(X, Y, lambda1=0, lambda2=0,
 
    res <- try(
       if(is.null(V)) {
-	 scca_internal(X, Y, lambda1, lambda2, ndim, stand_i, mem_i, seed, maxiter, tol,
+	 scca_internal(X, Y, lambda1, lambda2, ndim,
+	    standx_i, standy_i, mem_i, seed, maxiter, tol,
 	    verbose, num_threads, FALSE, matrix(0))
       } else {
-	 scca_internal(X, Y, lambda1, lambda2, ndim, stand_i, mem_i, seed, maxiter, tol,
+	 scca_internal(X, Y, lambda1, lambda2, ndim,
+	    standx_i, standy_i, mem_i, seed, maxiter, tol,
 	    verbose, num_threads, TRUE, V)
       }
    )

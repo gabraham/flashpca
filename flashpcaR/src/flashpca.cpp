@@ -156,47 +156,75 @@ List flashpca_plink_internal(
 }
 
 // [[Rcpp::export]]
-List scca_internal(Eigen::Map<Eigen::MatrixXd> X, Eigen::Map<Eigen::MatrixXd> Y,
-   double lambda1, double lambda2, unsigned int ndim, int stand,
-   int mem, long seed, int maxiter,  double tol,
-   bool verbose, unsigned int num_threads, bool useV,
+List scca_internal(
+   Eigen::Map<Eigen::MatrixXd> X,
+   Eigen::Map<Eigen::MatrixXd> Y,
+   double lambda1,
+   double lambda2,
+   unsigned int ndim,
+   int stand_x,
+   int stand_y,
+   int mem,
+   long seed,
+   int maxiter,
+   double tol,
+   bool verbose,
+   unsigned int num_threads,
+   bool useV,
    Eigen::Map<Eigen::MatrixXd> Vinit)
 {
+   try{
+
 #ifdef _OPENMP
-   omp_set_num_threads(num_threads);
+      omp_set_num_threads(num_threads);
 #endif
 
-   Eigen::MatrixXd Xm = X;
-   Eigen::MatrixXd Ym = Y;
+      Eigen::MatrixXd Xm = X;
+      Eigen::MatrixXd Ym = Y;
 
-   RandomPCA rpca;
-   rpca.stand_method_x = stand;
-   rpca.verbose = verbose;
+      RandomPCA rpca;
+      rpca.stand_method_x = stand_x;
+      rpca.stand_method_y = stand_y;
+      rpca.verbose = verbose;
 
-   if(useV)
-   {
-      Eigen::MatrixXd Vm = Vinit;
-      rpca.scca(Xm, Ym, lambda1, lambda2, seed, ndim, mem, maxiter, tol, Vm);
+      if(useV)
+      {
+         Eigen::MatrixXd Vm = Vinit;
+         rpca.scca(Xm, Ym, lambda1, lambda2, seed,
+            ndim, mem, maxiter, tol, Vm);
+      }
+      else
+      {
+         rpca.scca(Xm, Ym, lambda1, lambda2, seed,
+            ndim, mem, maxiter, tol);
+      }
+
+      NumericMatrix U(wrap(rpca.U));
+      NumericMatrix V(wrap(rpca.V));
+      NumericMatrix Px(wrap(rpca.Px));
+      NumericMatrix Py(wrap(rpca.Py));
+      NumericVector d(wrap(rpca.d));
+
+      Rcpp::List res;
+
+      res = Rcpp::List::create(
+            Rcpp::Named("U")=U,
+            Rcpp::Named("V")=V,
+            Rcpp::Named("d")=d,
+            Rcpp::Named("Px")=Px,
+            Rcpp::Named("Py")=Py
+      );
+
+      return res;
    }
-   else
-      rpca.scca(Xm, Ym, lambda1, lambda2, seed, ndim, mem, maxiter, tol);
-
-   NumericMatrix U(wrap(rpca.U));
-   NumericMatrix V(wrap(rpca.V));
-   NumericMatrix Px(wrap(rpca.Px));
-   NumericMatrix Py(wrap(rpca.Py));
-   NumericVector d(wrap(rpca.d));
-
-   Rcpp::List res;
-
-   res = Rcpp::List::create(
-	 Rcpp::Named("U")=U,
-         Rcpp::Named("V")=V,
-         Rcpp::Named("d")=d,
-         Rcpp::Named("Px")=Px,
-         Rcpp::Named("Py")=Py
-   );
-
-   return res;
+   catch(std::exception &ex)
+   {
+      forward_exception_to_r(ex);
+   }
+   catch(...)
+   {
+      ::Rf_error("SCCA: unknown c++ exception");
+   }
+   return NA_REAL;
 }
 

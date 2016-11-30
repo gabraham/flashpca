@@ -46,8 +46,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // scca_internal
-List scca_internal(Eigen::Map<Eigen::MatrixXd> X, Eigen::Map<Eigen::MatrixXd> Y, double lambda1, double lambda2, unsigned int ndim, int stand, int mem, long seed, int maxiter, double tol, bool verbose, unsigned int num_threads, bool useV, Eigen::Map<Eigen::MatrixXd> Vinit);
-RcppExport SEXP flashpcaR_scca_internal(SEXP XSEXP, SEXP YSEXP, SEXP lambda1SEXP, SEXP lambda2SEXP, SEXP ndimSEXP, SEXP standSEXP, SEXP memSEXP, SEXP seedSEXP, SEXP maxiterSEXP, SEXP tolSEXP, SEXP verboseSEXP, SEXP num_threadsSEXP, SEXP useVSEXP, SEXP VinitSEXP) {
+List scca_internal(Eigen::Map<Eigen::MatrixXd> X, Eigen::Map<Eigen::MatrixXd> Y, double lambda1, double lambda2, unsigned int ndim, int stand_x, int stand_y, int mem, long seed, int maxiter, double tol, bool verbose, unsigned int num_threads, bool useV, Eigen::Map<Eigen::MatrixXd> Vinit);
+RcppExport SEXP flashpcaR_scca_internal(SEXP XSEXP, SEXP YSEXP, SEXP lambda1SEXP, SEXP lambda2SEXP, SEXP ndimSEXP, SEXP stand_xSEXP, SEXP stand_ySEXP, SEXP memSEXP, SEXP seedSEXP, SEXP maxiterSEXP, SEXP tolSEXP, SEXP verboseSEXP, SEXP num_threadsSEXP, SEXP useVSEXP, SEXP VinitSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -56,7 +56,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type lambda1(lambda1SEXP);
     Rcpp::traits::input_parameter< double >::type lambda2(lambda2SEXP);
     Rcpp::traits::input_parameter< unsigned int >::type ndim(ndimSEXP);
-    Rcpp::traits::input_parameter< int >::type stand(standSEXP);
+    Rcpp::traits::input_parameter< int >::type stand_x(stand_xSEXP);
+    Rcpp::traits::input_parameter< int >::type stand_y(stand_ySEXP);
     Rcpp::traits::input_parameter< int >::type mem(memSEXP);
     Rcpp::traits::input_parameter< long >::type seed(seedSEXP);
     Rcpp::traits::input_parameter< int >::type maxiter(maxiterSEXP);
@@ -65,7 +66,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< unsigned int >::type num_threads(num_threadsSEXP);
     Rcpp::traits::input_parameter< bool >::type useV(useVSEXP);
     Rcpp::traits::input_parameter< Eigen::Map<Eigen::MatrixXd> >::type Vinit(VinitSEXP);
-    rcpp_result_gen = Rcpp::wrap(scca_internal(X, Y, lambda1, lambda2, ndim, stand, mem, seed, maxiter, tol, verbose, num_threads, useV, Vinit));
+    rcpp_result_gen = Rcpp::wrap(scca_internal(X, Y, lambda1, lambda2, ndim, stand_x, stand_y, mem, seed, maxiter, tol, verbose, num_threads, useV, Vinit));
     return rcpp_result_gen;
 END_RCPP
 }
