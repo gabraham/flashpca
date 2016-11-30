@@ -284,7 +284,11 @@ void Data::read_snp_block(unsigned int start_idx, unsigned int stop_idx,
 	    else if(stand_method_x == STANDARDIZE_BINOM2)
 	       sd = sqrt(2.0 * P * (1 - P));
 	    else
-	       throw std::runtime_error("unknown standardisation method");
+	    {
+	       std::string s = std::string("unknown standardisation method: ")
+		  + std::to_string(stand_method_x);
+	       throw std::runtime_error(s);
+	    }
 
 	    X_meansd(k, 0) = snp_avg;
 	    X_meansd(k, 1) = sd;

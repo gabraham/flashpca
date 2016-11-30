@@ -10,8 +10,8 @@ An R interface to flashpca for fast principal component analysis.}
 \tabular{ll}{
 Package: \tab flashpca\cr
 Type: \tab Package\cr
-Version: \tab 1.2.5\cr
-Date: \tab 2015-12-01\cr
+Version: \tab 2.0\cr
+Date: \tab 2016-11301\cr
 License: \tab GPL (>= 3)\cr
 }
 }

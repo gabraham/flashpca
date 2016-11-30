@@ -5,8 +5,8 @@ flashpca_internal <- function(X, stand, ndim, maxiter, tol, seed, verbose, do_lo
     .Call('flashpcaR_flashpca_internal', PACKAGE = 'flashpcaR', X, stand, ndim, maxiter, tol, seed, verbose, do_loadings, return_scale)
 }
 
-flashpca_plink_internal <- function(fn, X, stand, ndim, maxiter, block_size, tol, seed, verbose, do_loadings, return_scale) {
-    .Call('flashpcaR_flashpca_plink_internal', PACKAGE = 'flashpcaR', fn, X, stand, ndim, maxiter, block_size, tol, seed, verbose, do_loadings, return_scale)
+flashpca_plink_internal <- function(fn, stand, ndim, maxiter, block_size, tol, seed, verbose, do_loadings, return_scale) {
+    .Call('flashpcaR_flashpca_plink_internal', PACKAGE = 'flashpcaR', fn, stand, ndim, maxiter, block_size, tol, seed, verbose, do_loadings, return_scale)
 }
 
 scca_internal <- function(X, Y, lambda1, lambda2, ndim, stand, mem, seed, maxiter, tol, verbose, num_threads, useV, Vinit) {

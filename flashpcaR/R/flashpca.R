@@ -14,6 +14,8 @@
 #'
 #' @param seed Integer. Seed for random number generator.
 #'
+#' @param blocksize Integer. Block size for PCA on PLINK files.
+#'
 #' @param verbose logical. More verbose output.
 #'
 #' @param do_loadings Logical. Whether to compute loadings (matrix V from SVD).
@@ -97,7 +99,7 @@
 #' @export
 flashpca <- function(X, ndim=10,
    stand=c("binom2", "binom", "sd", "center", "none"),
-   maxiter=1e2, tol=1e-4, seed=1, verbose=FALSE,
+   maxiter=1e2, tol=1e-4, seed=1, blocksize=1000, verbose=FALSE,
    do_loadings=FALSE, check_geno=TRUE, return_scale=TRUE)
 {
    stand <- match.arg(stand)
@@ -105,6 +107,14 @@ flashpca <- function(X, ndim=10,
    if(is.numeric(X)) {
       if(any(is.na(X))) {
 	 stop("X cannot contain any missing values")
+      }
+
+      if(ncol(X) < 2) {
+	 stop("X must have at least two columns")
+      }
+
+      if(nrow(X) < 2) {
+	 stop("X must have at least two rows")
       }
 
       if(stand %in% c("binom", "binom2") && check_geno) {
@@ -115,6 +125,8 @@ flashpca <- function(X, ndim=10,
       	       "stand='binom'/'binom2' can't be used here")
       	 }
       }
+
+      blocksize <- min(blocksize, ncol(X))
    } else if(!is.character(X)) {
       stop("X must be a numeric matrix or a string naming a PLINK fileset")
    }
@@ -143,17 +155,26 @@ flashpca <- function(X, ndim=10,
 
    res <- try(
       if(is.character(X)) {
-	 flashpca_plink_internal(X, stand_i, ndim, maxiter,
+	 flashpca_plink_internal(X, stand_i, ndim, maxiter, blocksize,
 	    tol, seed, verbose, do_loadings, return_scale)
       } else {
 	 flashpca_internal(X, stand_i, ndim, maxiter,
 	    tol, seed, verbose, do_loadings, return_scale)
       }
    )
+   class(res) <- "flashpca"
    if(is(res, "try-error")) {
       NULL
    } else {
       res
    }
+}
+
+#' @param x A flashpca object to be printed
+#' @export 
+print.flashpca <- function(x, ...)
+{
+   cat("flashpca object; ndim=", length(x$values), "\n")
+   invisible(x)
 }
 

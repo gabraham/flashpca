@@ -5,8 +5,9 @@
 \title{Principal Component Analysis using flashpca}
 \usage{
 flashpca(X, ndim = 10, stand = c("binom2", "binom", "sd", "center", "none"),
-  maxiter = 100, tol = 1e-04, seed = 1, verbose = FALSE,
-  do_loadings = FALSE, check_geno = TRUE, return_scale = TRUE)
+  maxiter = 100, tol = 1e-04, seed = 1, blocksize = 1000,
+  verbose = FALSE, do_loadings = FALSE, check_geno = TRUE,
+  return_scale = TRUE)
 }
 \arguments{
 \item{X}{A numeric matrix to perform PCA on. X must not have any NAs.}
@@ -22,6 +23,8 @@ one of "binom" (old Eigenstrat-style), "binom2" (new Eigenstrat-style),
 \item{tol}{Numeric. Tolerance for determining PCA convergence.}
 
 \item{seed}{Integer. Seed for random number generator.}
+
+\item{blocksize}{Integer. Block size for PCA on PLINK files.}
 
 \item{verbose}{logical. More verbose output.}
 

@@ -192,11 +192,11 @@ void RandomPCA::pca_fast(Data& dat, unsigned int block_size,
       if(do_loadings)
       {
          V = MatrixXd::Zero(dat.nsnps, U.cols());
-         std::cout << "Computing loadings" << std::endl;
+         verbose && STDOUT << "Computing loadings" << std::endl;
          VectorXd v(dat.nsnps);
          for(unsigned int j = 0 ; j < U.cols() ; j++)
          {
-            std::cout << "loading " << j << std::endl;
+	    verbose && STDOUT << "loading " << j << std::endl;
             VectorXd u = U.col(j);
             op.crossprod(u.data(), v.data());
             double s = d(j);

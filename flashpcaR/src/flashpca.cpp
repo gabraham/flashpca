@@ -80,7 +80,6 @@ List flashpca_internal(
 // [[Rcpp::export]]
 List flashpca_plink_internal(
    std::string fn,
-   Eigen::Map<Eigen::MatrixXd> X,
    int stand,
    unsigned int ndim,
    unsigned int maxiter,
@@ -100,12 +99,13 @@ List flashpca_plink_internal(
    NumericVector X_sd(0);
 
    std::string fam_file, geno_file, bim_file, pheno_file;
-   geno_file = fn  + std::string(".bed");
+   geno_file = fn + std::string(".bed");
    bim_file = fn + std::string(".bim");
    fam_file = fn + std::string(".fam");
 
    Data data(seed);
    data.verbose = verbose;
+   data.stand_method_x = stand; 
    data.read_pheno(fam_file.c_str(), 6);
    data.read_plink_bim(bim_file.c_str());
    data.geno_filename = geno_file.c_str();

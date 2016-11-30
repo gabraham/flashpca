@@ -144,10 +144,19 @@ scca <- function(X, Y, lambda1=0, lambda2=0,
 	    verbose, num_threads, TRUE, V)
       }
    )
+   class(res) <- "scca"
    if(is(res, "try-error")) {
       NULL
    } else {
       res
    }
+}
+
+#' @param x A flashpca object to be printed
+#' @export 
+print.scca <- function(x, ...)
+{
+   cat("scca object; ndim=", length(x$d), "\n")
+   invisible(x)
 }
 
