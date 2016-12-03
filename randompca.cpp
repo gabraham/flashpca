@@ -249,6 +249,9 @@ void scca_lowmem(MatrixXd& X, MatrixXd &Y, MatrixXd& U, MatrixXd& V,
    VectorXd& d, double lambda1, double lambda2,
    unsigned int maxiter, double tol, bool verbose)
 {
+   verbose && STDOUT << timestamp() 
+      << "[scca_lowmem] " << std::endl;
+
    // TODO: X2 and Y2 take up lots of memory
    MatrixXd X2 = MatrixXd::Zero(X.rows() + U.cols(), X.cols());
    MatrixXd Y2 = MatrixXd::Zero(Y.rows() + U.cols(), Y.cols());
@@ -314,11 +317,13 @@ void scca_highmem(MatrixXd& X, MatrixXd &Y, MatrixXd& U, MatrixXd& V,
    VectorXd& d, double lambda1, double lambda2,
    unsigned int maxiter, double tol, bool verbose)
 {
-   verbose && STDOUT << timestamp() << "Begin computing X^T Y" << std::endl;
+   verbose && STDOUT << timestamp() 
+      << "[scca_highmem] Begin computing X^T Y" << std::endl;
 
    MatrixXd XY = X.transpose() * Y;
 
-   verbose && STDOUT << timestamp() << "End computing X^T Y" << std::endl;
+   verbose && STDOUT << timestamp() 
+      << "[scaa_highmem] End computing X^T Y" << std::endl;
 
    MatrixXd XYj;
    VectorXd u, v, u_old, v_old;
@@ -405,10 +410,10 @@ void RandomPCA::scca(MatrixXd &X, MatrixXd &Y, double lambda1, double lambda2,
    U = MatrixXd::Zero(p, ndim);
    d = VectorXd::Zero(ndim);
 
-   //if(mem == HIGHMEM)
+   if(mem == HIGHMEM)
       scca_highmem(X, Y, U, V, d, lambda1, lambda2, maxiter, tol, verbose);
-   //else
-   //   scca_lowmem(X, Y, U, V, d, lambda1, lambda2, maxiter, tol, verbose);
+   else
+      scca_lowmem(X, Y, U, V, d, lambda1, lambda2, maxiter, tol, verbose);
 
    Px = X * U;
    Py = Y * V;

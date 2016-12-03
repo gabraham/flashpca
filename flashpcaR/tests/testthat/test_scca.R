@@ -1,4 +1,4 @@
-context("Checking SCCA")
+context("Testing SCCA")
 
 ## It's kind of hard to test that SCCA is working, but we can at least test
 ## that SCCA of X with X gives 
@@ -8,7 +8,6 @@ context("Checking SCCA")
 ##
 ## We use very small penalisation so as to give very close results to
 ## classic eigen-decomposition.
-
 
 n <- 500
 p <- 100
@@ -38,43 +37,75 @@ test_that("Testing self-self SCCA (X with X)", {
    eval <- eigen(crossprod(Xbs))$val[1:ndim]
    
    # Essentially power method for eigen-decomposition of XX'
-   s <- scca(Xb, Xb, lambda1=l1, lambda2=l2, ndim=ndim,	 
-      standx="binom", standy="binom")
-   r <- diag(cor(s$Px, s$Py))
-   expect_equal(rep(1, length(r)), r, tol=test.tol)
-   expect_equal(eval, s$d, tol=test.tol)
+   s1 <- scca(Xb, Xb, lambda1=l1, lambda2=l2, ndim=ndim,	 
+      standx="binom", standy="binom", mem="high")
+   s2 <- scca(Xb, Xb, lambda1=l1, lambda2=l2, ndim=ndim,	 
+      standx="binom", standy="binom", mem="low")
+   r1 <- diag(cor(s1$Px, s1$Py))
+   r2 <- diag(cor(s2$Px, s2$Py))
+
+   expect_equal(rep(1, length(r1)), r1, tol=test.tol)
+   expect_equal(rep(1, length(r2)), r2, tol=test.tol)
+
+   expect_equal(eval, s1$d, tol=test.tol)
+   expect_equal(eval, s2$d, tol=test.tol)
 })
 
 test_that("Testing self-self SCCA with stand='sd'", {
    # X0 is already unit-variance so scaling within scca is moot but still
    # useful as a sanity check
-   s <- scca(X0, X0, lambda1=l1, lambda2=l2, ndim=ndim,
-      standx="sd", standy="sd")
+   s1 <- scca(X0, X0, lambda1=l1, lambda2=l2, ndim=ndim,
+      standx="sd", standy="sd", mem="high")
+   s2 <- scca(X0, X0, lambda1=l1, lambda2=l2, ndim=ndim,
+      standx="sd", standy="sd", mem="low")
    eval <- eigen(crossprod(X0))$val[1:ndim]
-   r <- diag(cor(s$Px, s$Py))
-   expect_equal(rep(1, length(r)), r, tol=test.tol)
-   expect_equal(eval, s$d, tol=test.tol)
+
+   r1 <- diag(cor(s1$Px, s1$Py))
+   r2 <- diag(cor(s2$Px, s2$Py))
+
+   expect_equal(rep(1, length(r1)), r1, tol=test.tol)
+   expect_equal(rep(1, length(r2)), r2, tol=test.tol)
+
+   expect_equal(eval, s1$d, tol=test.tol)
+   expect_equal(eval, s2$d, tol=test.tol)
 })
 
 test_that("Testing self-self SCCA with stand='none'", {
    # X0 is already unit-variance so not scaling within scca is ok
-   s <- scca(X0, X0, lambda1=l1, lambda2=l2, ndim=ndim,
-      standx="none", standy="none")
+   s1 <- scca(X0, X0, lambda1=l1, lambda2=l2, ndim=ndim,
+      standx="none", standy="none", mem="high")
+   s2 <- scca(X0, X0, lambda1=l1, lambda2=l2, ndim=ndim,
+      standx="none", standy="none", mem="low")
+
    eval <- eigen(crossprod(X0))$val[1:ndim]
-   r <- diag(cor(s$Px, s$Py))
-   expect_equal(rep(1, length(r)), r, tol=test.tol)
-   expect_equal(eval, s$d, tol=test.tol)
+
+   r1 <- diag(cor(s1$Px, s1$Py))
+   r2 <- diag(cor(s2$Px, s2$Py))
+
+   expect_equal(rep(1, length(r1)), r1, tol=test.tol)
+   expect_equal(rep(1, length(r2)), r2, tol=test.tol)
+
+   expect_equal(eval, s1$d, tol=test.tol)
+   expect_equal(eval, s2$d, tol=test.tol)
 })
 
 test_that("Testing self-self SCCA with stand='center'", {
    # X0 is already zero-mean so scaling within scca is moot but still
    # useful as a sanity check
-   s <- scca(X0, X0, lambda1=l1, lambda2=l2, ndim=ndim,
-      standx="center", standy="center")
+   s1 <- scca(X0, X0, lambda1=l1, lambda2=l2, ndim=ndim,
+      standx="center", standy="center", mem="high")
+   s2 <- scca(X0, X0, lambda1=l1, lambda2=l2, ndim=ndim,
+      standx="center", standy="center", mem="low")
    eval <- eigen(crossprod(X0))$val[1:ndim]
-   r <- diag(cor(s$Px, s$Py))
-   expect_equal(rep(1, length(r)), r, tol=test.tol)
-   expect_equal(eval, s$d, tol=test.tol)
+
+   r1 <- diag(cor(s1$Px, s1$Py))
+   r2 <- diag(cor(s2$Px, s2$Py))
+
+   expect_equal(rep(1, length(r1)), r1, tol=test.tol)
+   expect_equal(rep(1, length(r2)), r2, tol=test.tol)
+
+   expect_equal(eval, s1$d, tol=test.tol)
+   expect_equal(eval, s2$d, tol=test.tol)
 })
 
 test_that("Testing self-self SCCA (X with X), initialising V0", {
@@ -91,10 +122,18 @@ test_that("Testing self-self SCCA (X with X), initialising V0", {
    eval <- sv$d[1:ndim]^2
    
    # Essentially power method for eigen-decomposition of XX'
-   s <- scca(Xb, Xb, lambda1=l1, lambda2=l2, ndim=ndim,	 
-      standx="binom", standy="binom", V=sv$v[, 1:ndim])
-   r <- diag(cor(s$Px, s$Py))
-   expect_equal(rep(1, length(r)), r, tol=test.tol)
-   expect_equal(eval, s$d, tol=test.tol)
+   s1 <- scca(Xb, Xb, lambda1=l1, lambda2=l2, ndim=ndim,	 
+      standx="binom", standy="binom", V=sv$v[, 1:ndim], mem="high")
+   s2 <- scca(Xb, Xb, lambda1=l1, lambda2=l2, ndim=ndim,	 
+      standx="binom", standy="binom", V=sv$v[, 1:ndim], mem="low")
+
+   r1 <- diag(cor(s1$Px, s1$Py))
+   r2 <- diag(cor(s2$Px, s2$Py))
+
+   expect_equal(rep(1, length(r1)), r1, tol=test.tol)
+   expect_equal(rep(1, length(r2)), r2, tol=test.tol)
+
+   expect_equal(eval, s1$d, tol=test.tol)
+   expect_equal(eval, s2$d, tol=test.tol)
 })
 

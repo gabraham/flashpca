@@ -105,7 +105,7 @@ scca <- function(X, Y, lambda1=0, lambda2=0,
       }
    }
 
-   if(standx %in% c("binom", "binom2") && check_geno) {
+   if(standy %in% c("binom", "binom2") && check_geno) {
       wy <- Y %in% 0:2
       if(sum(wy) != length(Y)) {
 	 stop(

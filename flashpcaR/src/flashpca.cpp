@@ -228,3 +228,182 @@ List scca_internal(
    return NA_REAL;
 }
 
+// [[Rcpp::export]]
+List ucca_plink_internal(
+   std::string fn,
+   Eigen::Map<Eigen::MatrixXd> Y,
+   int stand_x,
+   int stand_y,
+   bool verbose,
+   bool return_scale)
+{
+   RandomPCA rpca;
+   rpca.stand_method_x = stand_x;
+   rpca.stand_method_y = stand_y;
+   rpca.divisor = DIVISOR_P;
+   rpca.verbose = verbose;
+
+   NumericVector X_mean(0);
+   NumericVector X_sd(0);
+
+   std::string fam_file, geno_file, bim_file, pheno_file;
+   geno_file = fn + std::string(".bed");
+   bim_file = fn + std::string(".bim");
+   fam_file = fn + std::string(".fam");
+
+   Data data(1);
+   data.verbose = verbose;
+   data.stand_method_x = stand_x; 
+   //data.read_pheno(fam_file.c_str(), 6);
+   data.Y = Y;
+   data.N = Y.rows();
+   data.read_plink_bim(bim_file.c_str());
+   data.geno_filename = geno_file.c_str();
+   data.get_size();
+   data.prepare();
+
+   rpca.ucca(data);
+   
+   NumericMatrix U(wrap(rpca.U));
+   NumericMatrix P(wrap(rpca.Px));
+   NumericVector d(wrap(rpca.d));
+
+   // STANDARDIZE_NONE: 0
+   //if(return_scale && stand != 0)
+   //{
+   //   NumericMatrix X_meansd(wrap(rpca.X_meansd));
+   //   X_mean = X_meansd(_, 0);
+   //   X_sd = X_meansd(_, 1);
+   //}
+   
+   Rcpp::List res;
+
+   //if(do_loadings)
+   //{
+   //   NumericMatrix V(wrap(rpca.V));
+   //   res = Rcpp::List::create(
+   //      Rcpp::Named("values")=d,
+   //      Rcpp::Named("vectors")=U,
+   //      Rcpp::Named("projection")=P,
+   //      Rcpp::Named("loadings")=V,
+   //      Rcpp::Named("center")=X_mean,
+   //      Rcpp::Named("scale")=X_sd
+   //   );
+   //}
+   //else
+   //{
+   //   res = Rcpp::List::create(
+   //      Rcpp::Named("values")=d,
+   //      Rcpp::Named("vectors")=U,
+   //      Rcpp::Named("projection")=P,
+   //      Rcpp::Named("center")=X_mean,
+   //      Rcpp::Named("scale")=X_sd
+   //   );
+   //}
+   //return res;
+   
+   NumericMatrix resM(wrap(rpca.res));
+   colnames(resM) = StringVector::create("R", "Fstat", "P");
+   StringVector rownamesV(data.snp_ids.size());
+   for(int i = 0 ; i < data.snp_ids.size() ; i++)
+      rownamesV(i) = data.snp_ids[i];
+   rownames(resM) = rownamesV;
+
+   res = Rcpp::List::create(
+      Rcpp::Named("result")=resM
+   );
+
+   return res;
+}
+
+// [[Rcpp::export]]
+List ucca_internal(
+   Eigen::Map<Eigen::MatrixXd> X,
+   Eigen::Map<Eigen::MatrixXd> Y,
+   int stand_x,
+   int stand_y,
+   bool verbose,
+   bool return_scale)
+{
+   Eigen::MatrixXd Xm = X;
+   Eigen::MatrixXd Ym = Y;
+
+   RandomPCA rpca;
+   rpca.stand_method_x = stand_x;
+   rpca.stand_method_y = stand_y;
+   rpca.divisor = DIVISOR_P;
+   rpca.verbose = verbose;
+
+   NumericVector X_mean(0);
+   NumericVector X_sd(0);
+
+   //std::string fam_file, geno_file, bim_file, pheno_file;
+   //geno_file = fn + std::string(".bed");
+   //bim_file = fn + std::string(".bim");
+   //fam_file = fn + std::string(".fam");
+
+   //Data data(1);
+   //data.verbose = verbose;
+   //data.stand_method_x = stand_x; 
+   ////data.read_pheno(fam_file.c_str(), 6);
+   //data.Y = Y;
+   //data.N = Y.rows();
+   //data.read_plink_bim(bim_file.c_str());
+   //data.geno_filename = geno_file.c_str();
+   //data.get_size();
+   //data.prepare();
+
+   rpca.ucca(Xm, Ym);
+   
+   NumericMatrix U(wrap(rpca.U));
+   NumericMatrix P(wrap(rpca.Px));
+   NumericVector d(wrap(rpca.d));
+
+   // STANDARDIZE_NONE: 0
+   //if(return_scale && stand != 0)
+   //{
+   //   NumericMatrix X_meansd(wrap(rpca.X_meansd));
+   //   X_mean = X_meansd(_, 0);
+   //   X_sd = X_meansd(_, 1);
+   //}
+   
+   Rcpp::List res;
+
+   //if(do_loadings)
+   //{
+   //   NumericMatrix V(wrap(rpca.V));
+   //   res = Rcpp::List::create(
+   //      Rcpp::Named("values")=d,
+   //      Rcpp::Named("vectors")=U,
+   //      Rcpp::Named("projection")=P,
+   //      Rcpp::Named("loadings")=V,
+   //      Rcpp::Named("center")=X_mean,
+   //      Rcpp::Named("scale")=X_sd
+   //   );
+   //}
+   //else
+   //{
+   //   res = Rcpp::List::create(
+   //      Rcpp::Named("values")=d,
+   //      Rcpp::Named("vectors")=U,
+   //      Rcpp::Named("projection")=P,
+   //      Rcpp::Named("center")=X_mean,
+   //      Rcpp::Named("scale")=X_sd
+   //   );
+   //}
+   //return res;
+   
+   NumericMatrix resM(wrap(rpca.res));
+   colnames(resM) = StringVector::create("R", "Fstat", "P");
+   //StringVector rownamesV(data.snp_ids.size());
+   //for(int i = 0 ; i < data.snp_ids.size() ; i++)
+   //   rownamesV(i) = data.snp_ids[i];
+   //rownames(resM) = rownamesV;
+
+   res = Rcpp::List::create(
+      Rcpp::Named("result")=resM
+   );
+
+   return res;
+}
+

@@ -148,7 +148,7 @@ flashpca <- function(X, ndim=10,
       ndim <- min(maxdim, ndim)
    }
 
-   # otherwise Rcpp will throw an exception
+   # If the matrix is integer, Rcpp will throw an exception
    if(is.numeric(X)) {
       storage.mode(X) <- "numeric"
    }

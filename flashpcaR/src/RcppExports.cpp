@@ -70,3 +70,35 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// ucca_plink_internal
+List ucca_plink_internal(std::string fn, Eigen::Map<Eigen::MatrixXd> Y, int stand_x, int stand_y, bool verbose, bool return_scale);
+RcppExport SEXP flashpcaR_ucca_plink_internal(SEXP fnSEXP, SEXP YSEXP, SEXP stand_xSEXP, SEXP stand_ySEXP, SEXP verboseSEXP, SEXP return_scaleSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< std::string >::type fn(fnSEXP);
+    Rcpp::traits::input_parameter< Eigen::Map<Eigen::MatrixXd> >::type Y(YSEXP);
+    Rcpp::traits::input_parameter< int >::type stand_x(stand_xSEXP);
+    Rcpp::traits::input_parameter< int >::type stand_y(stand_ySEXP);
+    Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
+    Rcpp::traits::input_parameter< bool >::type return_scale(return_scaleSEXP);
+    rcpp_result_gen = Rcpp::wrap(ucca_plink_internal(fn, Y, stand_x, stand_y, verbose, return_scale));
+    return rcpp_result_gen;
+END_RCPP
+}
+// ucca_internal
+List ucca_internal(Eigen::Map<Eigen::MatrixXd> X, Eigen::Map<Eigen::MatrixXd> Y, int stand_x, int stand_y, bool verbose, bool return_scale);
+RcppExport SEXP flashpcaR_ucca_internal(SEXP XSEXP, SEXP YSEXP, SEXP stand_xSEXP, SEXP stand_ySEXP, SEXP verboseSEXP, SEXP return_scaleSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Eigen::Map<Eigen::MatrixXd> >::type X(XSEXP);
+    Rcpp::traits::input_parameter< Eigen::Map<Eigen::MatrixXd> >::type Y(YSEXP);
+    Rcpp::traits::input_parameter< int >::type stand_x(stand_xSEXP);
+    Rcpp::traits::input_parameter< int >::type stand_y(stand_ySEXP);
+    Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
+    Rcpp::traits::input_parameter< bool >::type return_scale(return_scaleSEXP);
+    rcpp_result_gen = Rcpp::wrap(ucca_internal(X, Y, stand_x, stand_y, verbose, return_scale));
+    return rcpp_result_gen;
+END_RCPP
+}
