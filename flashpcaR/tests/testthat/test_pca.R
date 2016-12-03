@@ -70,7 +70,7 @@ test_that("Testing PCA with stand='binom'", {
 
    #f1 <- prcomp(S, center=FALSE, scale.=FALSE)
    f1 <- eigen(tcrossprod(S) / ncol(S), symmetric=TRUE)
-   f1$projection <- f1$vectors %*% S
+   f1$projection <- with(f1, vectors %*% diag(sqrt(values)))
    f2 <- flashpca(S, ndim=ndim, stand="none")
    f3 <- flashpca(bedf, ndim=ndim, stand="binom")
 
@@ -92,13 +92,15 @@ test_that("Testing PCA with stand='binom2'", {
    X <- matrix(sample(0:2, n * p, replace=TRUE), n, p)
    S <- scale2(X, type="2")
 
-   f1 <- prcomp(S, center=FALSE, scale.=FALSE)
+   f1 <- eigen(tcrossprod(S) / ncol(S), symmetric=TRUE)
+   f1$projection <- with(f1,
+      vectors[, 1:ndim] %*% diag(sqrt(values[1:ndim])))
    f2 <- flashpca(X, ndim=ndim, stand="binom2")
 
-   compare_scales(S, f1, f2)
+   compare_scales(S, f2)
 
    compare_eigenvecs(
-      f1$x[, 1:ndim], f2$projection
+      f1$projection[, 1:ndim], f2$projection
    )
 })
 
@@ -107,24 +109,27 @@ test_that("Testing PCA with stand='sd'", {
    X <- matrix(rnorm(n * p), n, p)
    S <- scale(X, center=TRUE, scale=TRUE)
 
-   f1 <- prcomp(S, center=FALSE, scale.=FALSE)
+   f1 <- eigen(tcrossprod(S) / ncol(S), symmetric=TRUE)
+   f1$projection <- with(f1,
+      vectors[, 1:ndim] %*% diag(sqrt(values[1:ndim])))
    f2 <- flashpca(X, ndim=ndim, stand="sd")
 
    compare_scales(S, f2)
 
    compare_eigenvecs(
-      f1$x[, 1:ndim], f2$projection
+      f1$projection[, 1:ndim], f2$projection
    )
 })
 
 test_that("Testing PCA with stand='none'", {
    X <- matrix(rnorm(n * p), n, p)
 
-   f1 <- prcomp(X, center=FALSE, scale.=FALSE)
+   f1 <- eigen(tcrossprod(X) / ncol(X), symmetric=TRUE)
+   f1$projection <- with(f1, vectors %*% diag(sqrt(values)))
    f2 <- flashpca(X, ndim=ndim, stand="none")
 
    compare_eigenvecs(
-      f1$x[, 1:ndim], f2$projection
+      f1$projection[, 1:ndim], f2$projection
    )
 })
 
@@ -132,14 +137,16 @@ test_that("Testing PCA with stand='center'", {
    X <- matrix(rnorm(n * p), n, p)
    S <- scale(X, center=TRUE, scale=FALSE)
 
-   f1 <- prcomp(S, center=FALSE, scale.=FALSE)
+   f1 <- eigen(tcrossprod(S) / ncol(S), symmetric=TRUE)
+   f1$projection <- with(f1,
+      vectors[, 1:ndim] %*% diag(sqrt(values[1:ndim])))
    f2 <- flashpca(X, ndim=ndim, stand="center")
 
    attr(S, "scaled:scale") <- rep(1, p)
    compare_scales(S, f2)
 
    compare_eigenvecs(
-      f1$x[, 1:ndim], f2$projection
+      f1$projection[, 1:ndim], f2$projection
    )
 })
 

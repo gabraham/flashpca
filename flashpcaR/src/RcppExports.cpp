@@ -7,33 +7,35 @@
 using namespace Rcpp;
 
 // flashpca_internal
-List flashpca_internal(Eigen::Map<Eigen::MatrixXd> X, int stand, unsigned int ndim, unsigned int maxiter, double tol, long seed, bool verbose, bool do_loadings, bool return_scale);
-RcppExport SEXP flashpcaR_flashpca_internal(SEXP XSEXP, SEXP standSEXP, SEXP ndimSEXP, SEXP maxiterSEXP, SEXP tolSEXP, SEXP seedSEXP, SEXP verboseSEXP, SEXP do_loadingsSEXP, SEXP return_scaleSEXP) {
+List flashpca_internal(Eigen::Map<Eigen::MatrixXd> X, int stand, unsigned int ndim, unsigned int divisor, unsigned int maxiter, double tol, long seed, bool verbose, bool do_loadings, bool return_scale);
+RcppExport SEXP flashpcaR_flashpca_internal(SEXP XSEXP, SEXP standSEXP, SEXP ndimSEXP, SEXP divisorSEXP, SEXP maxiterSEXP, SEXP tolSEXP, SEXP seedSEXP, SEXP verboseSEXP, SEXP do_loadingsSEXP, SEXP return_scaleSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< Eigen::Map<Eigen::MatrixXd> >::type X(XSEXP);
     Rcpp::traits::input_parameter< int >::type stand(standSEXP);
     Rcpp::traits::input_parameter< unsigned int >::type ndim(ndimSEXP);
+    Rcpp::traits::input_parameter< unsigned int >::type divisor(divisorSEXP);
     Rcpp::traits::input_parameter< unsigned int >::type maxiter(maxiterSEXP);
     Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
     Rcpp::traits::input_parameter< long >::type seed(seedSEXP);
     Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
     Rcpp::traits::input_parameter< bool >::type do_loadings(do_loadingsSEXP);
     Rcpp::traits::input_parameter< bool >::type return_scale(return_scaleSEXP);
-    rcpp_result_gen = Rcpp::wrap(flashpca_internal(X, stand, ndim, maxiter, tol, seed, verbose, do_loadings, return_scale));
+    rcpp_result_gen = Rcpp::wrap(flashpca_internal(X, stand, ndim, divisor, maxiter, tol, seed, verbose, do_loadings, return_scale));
     return rcpp_result_gen;
 END_RCPP
 }
 // flashpca_plink_internal
-List flashpca_plink_internal(std::string fn, int stand, unsigned int ndim, unsigned int maxiter, unsigned int block_size, double tol, long seed, bool verbose, bool do_loadings, bool return_scale);
-RcppExport SEXP flashpcaR_flashpca_plink_internal(SEXP fnSEXP, SEXP standSEXP, SEXP ndimSEXP, SEXP maxiterSEXP, SEXP block_sizeSEXP, SEXP tolSEXP, SEXP seedSEXP, SEXP verboseSEXP, SEXP do_loadingsSEXP, SEXP return_scaleSEXP) {
+List flashpca_plink_internal(std::string fn, int stand, unsigned int ndim, unsigned int divisor, unsigned int maxiter, unsigned int block_size, double tol, long seed, bool verbose, bool do_loadings, bool return_scale);
+RcppExport SEXP flashpcaR_flashpca_plink_internal(SEXP fnSEXP, SEXP standSEXP, SEXP ndimSEXP, SEXP divisorSEXP, SEXP maxiterSEXP, SEXP block_sizeSEXP, SEXP tolSEXP, SEXP seedSEXP, SEXP verboseSEXP, SEXP do_loadingsSEXP, SEXP return_scaleSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< std::string >::type fn(fnSEXP);
     Rcpp::traits::input_parameter< int >::type stand(standSEXP);
     Rcpp::traits::input_parameter< unsigned int >::type ndim(ndimSEXP);
+    Rcpp::traits::input_parameter< unsigned int >::type divisor(divisorSEXP);
     Rcpp::traits::input_parameter< unsigned int >::type maxiter(maxiterSEXP);
     Rcpp::traits::input_parameter< unsigned int >::type block_size(block_sizeSEXP);
     Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
@@ -41,7 +43,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
     Rcpp::traits::input_parameter< bool >::type do_loadings(do_loadingsSEXP);
     Rcpp::traits::input_parameter< bool >::type return_scale(return_scaleSEXP);
-    rcpp_result_gen = Rcpp::wrap(flashpca_plink_internal(fn, stand, ndim, maxiter, block_size, tol, seed, verbose, do_loadings, return_scale));
+    rcpp_result_gen = Rcpp::wrap(flashpca_plink_internal(fn, stand, ndim, divisor, maxiter, block_size, tol, seed, verbose, do_loadings, return_scale));
     return rcpp_result_gen;
 END_RCPP
 }

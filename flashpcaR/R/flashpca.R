@@ -2,12 +2,16 @@
 #'
 #' @param X A numeric matrix to perform PCA on. X must not have any NAs.
 #'
+#' @param ndim Integer. How many dimensions to return in results.
+#'
 #' @param stand A character string indicating how to standardize X before PCA,
 #' one of "binom" (old Eigenstrat-style), "binom2" (new Eigenstrat-style),
 #' "sd" (zero-mean unit-variance), "center" (zero mean), or "none".
-#'
-#' @param ndim Integer. How many dimensions to return in results.
 #' 
+#' @param divisor A character string indicating whether to divide the
+#' eigenvalues by number of columns of X ("p"), the number of 
+#' rows of X minus 1 ("n1") or none ("none").
+#'
 #' @param maxiter Integer. How many iterations to use in PCA.
 #'
 #' @param tol Numeric. Tolerance for determining PCA convergence.
@@ -29,7 +33,8 @@
 #' deviations used in standardizing the matrix X.
 #'
 #' @details
-#'    The decomposition is of X X' / m, where m is the number of SNPs.
+#'    The default decomposition is of X X' / m, where m is the number of SNPs
+#'    (the denominator can be changed using the 'divisor' argument).
 #'
 #'    The data is standardised by default. \code{stand = "binom"} uses the old Eigensoft
 #'    (Price 2006) formulation of
@@ -99,10 +104,12 @@
 #' @export
 flashpca <- function(X, ndim=10,
    stand=c("binom2", "binom", "sd", "center", "none"),
+   divisor=c("p", "n", "none"),
    maxiter=1e2, tol=1e-4, seed=1, blocksize=1000, verbose=FALSE,
    do_loadings=FALSE, check_geno=TRUE, return_scale=TRUE)
 {
    stand <- match.arg(stand)
+   divisor <- match.arg(divisor)
    
    if(is.numeric(X)) {
       if(any(is.na(X))) {
@@ -131,17 +138,21 @@ flashpca <- function(X, ndim=10,
       stop("X must be a numeric matrix or a string naming a PLINK fileset")
    }
 
-   if(stand == "none") {
-      stand_i <- 0L
-   } else if(stand == "sd") {
-      stand_i <- 1L
-   } else if(stand == "binom") {
-      stand_i <- 2L
-   } else if(stand == "binom2") {
-      stand_i <- 3L
-   } else if(stand == "center") {
-      stand_i <- 4L
-   } 
+   divisors <- c(
+      "p"=2,
+      "n1"=1,
+      "none"=0
+   )
+   div <- divisors[divisor]
+
+   std <- c(
+      "none"=0L,
+      "sd"=1L,
+      "binom"=2L,
+      "binom2"=3L,
+      "center"=4L
+   )
+   stand_i <- std[stand]
 
    if(is.numeric(X)) {
       maxdim <- min(dim(X))
@@ -155,10 +166,11 @@ flashpca <- function(X, ndim=10,
 
    res <- try(
       if(is.character(X)) {
-	 flashpca_plink_internal(X, stand_i, ndim, maxiter, blocksize,
-	    tol, seed, verbose, do_loadings, return_scale)
+	 flashpca_plink_internal(X, stand_i, ndim, div,
+	    maxiter, blocksize, tol, seed,
+	    verbose, do_loadings, return_scale)
       } else {
-	 flashpca_internal(X, stand_i, ndim, maxiter,
+	 flashpca_internal(X, stand_i, ndim, div, maxiter,
 	    tol, seed, verbose, do_loadings, return_scale)
       }
    )

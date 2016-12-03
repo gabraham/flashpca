@@ -18,6 +18,7 @@ List flashpca_internal(
    Eigen::Map<Eigen::MatrixXd> X,
    int stand,
    unsigned int ndim,
+   unsigned int divisor,
    unsigned int maxiter,
    double tol,
    long seed,
@@ -29,6 +30,7 @@ List flashpca_internal(
 
    RandomPCA rpca;
    rpca.stand_method_x = stand;
+   rpca.divisor = divisor;
    rpca.verbose = verbose;
 
    rpca.pca_fast(Xm, 0, ndim, maxiter,
@@ -82,6 +84,7 @@ List flashpca_plink_internal(
    std::string fn,
    int stand,
    unsigned int ndim,
+   unsigned int divisor,
    unsigned int maxiter,
    unsigned int block_size,
    double tol,
@@ -92,7 +95,7 @@ List flashpca_plink_internal(
 {
    RandomPCA rpca;
    rpca.stand_method_x = stand;
-   rpca.divisor = DIVISOR_P;
+   rpca.divisor = divisor;
    rpca.verbose = verbose;
 
    NumericVector X_mean(0);
