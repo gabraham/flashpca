@@ -44,9 +44,9 @@ int main(int argc, char * argv[])
       ("ucca", "perform per-SNP canonical correlation analysis [EXPERIMENTAL]")
       ("project,p", "project new samples onto existing principal components")
       ("batch", "load all genotypes into RAM at once")
-      ("memory,m", po::value<int>(), "size of block for online algorithm, in MB")
+      ("memory,m", po::value<int>(), "size of block, in MB")
       ("blocksize,b", po::value<int>(),
-	 "size of block for online algorithm, in number of SNPs")
+	 "size of block for, in number of SNPs")
       ("numthreads,n", po::value<int>(), "set number of OpenMP threads")
       ("seed", po::value<long>(), "set random seed")
       ("bed", po::value<std::string>(), "PLINK bed file")
@@ -56,7 +56,7 @@ int main(int argc, char * argv[])
       ("bfile", po::value<std::string>(), "PLINK root name")
       ("ndim,d", po::value<int>(), "number of PCs to output")
       ("standx,s", po::value<std::string>(),
-	 "standardization method for genotypes [binom2 | binom | none | sd | center]")
+	 "standardization method for genotypes [binom2 | binom]")
       ("standy", po::value<std::string>(),
 	 "standardization method for phenotypes [sd | binom2 | binom | none | center]")
       ("div", po::value<std::string>(),
@@ -362,28 +362,12 @@ int main(int argc, char * argv[])
 	 stand_method_x = STANDARDIZE_BINOM;
       else if(m == "binom2")
 	 stand_method_x = STANDARDIZE_BINOM2;
-      else if(m == "sd")
-	 stand_method_x = STANDARDIZE_SD;
-      else if(m == "center")
-	 stand_method_x = STANDARDIZE_CENTER;
-      else if(m == "none")
-	 stand_method_x = STANDARDIZE_NONE;
       else
       {
 	 std::cerr << "Error: unknown standardization method (--standx): "
 	    << m << std::endl;
 	 return EXIT_FAILURE;
       }
-   }
-
-   if(stand_method_x != STANDARDIZE_BINOM2
-      && stand_method_x != STANDARDIZE_BINOM
-      && mem_mode == MEM_MODE_ONLINE)
-   {
-      std::cerr << "Error: in online mode (--online), "
-	 << "only --stand binom and binom2 are supported"
-	 << std::endl;
-      return EXIT_FAILURE;
    }
 
    int stand_method_y = STANDARDIZE_SD;
