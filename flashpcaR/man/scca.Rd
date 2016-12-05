@@ -2,7 +2,7 @@
 % Please edit documentation in R/scca.R
 \name{scca}
 \alias{scca}
-\title{Performs sparse canonical correlation analysis}
+\title{Performs sparse canonical correlation analysis.}
 \usage{
 scca(X, Y, lambda1 = 0, lambda2 = 0, standx = c("binom2", "binom", "sd",
   "center", "none"), standy = c("binom2", "binom", "sd", "center", "none"),
@@ -17,6 +17,18 @@ scca(X, Y, lambda1 = 0, lambda2 = 0, standx = c("binom2", "binom", "sd",
 \item{lambda1}{Numeric. Non-negative L1 penalty on canonical vectors of X.}
 
 \item{lambda2}{Numeric. Non-negative L1 penalty on canonical vectors of Y.}
+
+\item{standx}{Character. One of "binom" (zero mean, unit variance
+where variance is p * (1 - p), for SNP data), "binom2" (zero mean, unit
+variance where variance is 2 * p * (1 - p),
+"sd" (zero-mean, unit Gaussian variance), "center" (zero mean), or "none". Note
+that if you use "binom" for non-SNP data you may get garbage. Note that
+currently the same standardization is applied to both X and Y. If you
+require different standardizations, it's best to standardise yourself
+and then choose standx="none". When X is a PLINK dataset name, standx must be one of "binom2" 
+or "binom".}
+
+\item{standy}{Character. Stanardisation of Y.}
 
 \item{ndim}{Integer. Positive number of canonical vectors to compute.}
 
@@ -36,21 +48,12 @@ doesn't explicitly compute X^T Y, and "high" does.
 This is useful for large X and Y.}
 
 \item{check_geno}{Logical. Whether to explicitly check if the matrices
-X and Y contain values other than {0, 1, 2}, when stand="binom". This can
+X and Y contain values other than {0, 1, 2}, when standx/standy="binom"/"binom2". This can
 be set to FALSE if you are sure your matrices only contain these values
-(only matters when using stand="binom").}
+(only matters when using "binom" or "binom2").}
 
 \item{V}{Numeric. A vector to initialise "v" in SCCA iterations. By
 default, it will be a vector of normally distributed variates.}
-
-\item{stand}{Character. One of "binom" (zero mean, unit variance
-where variance is p * (1 - p), for SNP data), "binom2" (zero mean, unit
-variance where variance is 2 * p * (1 - p),
-"sd" (zero-mean, unit Gaussian variance), "center" (zero mean), or "none". Note
-that if you use "binom" for non-SNP data you may get garbage. Note that
-currently the same standardization is applied to both X and Y. If you
-require different standardizations, it's best to standardize yourself
-and then choose stand="none".}
 }
 \value{
 \code{scca} returns a list containing the following components:
@@ -65,21 +68,21 @@ and then choose stand="none".}
 }
 }
 \description{
-Performs sparse canonical correlation analysis
+Performs sparse canonical correlation analysis.
 }
 \examples{
 
-n <- 500
-p <- 100
-k <- 50
-m <- 5
-M <- matrix(rnorm(n * m), n, m)
-Bx <- matrix(rnorm(m * p), m, p)
-By <- matrix(rnorm(m * k), m, k)
-X <- scale(M \%*\% Bx + rnorm(n * p))
-Y <- scale(M \%*\% By + rnorm(n * k))
+#######################
+## HapMap3 chr1 example
+data(hm3.chr1)
+X <- scale2(hm3.chr1$bed)
+n <- nrow(X)
+m <- ncol(X)
+k <- 10
+B <- matrix(rnorm(m * k), m, k)
+Y <- X \%*\% B + rnorm(n * k)
 
-s <- scca(X, Y, lambda1=1e-2, lambda2=1e-2, ndim=5, stand="sd")
+s <- scca(X, Y, lambda1=1e-2, lambda2=1e-2, ndim=5, standy="sd")
 
 ## The canonical correlations
 diag(cor(s$Px, s$Py))

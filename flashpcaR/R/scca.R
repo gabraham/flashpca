@@ -1,4 +1,4 @@
-#' Performs sparse canonical correlation analysis
+#' Performs sparse canonical correlation analysis.
 #'
 #' @param X An n by p numeric matrix
 #'
@@ -8,14 +8,17 @@
 #'
 #' @param lambda2 Numeric. Non-negative L1 penalty on canonical vectors of Y.
 #"
-#' @param stand Character. One of "binom" (zero mean, unit variance
+#' @param standx Character. One of "binom" (zero mean, unit variance
 #' where variance is p * (1 - p), for SNP data), "binom2" (zero mean, unit
 #' variance where variance is 2 * p * (1 - p),
 #' "sd" (zero-mean, unit Gaussian variance), "center" (zero mean), or "none". Note
 #' that if you use "binom" for non-SNP data you may get garbage. Note that
 #' currently the same standardization is applied to both X and Y. If you
-#' require different standardizations, it's best to standardize yourself
-#' and then choose stand="none".
+#' require different standardizations, it's best to standardise yourself
+#' and then choose standx="none". When X is a PLINK dataset name, standx must be one of "binom2" 
+#' or "binom".
+#'
+#' @param standy Character. Stanardisation of Y.
 #'
 #' @param ndim Integer. Positive number of canonical vectors to compute.
 #'
@@ -35,9 +38,9 @@
 #' This is useful for large X and Y.
 #'
 #' @param check_geno Logical. Whether to explicitly check if the matrices
-#' X and Y contain values other than {0, 1, 2}, when stand="binom". This can
+#' X and Y contain values other than {0, 1, 2}, when standx/standy="binom"/"binom2". This can
 #' be set to FALSE if you are sure your matrices only contain these values
-#' (only matters when using stand="binom").
+#' (only matters when using "binom" or "binom2").
 #' 
 #' @param V Numeric. A vector to initialise "v" in SCCA iterations. By
 #' default, it will be a vector of normally distributed variates.
@@ -55,17 +58,17 @@
 #'
 #' @examples
 #'
-#' n <- 500
-#' p <- 100
-#' k <- 50
-#' m <- 5
-#' M <- matrix(rnorm(n * m), n, m)
-#' Bx <- matrix(rnorm(m * p), m, p)
-#' By <- matrix(rnorm(m * k), m, k)
-#' X <- scale(M %*% Bx + rnorm(n * p))
-#' Y <- scale(M %*% By + rnorm(n * k))
-#' 
-#' s <- scca(X, Y, lambda1=1e-2, lambda2=1e-2, ndim=5, stand="sd")
+#' #######################
+#' ## HapMap3 chr1 example
+#' data(hm3.chr1)
+#' X <- scale2(hm3.chr1$bed)
+#' n <- nrow(X)
+#' m <- ncol(X)
+#' k <- 10
+#' B <- matrix(rnorm(m * k), m, k)
+#' Y <- X %*% B + rnorm(n * k)
+#'
+#' s <- scca(X, Y, lambda1=1e-2, lambda2=1e-2, ndim=5, standy="sd")
 #'
 #' ## The canonical correlations
 #' diag(cor(s$Px, s$Py))
@@ -81,37 +84,43 @@ scca <- function(X, Y, lambda1=0, lambda2=0,
    standy <- match.arg(standy)
    mem <- match.arg(mem)
 
-   X <- cbind(X)
+   if(!is.numeric(Y)) {
+      stop("Y must be a numeric matrix")
+   } else if(any(is.na(Y))) {
+       stop("Y cannot contain any missing values")
+   }
+
    Y <- cbind(Y)
+   # If Y is an integer matrix, Rcpp will throw exception
+   storage.mode(Y) <- "numeric"
 
-   if(nrow(X) != nrow(Y)) {
-      stop("X and Y must have the same number of rows")
-   }
-
-   if(!is.numeric(X) || !is.numeric(Y)) {
-      stop("X and Y must both be numeric matrices")
-   }
-
-   if(any(is.na(X)) || any(is.na(Y))) {
-      stop("X and Y cannot contain any missing values")
-   }
-
-   if(standx %in% c("binom", "binom2") && check_geno) {
-      wx <- X %in% 0:2
-      if(sum(wx) != length(X)) {
-	 stop(
-	    paste("Your X matrix contains values other than {0, 1, 2},
-	       stand='binom'/'binom2' can't be used here"))
+   if(is.numeric(X)) {
+      if(any(is.na(X))) {
+	 stop("X cannot contain any missing values")
       }
-   }
 
-   if(standy %in% c("binom", "binom2") && check_geno) {
-      wy <- Y %in% 0:2
-      if(sum(wy) != length(Y)) {
-	 stop(
-	    paste("Your Y matrix contains values other than {0, 1, 2},
-	       stand='binom'/'binom2' can't be used here"))
+      if(ncol(X) < 2) {
+	 stop("X must have at least two columns")
       }
+
+      if(nrow(X) < 2) {
+	 stop("X must have at least two rows")
+      }
+
+      if(standx %in% c("binom", "binom2") && check_geno) {
+	 wx <- X %in% 0:2
+      	 if(sum(wx) != length(X)) {
+      	    stop(
+      	       "Your data contains values other than {0, 1, 2}, ",
+      	       "standx='binom'/'binom2' can't be used here")
+      	 }
+      }
+   } else if(is.character(X)) {
+      if(!standx %in% c("binom", "binom2")) {
+	 stop("When using PLINK data, you must use standx='binom' or 'binom2'")
+      }
+   } else {
+      stop("X must be a numeric matrix or a string naming a PLINK fileset")
    }
 
    std <- c(
@@ -125,8 +134,8 @@ scca <- function(X, Y, lambda1=0, lambda2=0,
    standx_i <- std[standx]
    standy_i <- std[standy]
 
-   maxdim <- min(dim(X), dim(Y))
-   ndim <- min(maxdim, ndim)
+   #maxdim <- min(dim(X), dim(Y))
+   #ndim <- min(maxdim, ndim)
 
    if(mem == "high") {
       mem_i <- 2L
@@ -134,32 +143,37 @@ scca <- function(X, Y, lambda1=0, lambda2=0,
       mem_i <- 1L
    }
 
-   # otherwise Rcpp will throw an exception
-   storage.mode(X) <- "numeric"
-   storage.mode(Y) <- "numeric"
-
    if(!is.null(V)) {
       V <- cbind(V)
       if(nrow(V) < ncol(Y) || ncol(V) != ndim) {
          stop("dimensions of V must be (nrow(Y) x (ndim))")
       }
+      useV <- TRUE
+   } else 
+   {
+      V <- matrix(0.)
+      useV <- FALSE
    }
 
+
    res <- try(
-      if(is.null(V)) {
-	 scca_internal(X, Y, lambda1, lambda2, ndim,
+      if(is.character(X)) {
+	 scca_plink_internal(X, Y, lambda1, lambda2, ndim,
 	    standx_i, standy_i, mem_i, seed, maxiter, tol,
-	    verbose, num_threads, FALSE, matrix(0))
+	    verbose, num_threads, useV, V)
       } else {
 	 scca_internal(X, Y, lambda1, lambda2, ndim,
 	    standx_i, standy_i, mem_i, seed, maxiter, tol,
-	    verbose, num_threads, TRUE, V)
+	    verbose, num_threads, useV, V)
       }
    )
-   class(res) <- "scca"
+   class(res) <- "ucca"
    if(is(res, "try-error")) {
       NULL
    } else {
+      #if(!is.character(X)) {
+	 #rownames(res$result) <- colnames(X)
+      #}
       res
    }
 }
@@ -170,5 +184,35 @@ print.scca <- function(x, ...)
 {
    cat("scca object; ndim=", length(x$d), "\n")
    invisible(x)
+}
+
+cv.scca <- function(X, Y, nfolds=10, parallel=FALSE, ...)
+{
+   n <- nrow(Y)
+   if(is.character(X)) {
+      stop("Cross-validation currently only supported when X is a matrix")
+   }
+
+   folds <- sample(1:nfolds, n, replace=TRUE)
+
+   if(parallel) {
+      require(foreach)
+      res <- foreach(fold=1:nfolds) %dopar% {
+         w <- folds != fold
+         s <- scca(X[w,], Y[w,], ...)
+         px <- X[!w,] %*% s$U
+         py <- Y[!w,] %*% s$V
+         diag(cor(px, py))
+      }
+   } else {
+      res <- sapply(1:nfolds, function(fold) {
+         w <- folds != fold
+         s <- scca(X[w,], Y[w,], ...)
+         px <- X[!w,] %*% s$U
+         py <- Y[!w,] %*% s$V
+         diag(cor(px, py))
+      })
+   }
+   res
 }
 

@@ -1,6 +1,8 @@
 #' Principal Component Analysis using flashpca
 #'
-#' @param X A numeric matrix to perform PCA on. X must not have any NAs.
+#' @param X A numeric matrix to perform PCA on, or a character string po, or a
+#' character string pointing to a PLINK dataset. If X is a matrix, it cannot
+#' have missing values.
 #'
 #' @param ndim Integer. How many dimensions to return in results.
 #'
@@ -61,14 +63,17 @@
 #' 
 #' set.seed(123)
 #' 
-#' ## Toy example
-#' n <- 200
-#' p <- 500
-#' x <- matrix(rnorm(n * p), n, p)
+#' #######################
+#' ## HapMap3 chr1 example
+#' data(hm3.chr1)
 #' ndim <- 20
-#' f1 <- flashpca(x, stand="sd", ndim=ndim)
-#' 
-#' r <- prcomp(x, center=TRUE, scale.=TRUE)
+#' X <- scale2(hm3.chr1$bed)
+#' f1 <- flashpca(X, ndim=ndim, stand="none")
+#'
+#' # prcomp's eigenvalues are of XX'/(n-1), but
+#' # flashpca's are of XX'/m.
+#' r <- prcomp(X / sqrt(ncol(X)) * sqrt(nrow(X) - 1),
+#'   center=FALSE, scale.=FALSE)
 #' 
 #' ## Compare eigenvalues
 #' eval <- cbind(r$sdev[1:ndim]^2, f1$values)
@@ -76,30 +81,22 @@
 #' mean((eval[,1] - eval[,2])^2)
 #' 
 #' ## Compare eigenvectors
-#' cor(r$x[, 1:ndim], f1$projection)
+#' diag(cor(r$x[, 1:ndim], f1$projection))
 #'
-#' \dontrun{
-#' ## First get data from
-#' ## https://github.com/gabraham/flashpca/blob/devel/HapMap3/data.RData
-#' ##
-#' ## Missing genotypes have been imputed randomly according to genotype
-#' ## proportions in each SNP.
-#' load("data.RData")
-#' ndim <- 20
-#' system.time({
-#'    f <- flashpca(hapmap3$bed, stand="center", ndim=ndim)
-#' })
-#' system.time({
-#'    r <- prcomp(hapmap3$bed)
-#' })
+#' ####################################
+#' # HapMap3 chr1 example, PLINK format
+#'
+#' bedf <- gsub("\\.bed", "",
+#'    system.file("extdata", "data_chr1.bed", package="flashpcaR"))
+#'
+#' f2 <- flashpca(bedf, ndim=ndim) 
 #' 
-#' eval <- cbind(r$sdev[1:ndim]^2, f$values)
+#' eval <- cbind(r$sdev[1:ndim]^2, f2$values)
 #' cor(eval)
 #' mean((eval[,1] - eval[,2])^2)
 #' 
 #' ## Compare eigenvectors
-#' diag(cor(r$x[, 1:ndim], f$projection))
-#'}
+#' diag(cor(r$x[, 1:ndim], f2$projection))
 #'
 #' @export
 flashpca <- function(X, ndim=10,
@@ -134,7 +131,11 @@ flashpca <- function(X, ndim=10,
       }
 
       blocksize <- min(blocksize, ncol(X))
-   } else if(!is.character(X)) {
+   } else if(is.character(X)) {
+      if(!stand %in% c("binom", "binom2")) {
+	 stop("When using PLINK data, you must use stand='binom' or 'binom2'")
+      }
+   } else {
       stop("X must be a numeric matrix or a string naming a PLINK fileset")
    }
 
