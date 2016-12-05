@@ -234,14 +234,91 @@ of the canonical components cor(X U, Y V) in independent test data.
 
 # <a name="R"></a>flashpcaR: flashpca in R
 
-flashpcaR is deprecated; you can use
-[RSpectra](https://cran.r-project.org/package=RSpectra) for fast SVD.
+## Installation
+
+   ```R
+   devtools::install_github("gabraham/flashpca/flashpcaR")
+   ```
+
+## PCA
+   
+### On a numeric matrix
+
+   ```R
+   data(hm3.chr1)
+   X <- scale2(hm3.chr1$bed)
+   dim(X)
+   f <- flashpca(X, ndim=10, scale="none")
+   ```
+
+### On PLINK data
+
+You can supply a path to a PLINK dataset (with extensions .bed/.bim/.fam, all
+lowercase):
+   ```R
+   fn <- gsub("\\.bed", "",
+      system.file("extdata", "data_chr1.bed", package="flashpcaR"))
+   fn
+   f <- flashpca(fn, ndim=10)
+   ```
+
+## UCCA
+
+### On a numeric matrix
+
+Use HapMap3 genotypes, standardise them, simulate some phenotypes, and test each
+SNP for association with all phenotypes:
+
+   ```R
+   data(hm3.chr1)
+   X <- scale2(hm3.chr1$bed)
+   k <- 10
+   B <- matrix(rnorm(ncol(X) * k), ncol=k)
+   Y <- X %*% B + rnorm(nrow(X) * k)
+   f1 <- ucca(X, Y, standx="none", standy="sd")
+   head(f1$result)
+   ```
+
+### On PLINK data
+
+   ```R
+   fn <- gsub("\\.bed", "",
+      system.file("extdata", "data_chr1.bed", package="flashpcaR"))
+   fn
+   f2 <- ucca(fn, Y, standx="binom2", standy="sd")
+   head(f2$result)
+   ```
+
+## Sparse Canonical Correlation Analysis (SCCA)
+
+### On a numeric matrix
+
+Use HapMap3 genotypes, standardise them, simulate some phenotypes, and run
+sparse canonical correlation analysis over all SNPs and all phenotypes:
+
+   ```R
+   data(hm3.chr1)
+   X <- scale2(hm3.chr1$bed)
+   k <- 10
+   B <- matrix(rnorm(ncol(X) * k), ncol=k)
+   Y <- X %*% B + rnorm(nrow(X) * k)
+   f1 <- scca(X, Y, standx="none", standy="sd", lambda1=1e-2, lambda2=1e-3)
+   diag(cor(f1$Px, f1$Py))
+   ```
+
+### On PLINK data
+
+   ```R
+   fn <- gsub("\\.bed", "",
+      system.file("extdata", "data_chr1.bed", package="flashpcaR"))
+   fn
+   f2 <- scca(X, Y, standx="binom2", standy="sd", lambda1=1e-2, lambda2=1e-3)
+   diag(cor(f2$Px, f2$Py))
+   ```
 
 # LD-pruned HapMap3 example data
 
 See the [HapMap3](HapMap3) directory
-
-# Test
 
 # Changelog (stable versions only)
 

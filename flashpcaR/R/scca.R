@@ -178,6 +178,8 @@ scca <- function(X, Y, lambda1=0, lambda2=0,
    }
 }
 
+#' Prints an SCCA object
+#'
 #' @param x A flashpca object to be printed
 #' @export 
 print.scca <- function(x, ...)

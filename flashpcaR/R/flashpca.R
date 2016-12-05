@@ -183,6 +183,8 @@ flashpca <- function(X, ndim=10,
    }
 }
 
+#' Prints a flashpca object
+#'
 #' @param x A flashpca object to be printed
 #' @export 
 print.flashpca <- function(x, ...)

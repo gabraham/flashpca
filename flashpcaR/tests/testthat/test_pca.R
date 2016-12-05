@@ -6,7 +6,7 @@ ndim <- 50
 nextra <- 100
 tol <- 1e-3
 
-data(hm3_chr1)
+data(hm3.chr1)
 
 bedf <- gsub("\\.bed", "",
    system.file("extdata", "data_chr1.bed", package="flashpcaR"))

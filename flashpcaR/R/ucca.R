@@ -164,6 +164,8 @@ ucca <- function(X, Y,
    }
 }
 
+#' Prints a UCCA object
+#'
 #' @param x A flashpca object to be printed
 #' @export 
 print.ucca <- function(x, ...)
