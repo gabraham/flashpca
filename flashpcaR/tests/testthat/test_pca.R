@@ -6,38 +6,19 @@ ndim <- 50
 nextra <- 100
 tol <- 1e-3
 
+data(hm3_chr1)
+
 bedf <- gsub("\\.bed", "",
    system.file("extdata", "data_chr1.bed", package="flashpcaR"))
-datf <- system.file("extdata", "data_chr1.rds", package="flashpcaR")
-
-scale2 <- function(x, type=c("2", "1"))
-{
-   type <- match.arg(type)
-   mult <- ifelse(type == "1", 1, 2)
-
-   sum2 <- nrow(x) - colSums(apply(x, 2, is.na))
-   p <- colSums(x, na.rm=TRUE) / (2 * sum2)
-   xsd <- sqrt(mult * p * (1 - p))
-   names(p) <- names(xsd) <- colnames(x)
-
-   s <- sweep(
-      sweep(x, MARGIN=2, STATS=2 * p, FUN="-"),
-	 MARGIN=2, STATS=xsd, FUN="/"
-   )
-   s[is.na(s)] <- 0
-   attr(s, "scaled:center") <- 2 * p
-   attr(s, "scaled:scale") <- xsd
-   s
-}
 
 compare_scales <- function(S, ...)
 {
    l <- list(...)
    for(i in 1:length(l)) {
-      expect_equal(attr(S, "scaled:center"), l[[i]]$center, tolerance=tol,
-	 check.names=FALSE)
-      expect_equal(attr(S, "scaled:scale"), l[[i]]$scale, tolerenace=tol,
-	 check.names=FALSE)
+      expect_equal(attr(S, "scaled:center"),
+	 l[[i]]$center, tolerance=tol, check.names=FALSE)
+      expect_equal(attr(S, "scaled:scale"),
+	 l[[i]]$scale, tolerenace=tol, check.names=FALSE)
    }
 }
 
@@ -63,10 +44,7 @@ compare_eigenvecs <- function(...)
 }
 
 test_that("Testing PCA with stand='binom'", {
-   #X <- matrix(sample(0:2, n * p, replace=TRUE), n, p)
-   #S <- scale2(X, type="1")
-   dat <- readRDS(datf)
-   S <- scale2(dat$bed, type="1")
+   S <- scale2(hm3.chr1$bed, type="1")
 
    #f1 <- prcomp(S, center=FALSE, scale.=FALSE)
    f1 <- eigen(tcrossprod(S) / ncol(S), symmetric=TRUE)
@@ -89,18 +67,18 @@ test_that("Testing PCA with stand='binom'", {
 })
 
 test_that("Testing PCA with stand='binom2'", {
-   X <- matrix(sample(0:2, n * p, replace=TRUE), n, p)
-   S <- scale2(X, type="2")
+   S <- scale2(hm3.chr1$bed, type="2")
 
    f1 <- eigen(tcrossprod(S) / ncol(S), symmetric=TRUE)
    f1$projection <- with(f1,
       vectors[, 1:ndim] %*% diag(sqrt(values[1:ndim])))
-   f2 <- flashpca(X, ndim=ndim, stand="binom2")
+   f2 <- flashpca(S, ndim=ndim, stand="none")
+   f3 <- flashpca(bedf, ndim=ndim, stand="binom2")
 
-   compare_scales(S, f2)
+   compare_scales(S, f3)
 
    compare_eigenvecs(
-      f1$projection[, 1:ndim], f2$projection
+      f1$projection[, 1:ndim], f2$projection, f3$projection
    )
 })
 

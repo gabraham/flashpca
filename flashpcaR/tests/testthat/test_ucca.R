@@ -10,26 +10,12 @@ By <- matrix(rnorm(m * k), m, k)
 X0 <- scale(M %*% Bx + rnorm(n * p))
 Y0 <- scale(M %*% By + rnorm(n * k))
 
+data(hm3.chr1)
+
 bedf <- gsub("\\.bed", "",
    system.file("extdata", "data_chr1.bed", package="flashpcaR"))
-datf <- system.file("extdata", "data_chr1.rds", package="flashpcaR")
 
 test.tol <- 1e-4
-
-scale2 <- function(x, type=c("2", "1"))
-{
-   type <- match.arg(type)
-   mult <- ifelse(type == "1", 1, 2)
-
-   sum2 <- nrow(x) - colSums(apply(x, 2, is.na))
-   p <- colSums(x, na.rm=TRUE) / (2 * sum2)
-   s <- sweep(
-      sweep(x, MARGIN=2, STATS=2 * p, FUN="-"),
-	 MARGIN=2, STATS=sqrt(mult * p * (1 - p)), FUN="/"
-   )
-   s[is.na(s)] <- 0
-   s
-}
 
 test <- function(s, X, Y)
 {
@@ -63,8 +49,7 @@ test <- function(s, X, Y)
 }
 
 test_that("Testing UCCA (binomial) with matrices and PLINK", {
-   dat <- readRDS(datf)
-   X <- scale2(dat$bed, type="1")
+   X <- scale2(hm3.chr1$bed, type="1")
 	
    n <- nrow(X)
    p <- ncol(X)
@@ -78,8 +63,7 @@ test_that("Testing UCCA (binomial) with matrices and PLINK", {
 })
 
 test_that("Testing UCCA (binomial2) with matrices and PLINK", {
-   dat <- readRDS(datf)
-   X <- scale2(dat$bed, type="2")
+   X <- scale2(hm3.chr1$bed, type="2")
 	
    n <- nrow(X)
    p <- ncol(X)

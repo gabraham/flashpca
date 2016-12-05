@@ -4,10 +4,10 @@
 \alias{scca}
 \title{Performs sparse canonical correlation analysis}
 \usage{
-scca(X, Y, lambda1 = 0, lambda2 = 0, stand = c("binom", "binom2", "sd",
-  "center", "none"), ndim = 10, maxiter = 1000, tol = 1e-04, seed = 1L,
-  verbose = FALSE, num_threads = 1, mem = c("low", "high"),
-  check_geno = TRUE, V = NULL)
+scca(X, Y, lambda1 = 0, lambda2 = 0, standx = c("binom2", "binom", "sd",
+  "center", "none"), standy = c("binom2", "binom", "sd", "center", "none"),
+  ndim = 10, maxiter = 1000, tol = 1e-04, seed = 1L, verbose = FALSE,
+  num_threads = 1, mem = c("low", "high"), check_geno = TRUE, V = NULL)
 }
 \arguments{
 \item{X}{An n by p numeric matrix}
@@ -17,15 +17,6 @@ scca(X, Y, lambda1 = 0, lambda2 = 0, stand = c("binom", "binom2", "sd",
 \item{lambda1}{Numeric. Non-negative L1 penalty on canonical vectors of X.}
 
 \item{lambda2}{Numeric. Non-negative L1 penalty on canonical vectors of Y.}
-
-\item{stand}{Character. One of "binom" (zero mean, unit variance
-where variance is p * (1 - p), for SNP data), "binom2" (zero mean, unit
-variance where variance is 2 * p * (1 - p),
-"sd" (zero-mean, unit Gaussian variance), "center" (zero mean), or "none". Note
-that if you use "binom" for non-SNP data you may get garbage. Note that
-currently the same standardization is applied to both X and Y. If you
-require different standardizations, it's best to standardize yourself
-and then choose stand="none".}
 
 \item{ndim}{Integer. Positive number of canonical vectors to compute.}
 
@@ -51,6 +42,15 @@ be set to FALSE if you are sure your matrices only contain these values
 
 \item{V}{Numeric. A vector to initialise "v" in SCCA iterations. By
 default, it will be a vector of normally distributed variates.}
+
+\item{stand}{Character. One of "binom" (zero mean, unit variance
+where variance is p * (1 - p), for SNP data), "binom2" (zero mean, unit
+variance where variance is 2 * p * (1 - p),
+"sd" (zero-mean, unit Gaussian variance), "center" (zero mean), or "none". Note
+that if you use "binom" for non-SNP data you may get garbage. Note that
+currently the same standardization is applied to both X and Y. If you
+require different standardizations, it's best to standardize yourself
+and then choose stand="none".}
 }
 \value{
 \code{scca} returns a list containing the following components:

@@ -5,9 +5,9 @@
 \title{Principal Component Analysis using flashpca}
 \usage{
 flashpca(X, ndim = 10, stand = c("binom2", "binom", "sd", "center", "none"),
-  maxiter = 100, tol = 1e-04, seed = 1, blocksize = 1000,
-  verbose = FALSE, do_loadings = FALSE, check_geno = TRUE,
-  return_scale = TRUE)
+  divisor = c("p", "n", "none"), maxiter = 100, tol = 1e-04, seed = 1,
+  blocksize = 1000, verbose = FALSE, do_loadings = FALSE,
+  check_geno = TRUE, return_scale = TRUE)
 }
 \arguments{
 \item{X}{A numeric matrix to perform PCA on. X must not have any NAs.}
@@ -17,6 +17,10 @@ flashpca(X, ndim = 10, stand = c("binom2", "binom", "sd", "center", "none"),
 \item{stand}{A character string indicating how to standardize X before PCA,
 one of "binom" (old Eigenstrat-style), "binom2" (new Eigenstrat-style),
 "sd" (zero-mean unit-variance), "center" (zero mean), or "none".}
+
+\item{divisor}{A character string indicating whether to divide the
+eigenvalues by number of columns of X ("p"), the number of 
+rows of X minus 1 ("n1") or none ("none").}
 
 \item{maxiter}{Integer. How many iterations to use in PCA.}
 
@@ -54,7 +58,8 @@ deviations used in standardizing the matrix X.}
 Principal Component Analysis using flashpca
 }
 \details{
-The decomposition is of X X' / m, where m is the number of SNPs.
+The default decomposition is of X X' / m, where m is the number of SNPs
+   (the denominator can be changed using the 'divisor' argument).
 
    The data is standardised by default. \code{stand = "binom"} uses the old Eigensoft
    (Price 2006) formulation of
