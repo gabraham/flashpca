@@ -88,7 +88,6 @@ int main(int argc, char * argv[])
       ("precision", po::value<int>(), "digits of precision for output")
       ("notime", "don't print timestamp in output")
       ("save-vinit", "saves the initial v eigenvector for SCCA")
-      ("experimental", "allow experimental features")
       ("version", "version")
    ;
 
@@ -141,13 +140,6 @@ int main(int argc, char * argv[])
 
    if(vm.count("cca"))
    {
-      if(!vm.count("experimental"))
-      {
-	 std::cerr << "Error: CCA is exprimental, must specify --experimental"
-	    " to enable" << std::endl;
-	 return EXIT_FAILURE;
-      }
-
       for(int i = 0 ; i < modes.size() ; i++)
       {
 	 if(modes[i] != std::string("cca") && vm.count(modes[i]))
@@ -164,13 +156,6 @@ int main(int argc, char * argv[])
    }
    else if(vm.count("scca"))
    {
-      if(!vm.count("experimental"))
-      {
-	 std::cerr << "Error: SCCA is exprimental, must specify --experimental"
-	    " to enable" << std::endl;
-	 return EXIT_FAILURE;
-      }
-
       for(int i = 0 ; i < modes.size() ; i++)
       {
 	 if(modes[i] != std::string("scca") && vm.count(modes[i]))
@@ -185,13 +170,6 @@ int main(int argc, char * argv[])
    }
    else if(vm.count("ucca"))
    {
-      //if(!vm.count("experimental"))
-      //{
-      //   std::cerr << "Error: UCCA is exprimental, must specify --experimental"
-      //      " to enable" << std::endl;
-      //   return EXIT_FAILURE;
-      //}
-
       for(int i = 0 ; i < modes.size() ; i++)
       {
 	 if(modes[i] != std::string("ucca") && vm.count(modes[i]))

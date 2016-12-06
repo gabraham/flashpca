@@ -159,5 +159,13 @@ test_that("Testing input checking", {
       standx="none", standy="none", mem="low"))
    expect_error(scca(bedf, Z, lambda1=l1, lambda2=l2, ndim=ndim,	 
       standx="binom2", standy="none"))
+
+   # Test negative penalties
+   expect_error(scca(X, Z, lambda1=l1, lambda2=-1, ndim=ndim,	 
+      standx="none", standy="none", mem="high"))
+   expect_error(scca(X, Z, lambda1=-1, lambda2=l2, ndim=ndim,	 
+      standx="none", standy="none", mem="low"))
+   expect_error(scca(bedf, Z, lambda1=-1, lambda2=-1, ndim=ndim,	 
+      standx="binom2", standy="none"))
 })
 
