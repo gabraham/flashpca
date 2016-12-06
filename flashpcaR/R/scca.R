@@ -138,6 +138,13 @@ scca <- function(X, Y, lambda1=0, lambda2=0,
       }
    }
 
+   if(lambda1 < 0) {
+      stop("lambda1 must be non-negative")
+   }
+   if(lambda2 < 0) {
+      stop("lambda2 must be non-negative")
+   }
+
    std <- c(
       "none"=0L,
       "sd"=1L,
