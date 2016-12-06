@@ -420,29 +420,29 @@ void RandomPCA::scca(MatrixXd &X, MatrixXd &Y, double lambda1, double lambda2,
 }
 
 void RandomPCA::scca(Data &dat, double lambda1, double lambda2,
-   long seed, unsigned int ndim, int mem, unsigned int maxiter, double tol)
+   long seed, unsigned int ndim, int mem, unsigned int maxiter, double tol,
+   unsigned int block_size)
 {
    unsigned int k = dat.Y.cols();
    MatrixXd M = make_gaussian(k, ndim, seed);
-   this->scca(dat, lambda1, lambda2, seed, ndim, mem, maxiter, tol, M);
+   this->scca(dat, lambda1, lambda2, seed, ndim, mem, maxiter, tol, block_size, M);
 }
 
 // Block loading of X (genotypes)
 // Assumes that data.Y has been set
 void RandomPCA::scca(Data &dat, double lambda1, double lambda2,
    long seed, unsigned int ndim, int mem, unsigned int maxiter, double tol,
-   MatrixXd &V0)
+   unsigned int block_size, MatrixXd &V0)
 {
-   //if(stand_method_x != STANDARDIZE_NONE)
-   //   X_meansd = standardize(X, stand_method_x);
-
    if(stand_method_y != STANDARDIZE_NONE)
-      Y_meansd = standardize(Y, stand_method_y);
+      Y_meansd = standardize(dat.Y, stand_method_y);
 
    //verbose && STDOUT << timestamp() << "dim(X): " << dim(X) << std::endl;
-   verbose && STDOUT << timestamp() << "dim(Y): " << dim(Y) << std::endl;
+   verbose && STDOUT << timestamp() << "dim(Y): " << dim(dat.Y) << std::endl;
    verbose && STDOUT << timestamp() << "lambda1: " << lambda1
       << " lambda2: " << lambda2 << std::endl;
+
+   SVDWideOnline op(dat, block_size, stand_method_x, verbose);
 
    unsigned int p = dat.nsnps;
 
@@ -461,35 +461,26 @@ void RandomPCA::scca(Data &dat, double lambda1, double lambda2,
 	 u_old = u = U.col(j);
 	 v_old = v = V.col(j);
 
-	 if(j == 0)
-	 {
-	    //u = X.transpose() * (Y * v);
-	    MatrixXd Yv = Y * v;
-	    u = crossprod2(Yv);
-	 }
-	 else // deflation
-	 {
-	    // TODO: broken
-	    //	  1) X is never available as a matrix
-	    //	  2) Need to account for all the previous columns
-	    u = (X.array() + sqrt(d[j - 1]) * u.transpose()).transpose()
-	       * (Y.array() - sqrt(d[j - 1]) * v.transpose())  * v;
-	 }
+	 // u = X.transpose() * (Y * v);
+	 MatrixXd Yv = dat.Y * v;
+	 u = op.crossprod2(Yv);
+	 
+	 // deflate
+	 if(j > 0)
+	    u += sqrt(d[j - 1]) 
+	       * U.col(j - 1).transpose() * dat.Y * V.col(j - 1);
+
 	 u = norm_thresh(u, lambda1);
 	 U.col(j) = u;
 
-	 if(j == 0)
+	 // v = Y.transpose() * (X * u);
+	 VectorXd Xu = op.prod2(u);
+	 v = dat.Y.transpose() * Xu;
+
+	 if(j > 0)
 	 {
-	    //v = Y.transpose() * (X * u);
-	    VectorXd Xu = prod2(u);
-	    v = Y.transpose() * Xu;
-	 }
-	 else // deflation
-	 {
-	    // TODO: broken
-	    // (Y - sqrt(d[j-1)) * v')' * ((X - sqrt(d[j-1]) * u') * u)
-	    v = (Y.array() - sqrt(d[j - 1]) * v.transpose()).transpose()
-	       * (X.array() + sqrt(d[j - 1] * u.transpose())  * u);
+	    MatrixXd Xu_1 = op.prod2(U.col(j - 1)); 
+	    v -= sqrt(d[j - 1]) * V.col(j - 1).transpose() * Xu_1;
 	 }
 
 	 v = norm_thresh(v, lambda2);
@@ -521,7 +512,9 @@ void RandomPCA::scca(Data &dat, double lambda1, double lambda2,
 	 << " non-zeros: " << nzu << ", V_" << j
 	 << " non-zeros: " << nzv << std::endl;
 
-      d[j] = (X * U.col(j)).transpose() * (Y * V.col(j));
+      //d[j] = (X * U.col(j)).transpose() * (dat.Y * V.col(j));
+      VectorXd Xu = op.prod3(U.col(j));
+      d[j] = Xu.transpose() * (dat.Y * V.col(j));
       verbose && STDOUT << timestamp() << "d[" << j << "]: "
 	 << d[j] << std::endl;
    }

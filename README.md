@@ -304,6 +304,8 @@ sparse canonical correlation analysis over all SNPs and all phenotypes:
    Y <- X %*% B + rnorm(nrow(X) * k)
    f1 <- scca(X, Y, standx="none", standy="sd", lambda1=1e-2, lambda2=1e-3)
    diag(cor(f1$Px, f1$Py))
+
+   # Cross-validation
    ```
 
 ### On PLINK data
@@ -314,6 +316,9 @@ sparse canonical correlation analysis over all SNPs and all phenotypes:
    fn
    f2 <- scca(X, Y, standx="binom2", standy="sd", lambda1=1e-2, lambda2=1e-3)
    diag(cor(f2$Px, f2$Py))
+
+   # Cross-validation
+
    ```
 
 # LD-pruned HapMap3 example data

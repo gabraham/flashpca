@@ -89,8 +89,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // scca_plink_internal
-List scca_plink_internal(std::string fn, Eigen::Map<Eigen::MatrixXd> Y, double lambda1, double lambda2, unsigned int ndim, int stand_x, int stand_y, int mem, long seed, int maxiter, double tol, bool verbose, unsigned int num_threads, bool useV, Eigen::Map<Eigen::MatrixXd> Vinit);
-RcppExport SEXP flashpcaR_scca_plink_internal(SEXP fnSEXP, SEXP YSEXP, SEXP lambda1SEXP, SEXP lambda2SEXP, SEXP ndimSEXP, SEXP stand_xSEXP, SEXP stand_ySEXP, SEXP memSEXP, SEXP seedSEXP, SEXP maxiterSEXP, SEXP tolSEXP, SEXP verboseSEXP, SEXP num_threadsSEXP, SEXP useVSEXP, SEXP VinitSEXP) {
+List scca_plink_internal(std::string fn, Eigen::Map<Eigen::MatrixXd> Y, double lambda1, double lambda2, unsigned int ndim, int stand_x, int stand_y, int mem, long seed, int maxiter, double tol, bool verbose, unsigned int num_threads, unsigned int block_size, bool useV, Eigen::Map<Eigen::MatrixXd> Vinit);
+RcppExport SEXP flashpcaR_scca_plink_internal(SEXP fnSEXP, SEXP YSEXP, SEXP lambda1SEXP, SEXP lambda2SEXP, SEXP ndimSEXP, SEXP stand_xSEXP, SEXP stand_ySEXP, SEXP memSEXP, SEXP seedSEXP, SEXP maxiterSEXP, SEXP tolSEXP, SEXP verboseSEXP, SEXP num_threadsSEXP, SEXP block_sizeSEXP, SEXP useVSEXP, SEXP VinitSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -107,9 +107,10 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
     Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
     Rcpp::traits::input_parameter< unsigned int >::type num_threads(num_threadsSEXP);
+    Rcpp::traits::input_parameter< unsigned int >::type block_size(block_sizeSEXP);
     Rcpp::traits::input_parameter< bool >::type useV(useVSEXP);
     Rcpp::traits::input_parameter< Eigen::Map<Eigen::MatrixXd> >::type Vinit(VinitSEXP);
-    rcpp_result_gen = Rcpp::wrap(scca_plink_internal(fn, Y, lambda1, lambda2, ndim, stand_x, stand_y, mem, seed, maxiter, tol, verbose, num_threads, useV, Vinit));
+    rcpp_result_gen = Rcpp::wrap(scca_plink_internal(fn, Y, lambda1, lambda2, ndim, stand_x, stand_y, mem, seed, maxiter, tol, verbose, num_threads, block_size, useV, Vinit));
     return rcpp_result_gen;
 END_RCPP
 }

@@ -9,15 +9,15 @@ context("Testing SCCA")
 ## We use very small penalisation so as to give very close results to
 ## classic eigen-decomposition.
 
-n <- 500
-p <- 100
+data(hm3.chr1)
+
+bedf <- gsub("\\.bed", "",
+   system.file("extdata", "data_chr1.bed", package="flashpcaR"))
+
 k <- 50
-m <- 10
-M <- matrix(rnorm(n * m), n, m)
-Bx <- matrix(rnorm(m * p), m, p)
+m <- ncol(hm3.chr1$bed)
 By <- matrix(rnorm(m * k), m, k)
-X0 <- scale(M %*% Bx + rnorm(n * p))
-Y0 <- scale(M %*% By + rnorm(n * k))
+Y0 <- scale(X %*% By + rnorm(n * k))
 
 l1 <- 1e-6
 l2 <- 1e-6
@@ -27,28 +27,34 @@ ndim <- min(n, p, k, 5)
 test_that("Testing self-self SCCA (X with X)", {
 
    # Round the continuous values into {0, 1, 2}
-   Xb <- apply(X0, 2, function(x) {
-      round(2 * (x - min(x)) / (max(x) - min(x)))
-   })
+   #Xb <- apply(X0, 2, function(x) {
+   #   round(2 * (x - min(x)) / (max(x) - min(x)))
+   #})
 
    # "binomial" standardization
-   q <- colMeans(Xb) / 2
-   Xbs <- scale(Xb, center=TRUE, scale=sqrt(q * (1 - q)))
-   eval <- eigen(crossprod(Xbs))$val[1:ndim]
+   #q <- colMeans(Xb) / 2
+   #Xbs <- scale(Xb, center=TRUE, scale=sqrt(q * (1 - q)))
+   #eval <- eigen(crossprod(Xbs))$val[1:ndim]
+
+   X <- scale2(hm3.chr1$bed, type="2")
+   eval <- eigen(tcrossprod(X))$val[1:ndim]
    
    # Essentially power method for eigen-decomposition of XX'
-   s1 <- scca(Xb, Xb, lambda1=l1, lambda2=l2, ndim=ndim,	 
-      standx="binom", standy="binom", mem="high")
-   s2 <- scca(Xb, Xb, lambda1=l1, lambda2=l2, ndim=ndim,	 
-      standx="binom", standy="binom", mem="low")
+   s1 <- scca(X, X, lambda1=l1, lambda2=l2, ndim=ndim,	 
+      standx="none", standy="none", mem="high")
+   s2 <- scca(X, X, lambda1=l1, lambda2=l2, ndim=ndim,	 
+      standx="none", standy="none", mem="low")
+   s3 <- scca(bedf, X, lambda1=l1, lambda2=l2, ndim=ndim,	 
+      standx="binom2", standy="none", mem="low")
    r1 <- diag(cor(s1$Px, s1$Py))
    r2 <- diag(cor(s2$Px, s2$Py))
 
+   expect_equal(s1$d, eval, tol=test.tol)
+   expect_equal(s1$d, s2$d, tol=test.tol)
+   expect_equal(s1$d, s3$d, tol=test.tol)
+
    expect_equal(rep(1, length(r1)), r1, tol=test.tol)
    expect_equal(rep(1, length(r2)), r2, tol=test.tol)
-
-   expect_equal(eval, s1$d, tol=test.tol)
-   expect_equal(eval, s2$d, tol=test.tol)
 })
 
 test_that("Testing self-self SCCA with stand='sd'", {

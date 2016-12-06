@@ -45,6 +45,8 @@
 #' @param V Numeric. A vector to initialise "v" in SCCA iterations. By
 #' default, it will be a vector of normally distributed variates.
 #'
+#' @param blocksize Integer. Size of blocks for reading PLINK data.
+#'
 #' @return \code{scca} returns a list containing the following components:
 #'
 #' \describe{  
@@ -78,7 +80,7 @@ scca <- function(X, Y, lambda1=0, lambda2=0,
    standx=c("binom2", "binom", "sd", "center", "none"),
    standy=c("binom2", "binom", "sd", "center", "none"),
    ndim=10, maxiter=1e3, tol=1e-4, seed=1L, verbose=FALSE, num_threads=1,
-   mem=c("low", "high"), check_geno=TRUE, V=NULL)
+   mem=c("low", "high"), check_geno=TRUE, V=NULL, block_size=500)
 {
    standx <- match.arg(standx)
    standy <- match.arg(standy)
@@ -160,7 +162,7 @@ scca <- function(X, Y, lambda1=0, lambda2=0,
       if(is.character(X)) {
 	 scca_plink_internal(X, Y, lambda1, lambda2, ndim,
 	    standx_i, standy_i, mem_i, seed, maxiter, tol,
-	    verbose, num_threads, useV, V)
+	    verbose, num_threads, block_size, useV, V)
       } else {
 	 scca_internal(X, Y, lambda1, lambda2, ndim,
 	    standx_i, standy_i, mem_i, seed, maxiter, tol,

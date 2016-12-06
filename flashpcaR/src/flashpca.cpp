@@ -85,7 +85,7 @@ List flashpca_internal(
    }
    catch(...)
    {
-      ::Rf_error("SCCA: unknown c++ exception");
+      ::Rf_error("flashpca_internal: unknown c++ exception");
    }
    return NA_REAL;
 }
@@ -175,7 +175,7 @@ List flashpca_plink_internal(
    }
    catch(...)
    {
-      ::Rf_error("SCCA: unknown c++ exception");
+      ::Rf_error("flashpca_plink_internal: unknown c++ exception");
    }
    return NA_REAL;
 }
@@ -248,7 +248,7 @@ List scca_internal(
    }
    catch(...)
    {
-      ::Rf_error("SCCA: unknown c++ exception");
+      ::Rf_error("scca_internal: unknown c++ exception");
    }
    return NA_REAL;
 }
@@ -262,82 +262,93 @@ List ucca_plink_internal(
    bool verbose,
    bool return_scale)
 {
-   RandomPCA rpca;
-   rpca.stand_method_x = stand_x;
-   rpca.stand_method_y = stand_y;
-   rpca.verbose = verbose;
+   try{
+      RandomPCA rpca;
+      rpca.stand_method_x = stand_x;
+      rpca.stand_method_y = stand_y;
+      rpca.verbose = verbose;
 
-   NumericVector X_mean(0);
-   NumericVector X_sd(0);
+      NumericVector X_mean(0);
+      NumericVector X_sd(0);
 
-   std::string fam_file, geno_file, bim_file, pheno_file;
-   geno_file = fn + std::string(".bed");
-   bim_file = fn + std::string(".bim");
-   fam_file = fn + std::string(".fam");
+      std::string fam_file, geno_file, bim_file, pheno_file;
+      geno_file = fn + std::string(".bed");
+      bim_file = fn + std::string(".bim");
+      fam_file = fn + std::string(".fam");
 
-   Data data(1);
-   data.verbose = verbose;
-   data.stand_method_x = stand_x; 
-   //data.read_pheno(fam_file.c_str(), 6);
-   data.Y = Y;
-   data.N = Y.rows();
-   data.read_plink_bim(bim_file.c_str());
-   data.geno_filename = geno_file.c_str();
-   data.get_size();
-   data.prepare();
+      Data data(1);
+      data.verbose = verbose;
+      data.stand_method_x = stand_x; 
+      //data.read_pheno(fam_file.c_str(), 6);
+      data.Y = Y;
+      data.N = Y.rows();
+      data.read_plink_bim(bim_file.c_str());
+      data.geno_filename = geno_file.c_str();
+      data.get_size();
+      data.prepare();
 
-   rpca.ucca(data);
-   
-   NumericMatrix U(wrap(rpca.U));
-   NumericMatrix P(wrap(rpca.Px));
-   NumericVector d(wrap(rpca.d));
+      rpca.ucca(data);
+      
+      NumericMatrix U(wrap(rpca.U));
+      NumericMatrix P(wrap(rpca.Px));
+      NumericVector d(wrap(rpca.d));
 
-   // STANDARDIZE_NONE: 0
-   //if(return_scale && stand != 0)
-   //{
-   //   NumericMatrix X_meansd(wrap(rpca.X_meansd));
-   //   X_mean = X_meansd(_, 0);
-   //   X_sd = X_meansd(_, 1);
-   //}
-   
-   Rcpp::List res;
+      // STANDARDIZE_NONE: 0
+      //if(return_scale && stand != 0)
+      //{
+      //   NumericMatrix X_meansd(wrap(rpca.X_meansd));
+      //   X_mean = X_meansd(_, 0);
+      //   X_sd = X_meansd(_, 1);
+      //}
+      
+      Rcpp::List res;
 
-   //if(do_loadings)
-   //{
-   //   NumericMatrix V(wrap(rpca.V));
-   //   res = Rcpp::List::create(
-   //      Rcpp::Named("values")=d,
-   //      Rcpp::Named("vectors")=U,
-   //      Rcpp::Named("projection")=P,
-   //      Rcpp::Named("loadings")=V,
-   //      Rcpp::Named("center")=X_mean,
-   //      Rcpp::Named("scale")=X_sd
-   //   );
-   //}
-   //else
-   //{
-   //   res = Rcpp::List::create(
-   //      Rcpp::Named("values")=d,
-   //      Rcpp::Named("vectors")=U,
-   //      Rcpp::Named("projection")=P,
-   //      Rcpp::Named("center")=X_mean,
-   //      Rcpp::Named("scale")=X_sd
-   //   );
-   //}
-   //return res;
-   
-   NumericMatrix resM(wrap(rpca.res));
-   colnames(resM) = StringVector::create("R", "Fstat", "P");
-   StringVector rownamesV(data.snp_ids.size());
-   for(int i = 0 ; i < data.snp_ids.size() ; i++)
-      rownamesV(i) = data.snp_ids[i];
-   rownames(resM) = rownamesV;
+      //if(do_loadings)
+      //{
+      //   NumericMatrix V(wrap(rpca.V));
+      //   res = Rcpp::List::create(
+      //      Rcpp::Named("values")=d,
+      //      Rcpp::Named("vectors")=U,
+      //      Rcpp::Named("projection")=P,
+      //      Rcpp::Named("loadings")=V,
+      //      Rcpp::Named("center")=X_mean,
+      //      Rcpp::Named("scale")=X_sd
+      //   );
+      //}
+      //else
+      //{
+      //   res = Rcpp::List::create(
+      //      Rcpp::Named("values")=d,
+      //      Rcpp::Named("vectors")=U,
+      //      Rcpp::Named("projection")=P,
+      //      Rcpp::Named("center")=X_mean,
+      //      Rcpp::Named("scale")=X_sd
+      //   );
+      //}
+      //return res;
+      
+      NumericMatrix resM(wrap(rpca.res));
+      colnames(resM) = StringVector::create("R", "Fstat", "P");
+      StringVector rownamesV(data.snp_ids.size());
+      for(int i = 0 ; i < data.snp_ids.size() ; i++)
+         rownamesV(i) = data.snp_ids[i];
+      rownames(resM) = rownamesV;
 
-   res = Rcpp::List::create(
-      Rcpp::Named("result")=resM
-   );
+      res = Rcpp::List::create(
+         Rcpp::Named("result")=resM
+      );
 
-   return res;
+      return res;
+   }
+   catch(std::exception &ex)
+   {
+      forward_exception_to_r(ex);
+   }
+   catch(...)
+   {
+      ::Rf_error("ucca_plink_internal: unknown c++ exception");
+   }
+   return NA_REAL;
 }
 
 // [[Rcpp::export]]
@@ -355,6 +366,7 @@ List scca_plink_internal(
    double tol,
    bool verbose,
    unsigned int num_threads,
+   unsigned int block_size,
    bool useV,
    Eigen::Map<Eigen::MatrixXd> Vinit)
 {
@@ -390,12 +402,12 @@ List scca_plink_internal(
       {
          Eigen::MatrixXd Vm = Vinit;
          rpca.scca(data, lambda1, lambda2, seed,
-            ndim, mem, maxiter, tol, Vm);
+            ndim, mem, maxiter, tol, block_size, Vm);
       }
       else
       {
          rpca.scca(data, lambda1, lambda2, seed,
-            ndim, mem, maxiter, tol);
+            ndim, mem, maxiter, tol, block_size);
       }
 
       NumericMatrix U(wrap(rpca.U));
@@ -422,7 +434,7 @@ List scca_plink_internal(
    }
    catch(...)
    {
-      ::Rf_error("SCCA: unknown c++ exception");
+      ::Rf_error("scca_plink_internal: unknown c++ exception");
    }
    return NA_REAL;
 }
@@ -523,7 +535,7 @@ List ucca_internal(
    }
    catch(...)
    {
-      ::Rf_error("SCCA: unknown c++ exception");
+      ::Rf_error("ucca_internal: unknown c++ exception");
    }
    return NA_REAL;
 }
