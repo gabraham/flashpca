@@ -148,7 +148,7 @@ scca <- function(X, Y, lambda1=0, lambda2=0,
    if(!is.null(V)) {
       V <- cbind(V)
       if(nrow(V) < ncol(Y) || ncol(V) != ndim) {
-         stop("dimensions of V must be (nrow(Y) x (ndim))")
+         stop("dimensions of V must be (ncol(Y) x (ndim))")
       }
       useV <- TRUE
    } else 
