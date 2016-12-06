@@ -76,95 +76,33 @@ test_that("Testing UCCA (binomial2) with matrices and PLINK", {
    test(s2, X, Y)
 })
 
-#test_that("Testing UCCA (binomial) with PLINK data", {
-#
-#   s1 <- ucca(bedf, Y0, standx="binom", standy="none")
-#   test(s1, Xb, Y0)
-#})
+test_that("Testing input checking", {
 
-#test_that("Testing self-self UCCA with stand='sd'", {
-#   # X0 is already unit-variance so scaling within scca is moot but still
-#   # useful as a sanity check
-#   s1 <- scca(X0, X0, lambda1=l1, lambda2=l2, ndim=ndim,
-#      standx="sd", standy="sd", mem="high")
-#   s2 <- scca(X0, X0, lambda1=l1, lambda2=l2, ndim=ndim,
-#      standx="sd", standy="sd", mem="low")
-#   eval <- eigen(crossprod(X0))$val[1:ndim]
-#
-#   r1 <- diag(cor(s1$Px, s1$Py))
-#   r2 <- diag(cor(s2$Px, s2$Py))
-#
-#   expect_equal(rep(1, length(r1)), r1, tol=test.tol)
-#   expect_equal(rep(1, length(r2)), r2, tol=test.tol)
-#
-#   expect_equal(eval, s1$d, tol=test.tol)
-#   expect_equal(eval, s2$d, tol=test.tol)
-#})
-#
-#test_that("Testing self-self UCCA with stand='none'", {
-#   # X0 is already unit-variance so not scaling within scca is ok
-#   s1 <- scca(X0, X0, lambda1=l1, lambda2=l2, ndim=ndim,
-#      standx="none", standy="none", mem="high")
-#   s2 <- scca(X0, X0, lambda1=l1, lambda2=l2, ndim=ndim,
-#      standx="none", standy="none", mem="low")
-#
-#   eval <- eigen(crossprod(X0))$val[1:ndim]
-#
-#   r1 <- diag(cor(s1$Px, s1$Py))
-#   r2 <- diag(cor(s2$Px, s2$Py))
-#
-#   expect_equal(rep(1, length(r1)), r1, tol=test.tol)
-#   expect_equal(rep(1, length(r2)), r2, tol=test.tol)
-#
-#   expect_equal(eval, s1$d, tol=test.tol)
-#   expect_equal(eval, s2$d, tol=test.tol)
-#})
-#
-#test_that("Testing self-self UCCA with stand='center'", {
-#   # X0 is already zero-mean so scaling within scca is moot but still
-#   # useful as a sanity check
-#   s1 <- scca(X0, X0, lambda1=l1, lambda2=l2, ndim=ndim,
-#      standx="center", standy="center", mem="high")
-#   s2 <- scca(X0, X0, lambda1=l1, lambda2=l2, ndim=ndim,
-#      standx="center", standy="center", mem="low")
-#   eval <- eigen(crossprod(X0))$val[1:ndim]
-#
-#   r1 <- diag(cor(s1$Px, s1$Py))
-#   r2 <- diag(cor(s2$Px, s2$Py))
-#
-#   expect_equal(rep(1, length(r1)), r1, tol=test.tol)
-#   expect_equal(rep(1, length(r2)), r2, tol=test.tol)
-#
-#   expect_equal(eval, s1$d, tol=test.tol)
-#   expect_equal(eval, s2$d, tol=test.tol)
-#})
-#
-#test_that("Testing self-self UCCA (X with X), initialising V0", {
-#
-#   # Round the continuous values into {0, 1, 2}
-#   Xb <- apply(X0, 2, function(x) {
-#      round(2 * (x - min(x)) / (max(x) - min(x)))
-#   })
-#
-#   # "binomial" standardization
-#   q <- colMeans(Xb) / 2
-#   Xbs <- scale(Xb, center=TRUE, scale=sqrt(q * (1 - q)))
-#   sv <- svd(Xbs)
-#   eval <- sv$d[1:ndim]^2
-#   
-#   # Essentially power method for eigen-decomposition of XX'
-#   s1 <- scca(Xb, Xb, lambda1=l1, lambda2=l2, ndim=ndim,	 
-#      standx="binom", standy="binom", V=sv$v[, 1:ndim], mem="high")
-#   s2 <- scca(Xb, Xb, lambda1=l1, lambda2=l2, ndim=ndim,	 
-#      standx="binom", standy="binom", V=sv$v[, 1:ndim], mem="low")
-#
-#   r1 <- diag(cor(s1$Px, s1$Py))
-#   r2 <- diag(cor(s2$Px, s2$Py))
-#
-#   expect_equal(rep(1, length(r1)), r1, tol=test.tol)
-#   expect_equal(rep(1, length(r2)), r2, tol=test.tol)
-#
-#   expect_equal(eval, s1$d, tol=test.tol)
-#   expect_equal(eval, s2$d, tol=test.tol)
-#})
-#
+   # Test incompatible number of rows
+   Z <- matrix(rnorm((nrow(X) + 3) * 100), nrow(X) + 3, 100)
+
+   expect_error(
+      ucca(X, Z, standx="none", standy="none", mem="high")
+   )
+   expect_error(
+      ucca(X, Z, standx="none", standy="none", mem="low")
+   )
+   expect_error(
+      ucca(bedf, Z, standx="binom2", standy="none")
+   )
+
+   # Test having too many phenotypes
+   Z <- matrix(rnorm(nrow(X) * (nrow(X) + 3)), nrow(X), nrow(X) + 3)
+   expect_error(
+      ucca(X, Z, standx="none", standy="none", mem="high")
+   )
+   expect_error(
+      ucca(X, Z, standx="none", standy="none", mem="low")
+   )
+   expect_error(
+      ucca(bedf, Z, standx="binom2", standy="none")
+   )
+
+})
+
+

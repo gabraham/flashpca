@@ -50,6 +50,10 @@
 #' @details This is an efficient implementation of Ferreira and Purcell's
 #' plink.multivariate test for association between multiple phenotypes and one SNP at a time.
 #'
+#' This test is equivalent to the F-test for a linear regression of each SNP on the
+#' phenotypes, hence the number of phenotypes that can be tested is limited by
+#' the sample size (the model is not penalised).
+#'
 #' @return \code{ucca} returns a list containing the following components:
 #'
 #' \describe{  
@@ -109,6 +113,27 @@ ucca <- function(X, Y,
       }
    } else {
       stop("X must be a numeric matrix or a string naming a PLINK fileset")
+   }
+
+   if(is.character(X)) {
+      fam <- read.table(paste0(X, ".fam"), header=FALSE, sep="",
+	 stringsAsFactors=FALSE)
+      if(ncol(Y) > nrow(fam)) {
+	 stop(paste(
+	    "The phenotype matrix Y cannot have more columns than",
+	    "the sample size"))
+      } else if(nrow(Y) != nrow(fam)) {
+	    stop("The number of rows in X and Y don't match")
+      }
+      rm(fam)
+   } else {
+      if(ncol(Y) > nrow(X)) {
+	 stop(paste(
+	    "The phenotype matrix Y cannot have more columns than",
+	    "the sample size"))
+      } else if(nrow(Y) != nrow(X)) {
+	 stop("The number of rows in X and Y don't match")
+      }
    }
 
    if(is.numeric(X) && standx %in% c("binom", "binom2") && check_geno) {

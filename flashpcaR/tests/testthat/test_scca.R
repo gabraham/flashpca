@@ -21,12 +21,14 @@ n <- nrow(X)
 By <- matrix(rnorm(m * k), m, k)
 Y <- scale(X %*% By + rnorm(n * k))
 
-l1 <- runif(1, 1e-6, 1e-3)
-l2 <- runif(1, 1e-6, 1e-3)
+# very small penalties, to ensure the SCCA of X with X converges to the
+# eigen-decomposition
+l1 <- 1e-6
+l2 <- 1e-6
 test.tol <- 1e-4
 ndim <- min(n, m, k, 5)
 
-test_that("Testing self-self SCCA (X with X)", {
+test_that(paste0("Testing self-self SCCA (X with X), l1=", l1, ", l2=", l2), {
 
    eval <- eigen(tcrossprod(X))$val[1:ndim]
    
@@ -75,6 +77,10 @@ test_that("Testing self-self SCCA (X with X), initialising V0", {
 
 test_that("Testing SCCA (X with Y)", {
 
+   # These penalties don't have to be tiny
+   l1 <- runif(1, 1e-6, 1e-3)
+   l2 <- runif(1, 1e-6, 1e-3)
+
    # Essentially power method for eigen-decomposition of XX'
    s1 <- scca(X, Y, lambda1=l1, lambda2=l2, ndim=ndim,	 
       standx="none", standy="none", mem="high")
@@ -107,6 +113,10 @@ test_that("Testing SCCA (X with Y)", {
 
 test_that("Testing SCCA (X with Y), initialising V0", {
 
+   # These penalties don't have to be tiny
+   l1 <- runif(1, 1e-6, 1e-3)
+   l2 <- runif(1, 1e-6, 1e-3)
+
    V0 <- matrix(rnorm(k * ndim), k, ndim)
 
    # Essentially power method for eigen-decomposition of XX'
@@ -138,3 +148,16 @@ test_that("Testing SCCA (X with Y), initialising V0", {
    expect_equal(r1, r2, tol=test.tol)
    expect_equal(r1, r3, tol=test.tol)
 })
+
+test_that("Testing input checking", {
+   
+   # Test incompatible number of rows
+   Z <- matrix(rnorm((nrow(X) + 3) * 100), nrow(X) + 3, 100)
+   expect_error(scca(X, Z, lambda1=l1, lambda2=l2, ndim=ndim,	 
+      standx="none", standy="none", mem="high"))
+   expect_error(scca(X, Z, lambda1=l1, lambda2=l2, ndim=ndim,	 
+      standx="none", standy="none", mem="low"))
+   expect_error(scca(bedf, Z, lambda1=l1, lambda2=l2, ndim=ndim,	 
+      standx="binom2", standy="none"))
+})
+

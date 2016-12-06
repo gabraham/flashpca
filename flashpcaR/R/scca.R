@@ -125,6 +125,19 @@ scca <- function(X, Y, lambda1=0, lambda2=0,
       stop("X must be a numeric matrix or a string naming a PLINK fileset")
    }
 
+   if(is.character(X)) {
+      fam <- read.table(paste0(X, ".fam"), header=FALSE, sep="",
+         stringsAsFactors=FALSE)
+      if(nrow(Y) != nrow(fam)) {
+	 stop("The number of rows in X and Y don't match")
+      }
+      rm(fam)
+   } else {
+      if(nrow(Y) != nrow(X)) {
+	 stop("The number of rows in X and Y don't match")
+      }
+   }
+
    std <- c(
       "none"=0L,
       "sd"=1L,
