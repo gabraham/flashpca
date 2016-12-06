@@ -451,44 +451,47 @@ void RandomPCA::scca(Data &dat, double lambda1, double lambda2,
    U = MatrixXd::Zero(p, ndim);
    d = VectorXd::Zero(ndim);
 
-   VectorXd u, v, u_old, v_old;
+   VectorXd uj, vj, uj_old, vj_old;
 
    for(unsigned int j = 0 ; j < U.cols() ; j++)
    {
       unsigned int iter = 0;
       for( ; iter < maxiter ; iter++)
       {
-	 u_old = u = U.col(j);
-	 v_old = v = V.col(j);
+	 uj_old = uj = U.col(j);
+	 vj_old = vj = V.col(j);
 
 	 // u = X.transpose() * (Y * v);
-	 MatrixXd Yv = dat.Y * v;
-	 u = op.crossprod2(Yv);
+	 MatrixXd Yvj = dat.Y * vj;
+	 uj = op.crossprod2(Yvj);
 	 
-	 // deflate
-	 if(j > 0)
-	    u += sqrt(d[j - 1]) 
-	       * U.col(j - 1).transpose() * dat.Y * V.col(j - 1);
-
-	 u = norm_thresh(u, lambda1);
-	 U.col(j) = u;
-
-	 // v = Y.transpose() * (X * u);
-	 VectorXd Xu = op.prod2(u);
-	 v = dat.Y.transpose() * Xu;
-
+	 // deflate u
 	 if(j > 0)
 	 {
-	    MatrixXd Xu_1 = op.prod2(U.col(j - 1)); 
-	    v -= sqrt(d[j - 1]) * V.col(j - 1).transpose() * Xu_1;
+	    uj -= U.leftCols(j) * d.head(j - 1).asDiagonal()
+		  * V.leftCols(j).transpose() * vj;
 	 }
 
-	 v = norm_thresh(v, lambda2);
-	 V.col(j) = v;
+	 uj = norm_thresh(uj, lambda1);
+	 U.col(j) = uj;
+
+	 // v = Y.transpose() * (X * u);
+	 VectorXd Xuj = op.prod3(uj);
+	 vj = dat.Y.transpose() * Xuj;
+
+	 // deflate v
+	 if(j > 0)
+	 {
+	    vj -= V.leftCols(j) * d.head(j - 1).asDiagonal()
+		  * U.leftCols(j).transpose() * uj;
+	 }
+
+	 vj = norm_thresh(vj, lambda2);
+	 V.col(j) = vj;
 
 	 if(iter > 0
-	    && (v_old.array() - v.array()).abs().maxCoeff() < tol
-	       && (u_old.array() - u.array()).abs().maxCoeff() < tol)
+	    && (vj_old.array() - vj.array()).abs().maxCoeff() < tol
+	       && (uj_old.array() - uj.array()).abs().maxCoeff() < tol)
 	 {
 	    verbose && STDOUT << timestamp() << "dim "
 	       << j << " finished in "
@@ -512,15 +515,14 @@ void RandomPCA::scca(Data &dat, double lambda1, double lambda2,
 	 << " non-zeros: " << nzu << ", V_" << j
 	 << " non-zeros: " << nzv << std::endl;
 
-      //d[j] = (X * U.col(j)).transpose() * (dat.Y * V.col(j));
-      VectorXd Xu = op.prod3(U.col(j));
-      d[j] = Xu.transpose() * (dat.Y * V.col(j));
+      VectorXd Xuj = op.prod3(U.col(j));
+      d[j] = Xuj.transpose() * (dat.Y * V.col(j));
       verbose && STDOUT << timestamp() << "d[" << j << "]: "
 	 << d[j] << std::endl;
    }
 
-   //Px = X * U;
-   //Py = Y * V;
+   Px = op.prod3(U);
+   Py = dat.Y * V;
 }
 
 // Single-SNP CCA (like plink.multivariate), offline version (loading all SNPs

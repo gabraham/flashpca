@@ -738,8 +738,10 @@ int main(int argc, char * argv[])
       else if(mode == MODE_SCCA)
       {
          std::cout << timestamp() << "SCCA begin" << std::endl;
-         rpca.scca(data.X, data.Y, lambda1, lambda2, seed, n_dim, mem,
-	    maxiter, tol);
+         //rpca.scca(data.X, data.Y, lambda1, lambda2, seed, n_dim, mem,
+	 //   maxiter, tol);
+         rpca.scca(data, lambda1, lambda2, seed, n_dim, mem,
+	    maxiter, tol, block_size);
          std::cout << timestamp() << "SCCA done" << std::endl;
 	 if(save_vinit)
 	 {
