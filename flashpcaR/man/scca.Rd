@@ -7,7 +7,8 @@
 scca(X, Y, lambda1 = 0, lambda2 = 0, standx = c("binom2", "binom", "sd",
   "center", "none"), standy = c("binom2", "binom", "sd", "center", "none"),
   ndim = 10, maxiter = 1000, tol = 1e-04, seed = 1L, verbose = FALSE,
-  num_threads = 1, mem = c("low", "high"), check_geno = TRUE, V = NULL)
+  num_threads = 1, mem = c("low", "high"), check_geno = TRUE, V = NULL,
+  block_size = 500, simplify = TRUE)
 }
 \arguments{
 \item{X}{An n by p numeric matrix}
@@ -54,6 +55,8 @@ be set to FALSE if you are sure your matrices only contain these values
 
 \item{V}{Numeric. A vector to initialise "v" in SCCA iterations. By
 default, it will be a vector of normally distributed variates.}
+
+\item{blocksize}{Integer. Size of blocks for reading PLINK data.}
 }
 \value{
 \code{scca} returns a list containing the following components:

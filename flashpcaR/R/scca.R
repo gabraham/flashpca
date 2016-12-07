@@ -80,7 +80,8 @@ scca <- function(X, Y, lambda1=0, lambda2=0,
    standx=c("binom2", "binom", "sd", "center", "none"),
    standy=c("binom2", "binom", "sd", "center", "none"),
    ndim=10, maxiter=1e3, tol=1e-4, seed=1L, verbose=FALSE, num_threads=1,
-   mem=c("low", "high"), check_geno=TRUE, V=NULL, block_size=500)
+   mem=c("low", "high"), check_geno=TRUE, V=NULL, block_size=500,
+   simplify=TRUE)
 {
    standx <- match.arg(standx)
    standy <- match.arg(standy)
@@ -138,10 +139,10 @@ scca <- function(X, Y, lambda1=0, lambda2=0,
       }
    }
 
-   if(lambda1 < 0) {
+   if(any(lambda1 < 0)) {
       stop("lambda1 must be non-negative")
    }
-   if(lambda2 < 0) {
+   if(any(lambda2 < 0)) {
       stop("lambda2 must be non-negative")
    }
 
@@ -177,26 +178,39 @@ scca <- function(X, Y, lambda1=0, lambda2=0,
       useV <- FALSE
    }
 
-
    res <- try(
       if(is.character(X)) {
-	 scca_plink_internal(X, Y, lambda1, lambda2, ndim,
-	    standx_i, standy_i, mem_i, seed, maxiter, tol,
-	    verbose, num_threads, block_size, useV, V)
+	 lapply(lambda1, function(l1) {
+	    lapply(lambda2, function(l2) {
+	       x <- scca_plink_internal(X, Y, l1, l2, ndim,
+		  standx_i, standy_i, mem_i, seed, maxiter, tol,
+		  verbose, num_threads, block_size, useV, V)
+	    })
+	 })
       } else {
-	 scca_internal(X, Y, lambda1, lambda2, ndim,
-	    standx_i, standy_i, mem_i, seed, maxiter, tol,
-	    verbose, num_threads, useV, V)
+	 lapply(lambda1, function(l1) {
+	    lapply(lambda2, function(l2) {
+	       scca_internal(X, Y, l1, l2, ndim,
+		  standx_i, standy_i, mem_i, seed, maxiter, tol,
+		  verbose, num_threads, useV, V)
+	    })
+	 })
       }
    )
-   class(res) <- "ucca"
    if(is(res, "try-error")) {
       NULL
    } else {
       #if(!is.character(X)) {
 	 #rownames(res$result) <- colnames(X)
       #}
-      res
+      if(simplify && length(lambda1) == 1 && length(lambda2) == 1) {
+	 x <- res[[1]][[1]]
+	 class(x) <- "scca"
+	 x
+      } else {
+	 class(res) <- "scca-list"
+	 res
+      }
    }
 }
 
@@ -210,33 +224,146 @@ print.scca <- function(x, ...)
    invisible(x)
 }
 
-cv.scca <- function(X, Y, nfolds=10, parallel=FALSE, ...)
+#' Cross-validated grid search over SCCA penalties
+#'
+#' @param X A numeric matrix or character string pointing at a PLINK dataset
+#'
+#' @param Y A numeric matrix
+#'
+#' @param lambda1 A numeric vector of non-negative penalties
+#'
+#' @param lambda2 A numeric vector of non-negative penalties
+#'
+#' @param ndim Integer. The number of dimensions to infer.
+#'
+#' @param nfolds Integer. The number of cross-validation folds.
+#'
+#' @param parallel Logical. Whether to parallelise the cross-validation using
+#' the foreach package.
+#'
+#' @return \code{cv.scca} returns an array containing the average
+#' cross-validatd canonical Pearson correlations between X and Y, as follows:
+#'    Dimension 1: the ndim different canonical dimensions;
+#'    Dimension 2: along the lambda1 penalties;
+#'    Dimension 3: along the lambda2 penalties.
+#'
+#' @export
+cv.scca <- function(X, Y,
+   lambda1=seq(1e-6, 1e-3, length=5), lambda2=seq(1e-6, 1e-3, length=5),
+   ndim=3, nfolds=10, parallel=FALSE, ...)
 {
    n <- nrow(Y)
    if(is.character(X)) {
-      stop("Cross-validation currently only supported when X is a matrix")
+      stop(
+	 "Cross-validation currently only supported when X is a matrix")
    }
 
    folds <- sample(1:nfolds, n, replace=TRUE)
+   xpred <- array(0, c(n, ndim, length(lambda1), length(lambda2)))
+   ypred <- array(0, c(n, ndim, length(lambda1), length(lambda2)))
+   nzx <- array(0, c(ndim, length(lambda1), length(lambda2)))
+   nzy <- array(0, c(ndim, length(lambda1), length(lambda2)))
 
    if(parallel) {
       require(foreach)
       res <- foreach(fold=1:nfolds) %dopar% {
          w <- folds != fold
-         s <- scca(X[w,], Y[w,], ...)
-         px <- X[!w,] %*% s$U
-         py <- Y[!w,] %*% s$V
-         diag(cor(px, py))
+         scca(X[w,], Y[w,], ndim=ndim,
+	    lambda1=lambda1, lambda2=lambda2,
+	    simplify=FALSE, ...)
       }
    } else {
-      res <- sapply(1:nfolds, function(fold) {
+      res <- lapply(1:nfolds, function(fold) {
          w <- folds != fold
-         s <- scca(X[w,], Y[w,], ...)
-         px <- X[!w,] %*% s$U
-         py <- Y[!w,] %*% s$V
-         diag(cor(px, py))
+	 scca(X[w,], Y[w,], ndim=ndim,
+	    lambda1=lambda1, lambda2=lambda2,
+	    simplify=FALSE, ...)
       })
    }
-   res
+
+   # Collect all the folds into one result (same way as glmnet), instead
+   # of averaging over k folds
+   for(fold in 1:nfolds) {
+      for(i in seq(along=lambda1)) {
+	 for(j in seq(along=lambda2)) {
+	    x <- res[[fold]][[i]][[j]]
+	    w <- folds == fold
+	    xpred[w, ,i, j] <- X[w,] %*% x$U
+	    ypred[w, ,i, j] <- Y[w,] %*% x$V
+	 }
+      }
+   }
+
+   for(i in seq(along=lambda1)) {
+      for(j in seq(along=lambda2)) {
+	 mx <- sapply(res, function(x) colSums(x[[i]][[j]]$U != 0))
+	 my <- sapply(res, function(x) colSums(x[[i]][[j]]$V != 0))
+	 nzx[,i,j] <- rowMeans(mx)
+	 nzy[,i,j] <- rowMeans(my)
+      }
+   }
+
+   r <- lapply(1:ndim, function(k) {
+      sapply(seq(along=lambda1), function(i) {
+	 sapply(seq(along=lambda2), function(j) {
+	    cor(xpred[,k,i,j], ypred[,k,i,j])
+	 })
+      })
+   })
+   r <- abind(r, along=3)
+   r <- aperm(r, c(3, 2, 1))
+
+   res2 <- list(
+      ndim=ndim,
+      lambda1=lambda1,
+      lambda2=lambda2,
+      corr=r,
+      nzero.x=nzx,
+      nzero.y=nzy
+   )
+   class(res2) <- "cv.scca"
+   res2
+}
+
+#' Plot the results of SCCA cross-validation
+#'
+#' @param x An object of class "cv.scca"
+#'
+#' @param dim Integer. Which dimension to plot (all will be plotted by
+#' default).
+#'
+#' @details
+#'    Plots the cross-validated Pearson correlation, as a function of the
+#'    number of non-zero entries in the canonical vectors U (on the x-axis),
+#'    with a separate curve separately for each lambda2 penalty (which affects
+#'    the non-zero entries in the canonical vector V. For example, if
+#'    \code{cv.scca} was run with 5x lambda1 values and 7x lambda2 values,
+#'    there will be 7 separate curves each with 5 points on the x-axis.
+#'
+#' @export
+plot.cv.scca <- function(x, dim=NULL, ...)
+{
+   if(class(x) != "cv.scca") {
+      stop("x is not of class 'cv.scca'")
+   }
+
+   dim <- as.integer(dim)
+
+   if(is.null(dim)) {
+      for(i in 1:x$ndim) {
+         matplot(x$nzero.x[1,,], g$corr[i,,],
+            type="b", xlab="# of variables in X with non-zero weight",
+               ylab="Pearson correlation", log="x",
+               main=paste0("Canonical dimension ", i))
+      }
+   } else if(is.numeric(dim) && dim > 0 && dim <= x$ndim) {
+      matplot(x$nzero.x[dim,,], g$corr[dim,,],
+	 type="b", xlab="# of variables in X with non-zero weight",
+	 ylab="Pearson correlation", log="x",
+	 main=paste0("Canonical dimension ", dim))
+   } else {
+      stop(paste("dim must be a positive integer, <=", x$ndim))
+   }
+   invisible(x)
 }
 
