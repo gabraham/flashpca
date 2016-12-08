@@ -24,8 +24,8 @@ void SVDWideOnline::perform_op(double *x_in, double* y_out)
    Map<VectorXd> y(y_out, n);
    unsigned int actual_block_size;
 
-   verbose && STDOUT << timestamp()
-      << "Matrix operation " << nops << std::endl;
+   //verbose && STDOUT << timestamp()
+     // << "Matrix operation " << nops << std::endl;
 
    actual_block_size = stop[0] - start[0] + 1;
 
@@ -34,9 +34,9 @@ void SVDWideOnline::perform_op(double *x_in, double* y_out)
    if(nblocks > 1 || nops == 1)
    {
       dat.read_snp_block(start[0], stop[0], false, false);
-      verbose && STDOUT << timestamp() << "Reading block " <<
-	 0 << " (" << start[0] << ", " << stop[0]
-	 << ")"  << std::endl;
+      //verbose && STDOUT << timestamp() << "Reading block " <<
+//	 0 << " (" << start[0] << ", " << stop[0]
+//	 << ")"  << std::endl;
    }
 
    y.noalias() = dat.X.leftCols(actual_block_size) *
@@ -47,8 +47,8 @@ void SVDWideOnline::perform_op(double *x_in, double* y_out)
    // If there's only one block, this loop doesn't run anyway
    for(unsigned int k = 1 ; k < nblocks ; k++)
    {
-      verbose && STDOUT << timestamp() << "Reading block " <<
-	 k << " (" << start[k] << ", " << stop[k] << ")"  << std::endl;
+//      verbose && STDOUT << timestamp() << "Reading block " <<
+//	 k << " (" << start[k] << ", " << stop[k] << ")"  << std::endl;
       actual_block_size = stop[k] - start[k] + 1;
       dat.read_snp_block(start[k], stop[k], false, false);
       //TODO: Kahan summation better here?
@@ -79,9 +79,9 @@ MatrixXd SVDWideOnline::perform_op_mat(const MatrixXd x)
    if(nblocks > 1 || nops == 1)
    {
       dat.read_snp_block(start[0], stop[0], false, false);
-      verbose && STDOUT << timestamp() << "Reading block " <<
-	 0 << " (" << start[0] << ", " << stop[0]
-	 << ")"  << std::endl;
+  //    verbose && STDOUT << timestamp() << "Reading block " <<
+//	 0 << " (" << start[0] << ", " << stop[0]
+//	 << ")"  << std::endl;
    }
 
    MatrixXd Y(n, x.cols());
@@ -93,8 +93,8 @@ MatrixXd SVDWideOnline::perform_op_mat(const MatrixXd x)
    // If there's only one block, this loop doesn't run anyway
    for(unsigned int k = 1 ; k < nblocks ; k++)
    {
-      verbose && STDOUT << timestamp() << "Reading block " <<
-	 k << " (" << start[k] << ", " << stop[k] << ")"  << std::endl;
+ //     verbose && STDOUT << timestamp() << "Reading block " <<
+//	 k << " (" << start[k] << ", " << stop[k] << ")"  << std::endl;
       actual_block_size = stop[k] - start[k] + 1;
       dat.read_snp_block(start[k], stop[k], false, false);
       //TODO: Kahan summation better here?
@@ -149,13 +149,13 @@ MatrixXd SVDWideOnline::crossprod2(const MatrixXd& x)
 {
    unsigned int actual_block_size = stop[0] - start[0] + 1;
 
-   verbose && STDOUT << timestamp()
-      << "Matrix operation " << nops << std::endl;
+   //verbose && STDOUT << timestamp()
+   //   << "Matrix operation " << nops << std::endl;
 
    dat.read_snp_block(start[0], stop[0], false, false);
-   verbose && STDOUT << timestamp() << "Reading block " <<
-      0 << " (" << start[0] << ", " << stop[0]
-      << ")"  << std::endl;
+   //verbose && STDOUT << timestamp() << "Reading block " <<
+   //   0 << " (" << start[0] << ", " << stop[0]
+   //   << ")"  << std::endl;
 
    MatrixXd Y(p, x.cols());
    Y.middleRows(start[0], actual_block_size) =
@@ -163,8 +163,8 @@ MatrixXd SVDWideOnline::crossprod2(const MatrixXd& x)
 
    for(unsigned int k = 1 ; k < nblocks ; k++)
    {
-      verbose && STDOUT << timestamp() << "Reading block " <<
-	 k << " (" << start[k] << ", " << stop[k] << ")"  << std::endl;
+//      verbose && STDOUT << timestamp() << "Reading block " <<
+//	 k << " (" << start[k] << ", " << stop[k] << ")"  << std::endl;
       actual_block_size = stop[k] - start[k] + 1;
       dat.read_snp_block(start[k], stop[k], false, false);
       //TODO: Kahan summation better here?
@@ -292,21 +292,21 @@ MatrixXd SVDWideOnline::prod3(const MatrixXd& x)
 {
    unsigned int actual_block_size = stop[0] - start[0] + 1;
 
-   verbose && STDOUT << timestamp()
-      << "Matrix operation " << nops << std::endl;
+ //  verbose && STDOUT << timestamp()
+   //   << "Matrix operation " << nops << std::endl;
 
    dat.read_snp_block(start[0], stop[0], false, false);
-   verbose && STDOUT << timestamp() << "Reading block " <<
-      0 << " (" << start[0] << ", " << stop[0]
-      << ")"  << std::endl;
+   //verbose && STDOUT << timestamp() << "Reading block " <<
+     // 0 << " (" << start[0] << ", " << stop[0]
+     // << ")"  << std::endl;
 
    MatrixXd Y = dat.X.leftCols(actual_block_size) 
       * x.middleRows(start[0], actual_block_size);
 
    for(unsigned int k = 1 ; k < nblocks ; k++)
    {
-      verbose && STDOUT << timestamp() << "Reading block " <<
-	 k << " (" << start[k] << ", " << stop[k] << ")"  << std::endl;
+      //verbose && STDOUT << timestamp() << "Reading block " <<
+//	 k << " (" << start[k] << ", " << stop[k] << ")"  << std::endl;
       actual_block_size = stop[k] - start[k] + 1;
       dat.read_snp_block(start[k], stop[k], false, false);
       //TODO: Kahan summation better here?
