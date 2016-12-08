@@ -6,7 +6,7 @@
 #'
 #' @param ndim Integer. How many dimensions to return in results.
 #'
-#' @param stand A character string indicating how to standardize X before PCA,
+#' @param stand A character string indicating how to standardise X before PCA,
 #' one of "binom" (old Eigenstrat-style), "binom2" (new Eigenstrat-style),
 #' "sd" (zero-mean unit-variance), "center" (zero mean), or "none".
 #' 
@@ -56,7 +56,7 @@
 #'    \item{loadings}{a numeric matrix. The matrix of variable loadings, i.e., V
 #'    from SVD.}
 #'    \item{scale}{a list of two elements, ``center'' and ''scale'', which was
-#'	 used to standardize the input matrix X.}
+#'	 used to standardise the input matrix X.}
 #' }
 #' 
 #' @examples

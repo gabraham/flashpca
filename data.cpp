@@ -277,11 +277,11 @@ void Data::read_snp_block(unsigned int start_idx, unsigned int stop_idx,
       	    }
       	    snp_avg /= ngood;
 
-	    // Store the 4 possible standardized genotypes for each SNP
+	    // Store the 4 possible standardised genotypes for each SNP
 	    P = snp_avg / 2.0;
-	    if(stand_method_x == STANDARDIZE_BINOM)
+	    if(stand_method_x == STANDARDISE_BINOM)
 	       sd = sqrt(P * (1 - P));
-	    else if(stand_method_x == STANDARDIZE_BINOM2)
+	    else if(stand_method_x == STANDARDISE_BINOM2)
 	       sd = sqrt(2.0 * P * (1 - P));
 	    else
 	    {

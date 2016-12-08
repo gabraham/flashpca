@@ -44,7 +44,7 @@ List flashpca_internal(
       NumericVector X_mean(0);
       NumericVector X_sd(0);
 
-      // STANDARDIZE_NONE: 0
+      // STANDARDISE_NONE: 0
       if(return_scale && stand != 0)
       {
          NumericMatrix X_meansd(wrap(rpca.X_meansd));
@@ -136,7 +136,7 @@ List flashpca_plink_internal(
 
       Rcpp::List res;
 
-      // STANDARDIZE_NONE: 0
+      // STANDARDISE_NONE: 0
       if(return_scale && stand != 0)
       {
          NumericMatrix X_meansd(wrap(rpca.X_meansd));
@@ -293,7 +293,7 @@ List ucca_plink_internal(
       NumericMatrix P(wrap(rpca.Px));
       NumericVector d(wrap(rpca.d));
 
-      // STANDARDIZE_NONE: 0
+      // STANDARDISE_NONE: 0
       //if(return_scale && stand != 0)
       //{
       //   NumericMatrix X_meansd(wrap(rpca.X_meansd));
@@ -482,7 +482,7 @@ List ucca_internal(
       NumericMatrix P(wrap(rpca.Px));
       NumericVector d(wrap(rpca.d));
 
-      // STANDARDIZE_NONE: 0
+      // STANDARDISE_NONE: 0
       //if(return_scale && stand != 0)
       //{
       //   NumericMatrix X_meansd(wrap(rpca.X_meansd));
@@ -538,5 +538,17 @@ List ucca_internal(
       ::Rf_error("ucca_internal: unknown c++ exception");
    }
    return NA_REAL;
+}
+
+// [[Rcpp::export]]
+NumericMatrix standardise_impute(
+   Eigen::Map<Eigen::MatrixXd> XX,
+   int method)
+{
+
+   MatrixXd X = XX;
+   standardise(X, method, false);
+   NumericMatrix Xm(wrap(X));
+   return Xm;
 }
 

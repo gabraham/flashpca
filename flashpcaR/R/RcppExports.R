@@ -25,3 +25,7 @@ ucca_internal <- function(X, Y, stand_x, stand_y, verbose, return_scale) {
     .Call('flashpcaR_ucca_internal', PACKAGE = 'flashpcaR', X, Y, stand_x, stand_y, verbose, return_scale)
 }
 
+standardise_impute <- function(XX, method) {
+    .Call('flashpcaR_standardise_impute', PACKAGE = 'flashpcaR', XX, method)
+}
+

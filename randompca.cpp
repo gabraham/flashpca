@@ -124,8 +124,7 @@ void RandomPCA::pca_fast(MatrixXd& X, unsigned int block_size,
 {
    unsigned int N, p;
 
-   if(stand_method_x != STANDARDIZE_NONE)
-      X_meansd = standardize(X, stand_method_x, verbose);
+   X_meansd = standardise(X, stand_method_x, verbose);
    N = X.rows();
    p = X.cols();
 
@@ -391,11 +390,8 @@ void RandomPCA::scca(MatrixXd &X, MatrixXd &Y, double lambda1, double lambda2,
    long seed, unsigned int ndim, int mem, unsigned int maxiter, double tol,
    MatrixXd &V0)
 {
-   if(stand_method_x != STANDARDIZE_NONE)
-      X_meansd = standardize(X, stand_method_x);
-
-   if(stand_method_y != STANDARDIZE_NONE)
-      Y_meansd = standardize(Y, stand_method_y);
+   X_meansd = standardise(X, stand_method_x);
+   Y_meansd = standardise(Y, stand_method_y);
 
    verbose && STDOUT << timestamp() << "dim(X): " << dim(X) << std::endl;
    verbose && STDOUT << timestamp() << "dim(Y): " << dim(Y) << std::endl;
@@ -434,10 +430,8 @@ void RandomPCA::scca(Data &dat, double lambda1, double lambda2,
    long seed, unsigned int ndim, int mem, unsigned int maxiter, double tol,
    unsigned int block_size, MatrixXd &V0)
 {
-   if(stand_method_y != STANDARDIZE_NONE)
-      Y_meansd = standardize(dat.Y, stand_method_y);
+   Y_meansd = standardise(dat.Y, stand_method_y);
 
-   //verbose && STDOUT << timestamp() << "dim(X): " << dim(X) << std::endl;
    verbose && STDOUT << timestamp() << "dim(Y): " << dim(dat.Y) << std::endl;
    verbose && STDOUT << timestamp() << "lambda1: " << lambda1
       << " lambda2: " << lambda2 << std::endl;
@@ -529,11 +523,8 @@ void RandomPCA::scca(Data &dat, double lambda1, double lambda2,
 // into memory)
 void RandomPCA::ucca(MatrixXd &X, MatrixXd &Y)
 {
-   if(stand_method_x != STANDARDIZE_NONE)
-      X_meansd = standardize(X, stand_method_x);
-
-   if(stand_method_y != STANDARDIZE_NONE)
-      Y_meansd = standardize(Y, stand_method_y);
+   X_meansd = standardise(X, stand_method_x);
+   Y_meansd = standardise(Y, stand_method_y);
 
    unsigned int n = X.rows();
    unsigned int p = X.cols();
@@ -575,8 +566,7 @@ void RandomPCA::ucca(MatrixXd &X, MatrixXd &Y)
 // Assumes data.Y has been set
 void RandomPCA::ucca(Data& data)
 {
-   if(stand_method_y != STANDARDIZE_NONE)
-      Y_meansd = standardize(data.Y, stand_method_y);
+   Y_meansd = standardise(data.Y, stand_method_y);
 
    unsigned int n = data.N;
    unsigned int p = data.nsnps;
@@ -596,8 +586,7 @@ void RandomPCA::ucca(Data& data)
    for(unsigned int j = 0 ; j < p ; j++)
    {
       data.read_snp_block(j, j, false, true);
-      if(stand_method_x != STANDARDIZE_NONE)
-         X_meansd = standardize(data.X, stand_method_x);
+      X_meansd = standardise(data.X, stand_method_x);
       varx = var(data.X.col(0));
       covXY = cov(data.X.col(0), data.Y);
 

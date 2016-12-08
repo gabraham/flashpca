@@ -130,3 +130,15 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// standardise_impute
+NumericMatrix standardise_impute(Eigen::Map<Eigen::MatrixXd> XX, int method);
+RcppExport SEXP flashpcaR_standardise_impute(SEXP XXSEXP, SEXP methodSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Eigen::Map<Eigen::MatrixXd> >::type XX(XXSEXP);
+    Rcpp::traits::input_parameter< int >::type method(methodSEXP);
+    rcpp_result_gen = Rcpp::wrap(standardise_impute(XX, method));
+    return rcpp_result_gen;
+END_RCPP
+}

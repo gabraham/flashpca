@@ -31,11 +31,11 @@
 #include <sys/time.h>
 
 #define VAR_TOL 1e-9
-#define STANDARDIZE_NONE 0
-#define STANDARDIZE_SD 1
-#define STANDARDIZE_BINOM 2
-#define STANDARDIZE_BINOM2 3
-#define STANDARDIZE_CENTER 4
+#define STANDARDISE_NONE 0
+#define STANDARDISE_SD 1
+#define STANDARDISE_BINOM 2
+#define STANDARDISE_BINOM2 3
+#define STANDARDISE_CENTER 4
 
 #define TXT_SEP "\t"
 
@@ -125,7 +125,7 @@ int sign(T x)
 
 Eigen::MatrixXd read_bed(const char *filename, const unsigned int nrows);
 Eigen::MatrixXd read_pheno(const char *filename, unsigned int firstcol);
-Eigen::MatrixXd standardize(Eigen::MatrixXd &X, int method, bool verbose=false);
-Eigen::MatrixXd standardize_transpose(Eigen::MatrixXd &X, int method,
+Eigen::MatrixXd standardise(Eigen::MatrixXd &X, int method, bool verbose=false);
+Eigen::MatrixXd standardise_transpose(Eigen::MatrixXd &X, int method,
    bool verbose=false);
 

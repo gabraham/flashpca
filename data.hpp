@@ -99,7 +99,7 @@ class Data {
       //VectorXd tmpx;
       bool* visited;
 
-      // the standardized values for the 3 genotypes + NA, for each SNP
+      // the standardised values for the 3 genotypes + NA, for each SNP
       ArrayXXd scaled_geno_lookup;
 };
 
