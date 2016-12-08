@@ -585,8 +585,10 @@ void RandomPCA::ucca(Data& data)
 
    for(unsigned int j = 0 ; j < p ; j++)
    {
+      // No need to explicitly standardise X, since read_snp_block will
+      // already standardise it internally, assuming that
+      // data.stand_method_x has been set previously
       data.read_snp_block(j, j, false, true);
-      X_meansd = standardise(data.X, stand_method_x);
       varx = var(data.X.col(0));
       covXY = cov(data.X.col(0), data.Y);
 
