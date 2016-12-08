@@ -10,13 +10,12 @@ flashpca(X, ndim = 10, stand = c("binom2", "binom", "sd", "center", "none"),
   check_geno = TRUE, return_scale = TRUE)
 }
 \arguments{
-\item{X}{A numeric matrix to perform PCA on, or a character string po, or a
-character string pointing to a PLINK dataset. If X is a matrix, it cannot
-have missing values.}
+\item{X}{A numeric matrix to perform PCA on, or a
+character string pointing to a PLINK dataset.}
 
 \item{ndim}{Integer. How many dimensions to return in results.}
 
-\item{stand}{A character string indicating how to standardize X before PCA,
+\item{stand}{A character string indicating how to standardise X before PCA,
 one of "binom" (old Eigenstrat-style), "binom2" (new Eigenstrat-style),
 "sd" (zero-mean unit-variance), "center" (zero mean), or "none".}
 
@@ -53,7 +52,7 @@ deviations used in standardizing the matrix X.}
    \item{loadings}{a numeric matrix. The matrix of variable loadings, i.e., V
    from SVD.}
    \item{scale}{a list of two elements, ``center'' and ''scale'', which was
- used to standardize the input matrix X.}
+ used to standardise the input matrix X.}
 }
 }
 \description{

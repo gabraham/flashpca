@@ -552,3 +552,81 @@ NumericMatrix standardise_impute(
    return Xm;
 }
 
+// [[Rcpp::export]]
+double check_internal(
+   Eigen::MatrixXd X,
+   int stand, 
+   Eigen::MatrixXd evec,
+   Eigen::VectorXd eval,
+   unsigned int divisor)
+{
+   RandomPCA rpca;
+   rpca.divisor = divisor;
+   rpca.verbose = true;
+   rpca.stand_method_x = stand;
+   rpca.check(X, evec, eval); 
+   return 1.0;
+}
+
+// [[Rcpp::export]]
+List check_plink_internal(
+   std::string fn,
+   int stand,
+   Eigen::MatrixXd evec,
+   Eigen::VectorXd eval,
+   unsigned int block_size,
+   unsigned int divisor)
+{
+   try{
+      RandomPCA rpca;
+      rpca.stand_method_x = stand;
+      rpca.divisor = divisor;
+      //rpca.verbose = verbose;
+      rpca.verbose = true;
+
+      NumericVector X_mean(0);
+      NumericVector X_sd(0);
+
+      std::string fam_file, geno_file, bim_file, pheno_file;
+      geno_file = fn + std::string(".bed");
+      bim_file = fn + std::string(".bim");
+      fam_file = fn + std::string(".fam");
+
+      //Data data(seed);
+      Data data(1);
+      //data.verbose = verbose;
+      data.verbose = true;
+      data.stand_method_x = stand; 
+      data.read_pheno(fam_file.c_str(), 6);
+      data.read_plink_bim(bim_file.c_str());
+      data.geno_filename = geno_file.c_str();
+      data.get_size();
+      data.prepare();
+
+      rpca.check(data, block_size, evec, eval);
+      
+      //// STANDARDISE_NONE: 0
+      //if(return_scale && stand != 0)
+      //{
+      //   NumericMatrix X_meansd(wrap(rpca.X_meansd));
+      //   X_mean = X_meansd(_, 0);
+      //   X_sd = X_meansd(_, 1);
+      //}
+
+      Rcpp::List res = Rcpp::List::create(
+         //Rcpp::Named("values")=d,
+         Rcpp::Named("x")=1
+      );
+      return res;
+   }
+   catch(std::exception &ex)
+   {
+      forward_exception_to_r(ex);
+   }
+   catch(...)
+   {
+      ::Rf_error("flashpca_plink_internal: unknown c++ exception");
+   }
+   return NA_REAL;
+}
+

@@ -1,8 +1,7 @@
 #' Principal Component Analysis using flashpca
 #'
-#' @param X A numeric matrix to perform PCA on, or a character string po, or a
-#' character string pointing to a PLINK dataset. If X is a matrix, it cannot
-#' have missing values.
+#' @param X A numeric matrix to perform PCA on, or a
+#' character string pointing to a PLINK dataset. 
 #'
 #' @param ndim Integer. How many dimensions to return in results.
 #'
@@ -110,7 +109,7 @@ flashpca <- function(X, ndim=10,
    
    if(is.numeric(X)) {
       if(any(is.na(X))) {
-	 stop("X cannot contain any missing values")
+	 warning("X contains missing values, will be mean imputed")
       }
 
       if(ncol(X) < 2) {

@@ -199,9 +199,9 @@ This is done using
 
 The final mean squared error should be low (e.g., <1e-8).
 
-### <a name="scca"></a>Sparse Canonical Correlation Analysis (SCCA) (_experimental_)
+### <a name="scca"></a>Sparse Canonical Correlation Analysis (SCCA)
 
-* flashpca now experimentally supports sparse CCA
+* flashpca now supports sparse CCA
    ([Parkhomenko 2009](http://dx.doi.org/10.2202/1544-6115.1406),
    [Witten 2009](http://dx.doi.org/10.1093/biostatistics/kxp008)),
    between SNPs and multivariate phenotypes.

@@ -29,3 +29,11 @@ standardise_impute <- function(XX, method) {
     .Call('flashpcaR_standardise_impute', PACKAGE = 'flashpcaR', XX, method)
 }
 
+check_internal <- function(X, stand, evec, eval, divisor) {
+    .Call('flashpcaR_check_internal', PACKAGE = 'flashpcaR', X, stand, evec, eval, divisor)
+}
+
+check_plink_internal <- function(fn, stand, evec, eval, block_size, divisor) {
+    .Call('flashpcaR_check_plink_internal', PACKAGE = 'flashpcaR', fn, stand, evec, eval, block_size, divisor)
+}
+

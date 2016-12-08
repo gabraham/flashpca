@@ -97,7 +97,7 @@ ucca <- function(X, Y,
    if(!is.numeric(Y)) {
       stop("Y must be a numeric matrix")
    } else if(any(is.na(Y))) {
-       stop("Y cannot contain any missing values")
+       warning("Y contains missing values, will be mean-imputed")
    }
 
    Y <- cbind(Y)
@@ -107,6 +107,9 @@ ucca <- function(X, Y,
    if(is.numeric(X)) {
       X <- cbind(X)
       storage.mode(X) <- "numeric"
+      if(any(is.na(X))) {
+	 warning("X contains missing values, will be mean-imputed")
+      }
    } else if(is.character(X)) {
       if(!standx %in% c("binom", "binom2")) {
 	 stop("When using PLINK data, you must use standx='binom' or 'binom2'")

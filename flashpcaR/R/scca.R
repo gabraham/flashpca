@@ -1,6 +1,7 @@
 #' Performs sparse canonical correlation analysis.
 #'
-#' @param X An n by p numeric matrix
+#' @param X An n by p numeric matrix, or a character string pointing to a
+#' PLINK dataset.
 #'
 #' @param Y An n by k numeric matrix
 #' 
@@ -90,7 +91,7 @@ scca <- function(X, Y, lambda1=0, lambda2=0,
    if(!is.numeric(Y)) {
       stop("Y must be a numeric matrix")
    } else if(any(is.na(Y))) {
-       stop("Y cannot contain any missing values")
+       warning("Y cantains missing values, will be mean imputed")
    }
 
    Y <- cbind(Y)
@@ -99,7 +100,7 @@ scca <- function(X, Y, lambda1=0, lambda2=0,
 
    if(is.numeric(X)) {
       if(any(is.na(X))) {
-	 stop("X cannot contain any missing values")
+	 warning("X cantains missing values, will be mean imputed")
       }
 
       if(ncol(X) < 2) {

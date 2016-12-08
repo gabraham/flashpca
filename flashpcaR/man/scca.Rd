@@ -11,7 +11,8 @@ scca(X, Y, lambda1 = 0, lambda2 = 0, standx = c("binom2", "binom", "sd",
   block_size = 500, simplify = TRUE)
 }
 \arguments{
-\item{X}{An n by p numeric matrix}
+\item{X}{An n by p numeric matrix, or a character string pointing to a
+PLINK dataset.}
 
 \item{Y}{An n by k numeric matrix}
 
