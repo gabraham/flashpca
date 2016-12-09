@@ -78,8 +78,10 @@ test_that("Testing UCCA (binomial2) with matrices and PLINK", {
 
 test_that("Testing input checking", {
 
+   X <- scale2(hm3.chr1$bed, type="1")
+
    # Test incompatible number of rows
-   Z <- matrix(rnorm((nrow(X) + 3) * 100), nrow(X) + 3, 100)
+   Z <- matrix(rnorm((nrow(X) + 3) * 10), nrow(X) + 3, 10)
 
    expect_error(
       ucca(X, Z, standx="none", standy="none", mem="high")

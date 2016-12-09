@@ -42,6 +42,10 @@
 #' X and Y contain values other than {0, 1, 2}, when standx/standy="binom"/"binom2". This can
 #' be set to FALSE if you are sure your matrices only contain these values
 #' (only matters when using "binom" or "binom2").
+#'
+#' @param check_fam Logical. Whether to check that the number of rows in 
+#' the PLINK fam file (if X is a character string) matches the number of
+#' rows in the eigenvectors.
 #' 
 #' @param V Numeric. A vector to initialise "v" in SCCA iterations. By
 #' default, it will be a vector of normally distributed variates.
@@ -81,8 +85,8 @@ scca <- function(X, Y, lambda1=0, lambda2=0,
    standx=c("binom2", "binom", "sd", "center", "none"),
    standy=c("binom2", "binom", "sd", "center", "none"),
    ndim=10, maxiter=1e3, tol=1e-4, seed=1L, verbose=FALSE, num_threads=1,
-   mem=c("low", "high"), check_geno=TRUE, V=NULL, block_size=500,
-   simplify=TRUE)
+   mem=c("low", "high"), check_geno=TRUE, check_fam=TRUE,
+   V=NULL, block_size=500, simplify=TRUE)
 {
    standx <- match.arg(standx)
    standy <- match.arg(standy)
@@ -122,6 +126,15 @@ scca <- function(X, Y, lambda1=0, lambda2=0,
    } else if(is.character(X)) {
       if(!standx %in% c("binom", "binom2")) {
 	 stop("When using PLINK data, you must use standx='binom' or 'binom2'")
+      }
+      if(check_fam) {
+	 fam <- read.table(paste0(X, ".fam"), header=FALSE, sep="",
+	    stringsAsFactors=FALSE)
+	 if(nrow(Y) != nrow(fam)) {
+	    stop(paste0("The number of rows in ", X,
+		  ".fam and Y don't match"))
+	 }
+	 rm(fam)
       }
    } else {
       stop("X must be a numeric matrix or a string naming a PLINK fileset")

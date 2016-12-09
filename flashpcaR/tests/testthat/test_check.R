@@ -32,3 +32,29 @@ test_that("Testing PCA with stand='binom'", {
    expect_equal(mse, c2$mse)
 })
 
+test_that("Testing input checking", {
+
+   X <- scale2(hm3.chr1$bed, type="1")
+
+   ndim <- 5
+   evec <- matrix(rnorm((nrow(X) + 3) * ndim), nrow(X) + 3, ndim)
+   eval<- rnorm(ndim)^2
+
+   # Test incompatible number of rows in evec and X
+   expect_error(
+      check(X, stand="none", evec=evec, eval=eval)
+   )
+   expect_error(
+      check(bedf, stand="none", evec=evec, eval=eval)
+   )
+
+   # Test incompatible number of dimensions between eval and evec
+   eval <- eval[1:3]
+   expect_error(
+      check(X, stand="none", evec=evec, eval=eval)
+   )
+   expect_error(
+      check(bedf, stand="none", evec=evec, eval=eval)
+   )
+})
+

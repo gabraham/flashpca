@@ -7,8 +7,8 @@
 scca(X, Y, lambda1 = 0, lambda2 = 0, standx = c("binom2", "binom", "sd",
   "center", "none"), standy = c("binom2", "binom", "sd", "center", "none"),
   ndim = 10, maxiter = 1000, tol = 1e-04, seed = 1L, verbose = FALSE,
-  num_threads = 1, mem = c("low", "high"), check_geno = TRUE, V = NULL,
-  block_size = 500, simplify = TRUE)
+  num_threads = 1, mem = c("low", "high"), check_geno = TRUE,
+  check_fam = TRUE, V = NULL, block_size = 500, simplify = TRUE)
 }
 \arguments{
 \item{X}{An n by p numeric matrix, or a character string pointing to a
@@ -53,6 +53,10 @@ This is useful for large X and Y.}
 X and Y contain values other than {0, 1, 2}, when standx/standy="binom"/"binom2". This can
 be set to FALSE if you are sure your matrices only contain these values
 (only matters when using "binom" or "binom2").}
+
+\item{check_fam}{Logical. Whether to check that the number of rows in 
+the PLINK fam file (if X is a character string) matches the number of
+rows in the eigenvectors.}
 
 \item{V}{Numeric. A vector to initialise "v" in SCCA iterations. By
 default, it will be a vector of normally distributed variates.}

@@ -43,6 +43,10 @@
 #' "binom" or "binom2". This can
 #' be set to FALSE if you are sure your matrices only contain these values
 #' (only matters when using "binom"/"binom2").
+#'
+#' @param check_fam Logical. Whether to check that the number of row in 
+#' the PLINK fam file (if X is a character string) matches the number of
+#' rows in the eigenvectors.
 #' 
 #' @param V Numeric. A vector to initialise "v" in SCCA iterations. By
 #' default, it will be a vector of normally distributed variates.
@@ -89,7 +93,7 @@
 ucca <- function(X, Y,
    standx=c("binom2", "binom", "sd", "center", "none"),
    standy=c("binom2", "binom", "sd", "center", "none"),
-   check_geno=TRUE, verbose=FALSE, return_scale=FALSE)
+   check_geno=TRUE, check_fam=TRUE, verbose=FALSE, return_scale=FALSE)
 {
    standx <- match.arg(standx)
    standy <- match.arg(standy)
@@ -118,15 +122,15 @@ ucca <- function(X, Y,
       stop("X must be a numeric matrix or a string naming a PLINK fileset")
    }
 
-   if(is.character(X)) {
+   if(is.character(X) && check_fam) {
       fam <- read.table(paste0(X, ".fam"), header=FALSE, sep="",
-	 stringsAsFactors=FALSE)
+         stringsAsFactors=FALSE)
       if(ncol(Y) > nrow(fam)) {
-	 stop(paste(
-	    "The phenotype matrix Y cannot have more columns than",
-	    "the sample size"))
+         stop(paste(
+            "The phenotype matrix Y cannot have more columns than",
+            "the sample size"))
       } else if(nrow(Y) != nrow(fam)) {
-	    stop("The number of rows in X and Y don't match")
+         stop(paste0("The number of rows in ", X, ".fam and Y don't match"))
       }
       rm(fam)
    } else {
