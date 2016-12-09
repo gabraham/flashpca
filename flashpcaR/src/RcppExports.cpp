@@ -143,23 +143,24 @@ BEGIN_RCPP
 END_RCPP
 }
 // check_internal
-double check_internal(Eigen::MatrixXd X, int stand, Eigen::MatrixXd evec, Eigen::VectorXd eval, unsigned int divisor);
-RcppExport SEXP flashpcaR_check_internal(SEXP XSEXP, SEXP standSEXP, SEXP evecSEXP, SEXP evalSEXP, SEXP divisorSEXP) {
+List check_internal(Eigen::MatrixXd& X, int stand, Eigen::MatrixXd& evec, Eigen::VectorXd& eval, unsigned int divisor, bool verbose);
+RcppExport SEXP flashpcaR_check_internal(SEXP XSEXP, SEXP standSEXP, SEXP evecSEXP, SEXP evalSEXP, SEXP divisorSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< Eigen::MatrixXd >::type X(XSEXP);
+    Rcpp::traits::input_parameter< Eigen::MatrixXd& >::type X(XSEXP);
     Rcpp::traits::input_parameter< int >::type stand(standSEXP);
-    Rcpp::traits::input_parameter< Eigen::MatrixXd >::type evec(evecSEXP);
-    Rcpp::traits::input_parameter< Eigen::VectorXd >::type eval(evalSEXP);
+    Rcpp::traits::input_parameter< Eigen::MatrixXd& >::type evec(evecSEXP);
+    Rcpp::traits::input_parameter< Eigen::VectorXd& >::type eval(evalSEXP);
     Rcpp::traits::input_parameter< unsigned int >::type divisor(divisorSEXP);
-    rcpp_result_gen = Rcpp::wrap(check_internal(X, stand, evec, eval, divisor));
+    Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
+    rcpp_result_gen = Rcpp::wrap(check_internal(X, stand, evec, eval, divisor, verbose));
     return rcpp_result_gen;
 END_RCPP
 }
 // check_plink_internal
-List check_plink_internal(std::string fn, int stand, Eigen::MatrixXd evec, Eigen::VectorXd eval, unsigned int block_size, unsigned int divisor);
-RcppExport SEXP flashpcaR_check_plink_internal(SEXP fnSEXP, SEXP standSEXP, SEXP evecSEXP, SEXP evalSEXP, SEXP block_sizeSEXP, SEXP divisorSEXP) {
+List check_plink_internal(std::string fn, int stand, Eigen::MatrixXd evec, Eigen::VectorXd eval, unsigned int block_size, unsigned int divisor, bool verbose);
+RcppExport SEXP flashpcaR_check_plink_internal(SEXP fnSEXP, SEXP standSEXP, SEXP evecSEXP, SEXP evalSEXP, SEXP block_sizeSEXP, SEXP divisorSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -169,7 +170,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< Eigen::VectorXd >::type eval(evalSEXP);
     Rcpp::traits::input_parameter< unsigned int >::type block_size(block_sizeSEXP);
     Rcpp::traits::input_parameter< unsigned int >::type divisor(divisorSEXP);
-    rcpp_result_gen = Rcpp::wrap(check_plink_internal(fn, stand, evec, eval, block_size, divisor));
+    Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
+    rcpp_result_gen = Rcpp::wrap(check_plink_internal(fn, stand, evec, eval, block_size, divisor, verbose));
     return rcpp_result_gen;
 END_RCPP
 }

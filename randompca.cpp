@@ -651,37 +651,10 @@ void RandomPCA::check(Data& dat, unsigned int block_size,
 {
    SVDWideOnline op(dat, block_size, 1, verbose);
 
-//   // Read eigenvalues
-//   // Expects no header, no rownames, one eigenvalue per row
-//   verbose && STDOUT << timestamp() << "Loading eigenvalue file '"
-//       << eval_file << "'" << std::endl;
-//   NamedMatrixWrapper M1 = read_text(eval_file.c_str(), 1, -1, 0);
-//   MatrixXd ev = M1.X;
-//   if(ev.rows() == 0)
-//      throw std::runtime_error("No eigenvalues found in file");
-//   VectorXd eval = ev.col(0);
-//
-//   // Read eigenvectors
-//   // Expects header (colnames), FID and IID cols
-//   verbose && STDOUT << timestamp() << "Loading eigenvector file '"
-//       << evec_file << "'" << std::endl;
-//   NamedMatrixWrapper M2 = read_text(evec_file.c_str(), 3, -1, 1);
-//   const MatrixXd& evec = M2.X;
-//
-//   if(evec.rows() != dat.N)
-//      throw std::runtime_error(
-//	 std::string("Eigenvector dimension doesn't match data dimension")
-//	    + " (evec.rows = " + std::to_string(evec.rows())
-//	    + "; dat.N = " + std::to_string(dat.N) + ")");
-//
-//   if(eval.size() != evec.cols())
-//      throw std::runtime_error(
-//	 "Eigenvector dimension doesn't match the number of eigenvalues");
-//
    unsigned int K = std::min(evec.cols(), eval.size());
 
    // X X' U / div = U D^2
-   STDOUT << timestamp()
+   verbose && STDOUT << timestamp()
       << "Checking mean square error between (X X' U) and (U D^2)"
       << " for " << K << " dimensions"
       << std::endl;
@@ -696,19 +669,20 @@ void RandomPCA::check(Data& dat, unsigned int block_size,
    XXU /= div;
    MatrixXd UD2 = evec * eval.asDiagonal();
 
-   RowVectorXd err = (XXU - UD2).colwise().squaredNorm();
+   RowVectorXd rerr = (XXU - UD2).colwise().squaredNorm();
+   err = rerr.transpose();
 
    for(unsigned int j = 0 ; j < K ; j++)
    {
-      STDOUT << timestamp() << "eval(" << (j + 1)
+      verbose && STDOUT << timestamp() << "eval(" << (j + 1)
          << "): " << eval(j) << ", sum squared error: "
          << err(j) << std::endl;
    }
 
-   double mse = err.sum() / (dat.N * K);
-   double rmse = std::sqrt(mse);
+   mse = err.sum() / (dat.N * K);
+   rmse = std::sqrt(mse);
 
-   STDOUT << timestamp() << "Mean squared error: " << mse
+   verbose && STDOUT << timestamp() << "Mean squared error: " << mse
       << ", Root mean squared error: " << rmse
       << " (n=" << dat.N << ")" << std::endl;
 
@@ -722,7 +696,7 @@ void RandomPCA::check(MatrixXd& X, MatrixXd& evec, VectorXd& eval)
    unsigned int p = X.cols();
 
    // X X' U / div = U D^2
-   STDOUT << timestamp()
+   verbose && STDOUT << timestamp()
       << "Checking mean square error between (X X' U) and (U D^2)"
       << " for " << K << " dimensions"
       << std::endl;
@@ -733,22 +707,23 @@ void RandomPCA::check(MatrixXd& X, MatrixXd& evec, VectorXd& eval)
    else if(divisor == DIVISOR_P)
       div = p;
 
-   MatrixXd XXU = X * (X.transpose() * U) / div;
+   MatrixXd XXU = X * (X.transpose() * evec) / div;
    MatrixXd UD2 = evec * eval.asDiagonal();
 
-   RowVectorXd err = (XXU - UD2).colwise().squaredNorm();
+   RowVectorXd rerr = (XXU - UD2).colwise().squaredNorm();
+   err = rerr.transpose();
 
    for(unsigned int j = 0 ; j < K ; j++)
    {
-      STDOUT << timestamp() << "eval(" << (j + 1)
+      verbose && STDOUT << timestamp() << "eval(" << (j + 1)
          << "): " << eval(j) << ", sum squared error: "
          << err(j) << std::endl;
    }
 
-   double mse = err.sum() / (N * K);
-   double rmse = std::sqrt(mse);
+   mse = err.sum() / (N * K);
+   rmse = std::sqrt(mse);
 
-   STDOUT << timestamp() << "Mean squared error: " << mse
+   verbose && STDOUT << timestamp() << "Mean squared error: " << mse
       << ", Root mean squared error: " << rmse
       << " (n=" << N << ")" << std::endl;
 }

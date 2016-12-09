@@ -553,19 +553,35 @@ NumericMatrix standardise_impute(
 }
 
 // [[Rcpp::export]]
-double check_internal(
-   Eigen::MatrixXd X,
+List check_internal(
+   Eigen::MatrixXd& X,
    int stand, 
-   Eigen::MatrixXd evec,
-   Eigen::VectorXd eval,
-   unsigned int divisor)
+   Eigen::MatrixXd& evec,
+   Eigen::VectorXd& eval,
+   unsigned int divisor,
+   bool verbose)
 {
-   RandomPCA rpca;
-   rpca.divisor = divisor;
-   rpca.verbose = true;
-   rpca.stand_method_x = stand;
-   rpca.check(X, evec, eval); 
-   return 1.0;
+   try{
+      RandomPCA rpca;
+      rpca.divisor = divisor;
+      rpca.verbose = verbose;
+      rpca.stand_method_x = stand;
+      rpca.check(X, evec, eval); 
+      Rcpp::List res = Rcpp::List::create(
+         Rcpp::Named("err")=rpca.err,
+	 Rcpp::Named("mse")=rpca.mse,
+	 Rcpp::Named("rmse")=rpca.rmse);
+      return res;
+   }
+   catch(std::exception &ex)
+   {
+      forward_exception_to_r(ex);
+   }
+   catch(...)
+   {
+      ::Rf_error("flashpca_plink_internal: unknown c++ exception");
+   }
+   return NA_REAL;
 }
 
 // [[Rcpp::export]]
@@ -575,14 +591,14 @@ List check_plink_internal(
    Eigen::MatrixXd evec,
    Eigen::VectorXd eval,
    unsigned int block_size,
-   unsigned int divisor)
+   unsigned int divisor,
+   bool verbose)
 {
    try{
       RandomPCA rpca;
       rpca.stand_method_x = stand;
       rpca.divisor = divisor;
-      //rpca.verbose = verbose;
-      rpca.verbose = true;
+      rpca.verbose = verbose;
 
       NumericVector X_mean(0);
       NumericVector X_sd(0);
@@ -594,8 +610,7 @@ List check_plink_internal(
 
       //Data data(seed);
       Data data(1);
-      //data.verbose = verbose;
-      data.verbose = true;
+      data.verbose = verbose;
       data.stand_method_x = stand; 
       data.read_pheno(fam_file.c_str(), 6);
       data.read_plink_bim(bim_file.c_str());
@@ -614,9 +629,9 @@ List check_plink_internal(
       //}
 
       Rcpp::List res = Rcpp::List::create(
-         //Rcpp::Named("values")=d,
-         Rcpp::Named("x")=1
-      );
+         Rcpp::Named("err")=rpca.err,
+	 Rcpp::Named("mse")=rpca.mse,
+	 Rcpp::Named("rmse")=rpca.rmse);
       return res;
    }
    catch(std::exception &ex)

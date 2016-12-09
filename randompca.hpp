@@ -64,6 +64,9 @@ class RandomPCA {
       VectorXd pve;
       MatrixXd X_meansd, Y_meansd;
       ArrayXXd res;
+      VectorXd err;
+      double mse;
+      double rmse;
 
       int stand_method_x, stand_method_y;
       long seed;
