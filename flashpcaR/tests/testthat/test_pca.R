@@ -4,7 +4,7 @@ n <- 500
 p <- 1000
 ndim <- 50
 nextra <- 100
-tol <- 1e-3
+tol <- 1e-4
 
 data(hm3.chr1)
 

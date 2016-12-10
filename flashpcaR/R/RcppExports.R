@@ -37,3 +37,7 @@ check_plink_internal <- function(fn, stand, evec, eval, block_size, divisor, ver
     .Call('flashpcaR_check_plink_internal', PACKAGE = 'flashpcaR', fn, stand, evec, eval, block_size, divisor, verbose)
 }
 
+project_plink_internal <- function(fn, loadings, ref_alleles, orig_mean, orig_sd, block_size, divisor, verbose) {
+    .Call('flashpcaR_project_plink_internal', PACKAGE = 'flashpcaR', fn, loadings, ref_alleles, orig_mean, orig_sd, block_size, divisor, verbose)
+}
+

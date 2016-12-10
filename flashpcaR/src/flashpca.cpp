@@ -15,19 +15,19 @@ using namespace Eigen;
 
 // [[Rcpp::export]]
 List flashpca_internal(
-   Eigen::Map<Eigen::MatrixXd> X,
-   int stand,
-   unsigned int ndim,
-   unsigned int divisor,
-   unsigned int maxiter,
-   double tol,
-   long seed,
-   bool verbose,
-   bool do_loadings,
-   bool return_scale)
+   const Eigen::Map<Eigen::MatrixXd> X,
+   const int stand,
+   const unsigned int ndim,
+   const unsigned int divisor,
+   const unsigned int maxiter,
+   const double tol,
+   const long seed,
+   const bool verbose,
+   const bool do_loadings,
+   const bool return_scale)
 {
    try{
-      Eigen::MatrixXd Xm = X;
+      Eigen::MatrixXd Xm(X);
 
       RandomPCA rpca;
       rpca.stand_method_x = stand;
@@ -92,17 +92,17 @@ List flashpca_internal(
 
 // [[Rcpp::export]]
 List flashpca_plink_internal(
-   std::string fn,
-   int stand,
-   unsigned int ndim,
-   unsigned int divisor,
-   unsigned int maxiter,
-   unsigned int block_size,
-   double tol,
-   long seed,
-   bool verbose,
-   bool do_loadings,
-   bool return_scale)
+   const std::string fn,
+   const int stand,
+   const unsigned int ndim,
+   const unsigned int divisor,
+   const unsigned int maxiter,
+   const unsigned int block_size,
+   const double tol,
+   const long seed,
+   const bool verbose,
+   const bool do_loadings,
+   const bool return_scale)
 {
    try{
       RandomPCA rpca;
@@ -182,21 +182,21 @@ List flashpca_plink_internal(
 
 // [[Rcpp::export]]
 List scca_internal(
-   Eigen::Map<Eigen::MatrixXd> X,
-   Eigen::Map<Eigen::MatrixXd> Y,
-   double lambda1,
-   double lambda2,
-   unsigned int ndim,
-   int stand_x,
-   int stand_y,
-   int mem,
-   long seed,
-   int maxiter,
-   double tol,
-   bool verbose,
-   unsigned int num_threads,
-   bool useV,
-   Eigen::Map<Eigen::MatrixXd> Vinit)
+   const Eigen::Map<Eigen::MatrixXd> X,
+   const Eigen::Map<Eigen::MatrixXd> Y,
+   const double lambda1,
+   const double lambda2,
+   const unsigned int ndim,
+   const int stand_x,
+   const int stand_y,
+   const int mem,
+   const long seed,
+   const int maxiter,
+   const double tol,
+   const bool verbose,
+   const unsigned int num_threads,
+   const bool useV,
+   const Eigen::Map<Eigen::MatrixXd> Vinit)
 {
    try{
 
@@ -255,12 +255,12 @@ List scca_internal(
 
 // [[Rcpp::export]]
 List ucca_plink_internal(
-   std::string fn,
-   Eigen::Map<Eigen::MatrixXd> Y,
-   int stand_x,
-   int stand_y,
-   bool verbose,
-   bool return_scale)
+   const std::string fn,
+   const Eigen::Map<Eigen::MatrixXd> Y,
+   const int stand_x,
+   const int stand_y,
+   const bool verbose,
+   const bool return_scale)
 {
    try{
       RandomPCA rpca;
@@ -353,22 +353,22 @@ List ucca_plink_internal(
 
 // [[Rcpp::export]]
 List scca_plink_internal(
-   std::string fn,
-   Eigen::Map<Eigen::MatrixXd> Y,
-   double lambda1,
-   double lambda2,
-   unsigned int ndim,
-   int stand_x,
-   int stand_y,
-   int mem,
-   long seed,
-   int maxiter,
-   double tol,
-   bool verbose,
-   unsigned int num_threads,
-   unsigned int block_size,
-   bool useV,
-   Eigen::Map<Eigen::MatrixXd> Vinit)
+   const std::string fn,
+   const Eigen::Map<Eigen::MatrixXd> Y,
+   const double lambda1,
+   const double lambda2,
+   const unsigned int ndim,
+   const int stand_x,
+   const int stand_y,
+   const int mem,
+   const long seed,
+   const int maxiter,
+   const double tol,
+   const bool verbose,
+   const unsigned int num_threads,
+   const unsigned int block_size,
+   const bool useV,
+   const Eigen::Map<Eigen::MatrixXd> Vinit)
 {
    try{
 
@@ -441,12 +441,12 @@ List scca_plink_internal(
 
 // [[Rcpp::export]]
 List ucca_internal(
-   Eigen::Map<Eigen::MatrixXd> X,
-   Eigen::Map<Eigen::MatrixXd> Y,
-   int stand_x,
-   int stand_y,
-   bool verbose,
-   bool return_scale)
+   const Eigen::Map<Eigen::MatrixXd> X,
+   const Eigen::Map<Eigen::MatrixXd> Y,
+   const int stand_x,
+   const int stand_y,
+   const bool verbose,
+   const bool return_scale)
 {
    try{
       Eigen::MatrixXd Xm = X;
@@ -542,8 +542,8 @@ List ucca_internal(
 
 // [[Rcpp::export]]
 NumericMatrix standardise_impute(
-   Eigen::Map<Eigen::MatrixXd> XX,
-   int method)
+   const Eigen::Map<Eigen::MatrixXd> XX,
+   const int method)
 {
 
    MatrixXd X = XX;
@@ -554,19 +554,22 @@ NumericMatrix standardise_impute(
 
 // [[Rcpp::export]]
 List check_internal(
-   Eigen::MatrixXd& X,
-   int stand, 
-   Eigen::MatrixXd& evec,
-   Eigen::VectorXd& eval,
-   unsigned int divisor,
-   bool verbose)
+   const Eigen::MatrixXd& X,
+   const int stand, 
+   const Eigen::MatrixXd& evec,
+   const Eigen::VectorXd& eval,
+   const unsigned int divisor,
+   const bool verbose)
 {
    try{
       RandomPCA rpca;
       rpca.divisor = divisor;
       rpca.verbose = verbose;
       rpca.stand_method_x = stand;
-      rpca.check(X, evec, eval); 
+      Eigen::MatrixXd XX(X);
+      Eigen::MatrixXd evec_(evec);
+      Eigen::VectorXd eval_(eval);
+      rpca.check(XX, evec_, eval_); 
       Rcpp::List res = Rcpp::List::create(
          Rcpp::Named("err")=rpca.err,
 	 Rcpp::Named("mse")=rpca.mse,
@@ -586,13 +589,13 @@ List check_internal(
 
 // [[Rcpp::export]]
 List check_plink_internal(
-   std::string fn,
-   int stand,
-   Eigen::MatrixXd evec,
-   Eigen::VectorXd eval,
-   unsigned int block_size,
-   unsigned int divisor,
-   bool verbose)
+   const std::string fn,
+   const int stand,
+   const Eigen::MatrixXd evec,
+   const Eigen::VectorXd eval,
+   const unsigned int block_size,
+   const unsigned int divisor,
+   const bool verbose)
 {
    try{
       RandomPCA rpca;
@@ -618,7 +621,9 @@ List check_plink_internal(
       data.get_size();
       data.prepare();
 
-      rpca.check(data, block_size, evec, eval);
+      MatrixXd evec_(evec);
+      VectorXd eval_(eval);
+      rpca.check(data, block_size, evec_, eval_);
       
       //// STANDARDISE_NONE: 0
       //if(return_scale && stand != 0)
@@ -632,6 +637,98 @@ List check_plink_internal(
          Rcpp::Named("err")=rpca.err,
 	 Rcpp::Named("mse")=rpca.mse,
 	 Rcpp::Named("rmse")=rpca.rmse);
+      return res;
+   }
+   catch(std::exception &ex)
+   {
+      forward_exception_to_r(ex);
+   }
+   catch(...)
+   {
+      ::Rf_error("flashpca_plink_internal: unknown c++ exception");
+   }
+   return NA_REAL;
+}
+
+//List project_internal(
+//   const Eigen::MatrixXd& X,
+//   const Eigen::MatrixXd& loadings,
+//   const std::string ref_allele,
+//   const VectorXd& orig_mean,
+//   const VectorXd& orig_sd,
+//   const unsigned int divisor,
+//   const bool verbose)
+//{
+//   try{
+//      MatrixXd X2(X);
+//      unsigned int n = X.rows(), p = X.cols();
+//      VectorXd xj(n);
+//      for(unsigned int j = 0 ; j < p ; j++)
+//      {
+//	 xj = X2.col(j);
+//	 X2.col(j) = (xj.array() - orig_mean(j)) / orig_sd(j);
+//	 for(unsigned int i = 0 ; i < n ; i++)
+//	 {
+//	    if(isnan(X2(i, j)))
+//	       X2(i, j) = 0;
+//	 }
+//      }
+//      MatrixXd Px = X2 * loadings / sqrt(divisor);
+//      Rcpp::List res = Rcpp::List::create(
+//         Rcpp::Named("projection")=Px);
+//      return res;
+//   }
+//   catch(std::exception &ex)
+//   {
+//      forward_exception_to_r(ex);
+//   }
+//   catch(...)
+//   {
+//      ::Rf_error("flashpca_plink_internal: unknown c++ exception");
+//   }
+//   return NA_REAL;
+//}
+
+// [[Rcpp::export]]
+List project_plink_internal(
+   const std::string fn,
+   const Eigen::MatrixXd& loadings,
+   const std::vector<std::string> ref_alleles,
+   const Eigen::VectorXd& orig_mean,
+   const Eigen::VectorXd& orig_sd,
+   const unsigned int block_size,
+   const unsigned int divisor,
+   const bool verbose)
+{
+   try{
+      RandomPCA rpca;
+      rpca.divisor = divisor;
+      rpca.verbose = verbose;
+      rpca.V = loadings;
+
+      std::string fam_file, geno_file, bim_file, pheno_file;
+      geno_file = fn + std::string(".bed");
+      bim_file = fn + std::string(".bim");
+      fam_file = fn + std::string(".fam");
+
+      Data data(1);
+      data.verbose = verbose;
+      std::cout << data.X_meansd.topRows(3) << std::endl;
+      data.read_pheno(fam_file.c_str(), 6);
+      data.read_plink_bim(bim_file.c_str());
+      data.geno_filename = geno_file.c_str();
+      data.get_size();
+      data.prepare();
+
+      data.use_preloaded_maf = true;
+      data.X_meansd = MatrixXd::Zero(ref_alleles.size(), 2);
+      data.X_meansd.col(0) = orig_mean;
+      data.X_meansd.col(1) = orig_sd;
+
+      rpca.project(data, block_size);
+      
+      Rcpp::List res = Rcpp::List::create(
+         Rcpp::Named("projection")=rpca.Px);
       return res;
    }
    catch(std::exception &ex)

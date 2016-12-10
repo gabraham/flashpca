@@ -332,14 +332,14 @@ int main(int argc, char * argv[])
       }
    }
 
-   int stand_method_x = STANDARDIZE_BINOM2;
+   int stand_method_x = STANDARDISE_BINOM2;
    if(vm.count("standx"))
    {
       std::string m = vm["standx"].as<std::string>();
       if(m == "binom")
-	 stand_method_x = STANDARDIZE_BINOM;
+	 stand_method_x = STANDARDISE_BINOM;
       else if(m == "binom2")
-	 stand_method_x = STANDARDIZE_BINOM2;
+	 stand_method_x = STANDARDISE_BINOM2;
       else
       {
 	 std::cerr << "Error: unknown standardization method (--standx): "
@@ -348,20 +348,20 @@ int main(int argc, char * argv[])
       }
    }
 
-   int stand_method_y = STANDARDIZE_SD;
+   int stand_method_y = STANDARDISE_SD;
    if(vm.count("standy"))
    {
       std::string m = vm["standy"].as<std::string>();
       if(m == "binom")
-	 stand_method_x = STANDARDIZE_BINOM;
+	 stand_method_x = STANDARDISE_BINOM;
       else if(m == "binom2")
-	 stand_method_x = STANDARDIZE_BINOM2;
+	 stand_method_x = STANDARDISE_BINOM2;
       else if(m == "sd")
-	 stand_method_x = STANDARDIZE_SD;
+	 stand_method_x = STANDARDISE_SD;
       else if(m == "center")
-	 stand_method_x = STANDARDIZE_CENTER;
+	 stand_method_x = STANDARDISE_CENTER;
       else if(m == "none")
-	 stand_method_x = STANDARDIZE_NONE;
+	 stand_method_x = STANDARDISE_NONE;
       else
       {
 	 std::cerr << "Error: unknown standardization method (--standy): "

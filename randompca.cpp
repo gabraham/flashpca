@@ -736,15 +736,10 @@ MatrixXd maf2meansd(MatrixXd maf)
    return X_meansd;
 }
 
-// Project new samples onto existing principal components.
-//
-// Doesn't do a lot of sanity checking.
 void RandomPCA::project(Data& dat, unsigned int block_size,
    std::string loadings_file, std::string maf_file,
    std::string meansd_file)
 {
-   std::cout << "[project] loadings_file " << loadings_file << std::endl;
-
    // Read the loadings
    // TODO: check that SNP ids match
    NamedMatrixWrapper M = read_text(loadings_file.c_str(), 3, -1, 1);
@@ -775,6 +770,19 @@ void RandomPCA::project(Data& dat, unsigned int block_size,
       dat.use_preloaded_maf = false;
    }
 
+   project(dat, block_size);
+}
+
+// Project new samples onto existing principal components.
+//
+// Doesn't do a lot of sanity checking.
+//
+// Assumes:
+// - The loadings matrix V must have been set already
+// - dat.X_meansd has beeen set
+// - dat.use_preloaded_maf has been set, if needed
+void RandomPCA::project(Data& dat, unsigned int block_size)
+{
    // Check that the SNPs in the data match
 
    SVDWideOnline op(dat, block_size, 1, verbose);
@@ -796,3 +804,4 @@ void RandomPCA::project(Data& dat, unsigned int block_size,
       Px.col(i) = pxi.array() / sqrt(div); // X V = U D
    }
 }
+

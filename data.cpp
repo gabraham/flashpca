@@ -297,6 +297,7 @@ void Data::read_snp_block(unsigned int start_idx, unsigned int stop_idx,
 	 {
 	    snp_avg = X_meansd(k, 0);
 	    sd = X_meansd(k, 1);
+	    //std::cout << k << " " << snp_avg << " " << sd << std::endl ;
 	 }
 
 	 // scaled genotyped initialised to zero

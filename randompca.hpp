@@ -107,4 +107,6 @@ class RandomPCA {
       void project(Data& dat, unsigned int block_size,
 	 std::string loadings_file, std::string maf_file,
 	 std::string meansd_file);
+      void project(Data& dat, unsigned int block_size);
 };
+
