@@ -1,6 +1,7 @@
 Version 2.0
-15-Nov-2016
+15-Dec-2016
 * New algorithm for PCA
+* New flashpcaR
 
 Version 1.2.6
 24-Mar-2016

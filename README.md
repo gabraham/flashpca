@@ -234,7 +234,7 @@ of the canonical components cor(X U, Y V) in independent test data.
 
 # <a name="flashpcaR"></a>flashpcaR: flashpca in R
 
-FlashPCA can be called entirely within R.
+FlashPCA can be called (almost) entirely within R.
 
 ## Installation
 
@@ -342,7 +342,7 @@ sparse canonical correlation analysis over all SNPs and all phenotypes:
 
    ```
 
-# LD-pruned HapMap3 example data
+# LD-pruned HapMap3 and 1000Genomes example data
 
 See the [HapMap3](HapMap3) directory
 
