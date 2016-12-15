@@ -7,8 +7,8 @@
 Files: `HM3_thinned_autosomal_overlap.{bed,bim,fam}`
 
 This dataset consists of 957 founders extracted from the HapMap3 phase III data
-(http://ftp.ncbi.nlm.nih.gov/hapmap/genotypes/2009-01_phaseIII/plink_format)
-hapmap3_r2_b36_fwd.consensus.qc.poly.{bed,bim,fam}
+(http://ftp.ncbi.nlm.nih.gov/hapmap/genotypes/2009-01_phaseIII/plink_format),
+hapmap3_r2_b36_fwd.consensus.qc.poly.{bed,bim,fam},
 using PLINK options:
    ```
    --bfile hapmap3_r2_b36_fwd.consensus.qc.poly
