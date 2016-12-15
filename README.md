@@ -245,7 +245,7 @@ FlashPCA can be called entirely within R.
 Depends on packages:
    
    * [Rcpp](https://cran.r-project.org/package=Rcpp) (>= 0.11.1)
-   * [abind]([ttps://cran.r-project.org/package=abind)
+   * [abind](https://cran.r-project.org/package=abind)
    * [RcppEigen](https://cran.r-project.org/package=RcppEigen) (>= 0.3.2.5.1)
    * [BH](https://cran.r-project.org/package=BH)
    * [RSpectra](https://cran.r-project.org/package=RSpectra)
