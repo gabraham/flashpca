@@ -12,7 +12,7 @@ Main features:
 * Scalable: memory requirements are bounded, scales to at least 1M individuals
 * Highly accurate results 
 * Natively reads PLINK bed/bim/fam files
-* Easy to use; can be called entirely within R
+* Easy to use; can be called entirely within R (package [flashpcaR](#flashpcaR))
 
 ## Help
 
@@ -232,7 +232,7 @@ of the canonical components cor(X U, Y V) in independent test data.
    parallel](http://www.gnu.org/software/parallel) is recommended)
 * R code for plotting the correlations [scca_pred.R](scca_pred.R)
 
-# <a name="R"></a>flashpcaR: flashpca in R
+# <a name="flashpcaR"></a>flashpcaR: flashpca in R
 
 FlashPCA can be called entirely within R.
 
