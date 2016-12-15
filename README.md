@@ -181,7 +181,7 @@ can use `plink --reference-allele ...` to ensure consistent allele ordering).
 (`--outload loadings.txt`) and their means and standard deviations
 (`--outmeansd meansd.txt`).
 * You are using the same standardisation (`--standx`) for the old and new
-data. 
+data, as well as the same divisor (`--div`; by default `p`). 
 
 
 ## Checking accuracy of results
@@ -320,7 +320,13 @@ sparse canonical correlation analysis over all SNPs and all phenotypes:
    f1 <- scca(X, Y, standx="none", standy="sd", lambda1=1e-2, lambda2=1e-3)
    diag(cor(f1$Px, f1$Py))
 
-   # Cross-validation
+   # 3-fold cross-validation
+   cv1 <- cv.scca(X, Y, standx="sd", standy="sd",
+      lambda1=seq(1e-3, 1e-1, length=10), lambda2=seq(1e-6, 1e-3, length=5),
+      ndim=3, nfolds=3)
+
+   # Plot the canonical correlations over the penalties, for the 1st dimension
+   plot(cv1, dim=1)
    ```
 
 ### On PLINK data
@@ -332,7 +338,7 @@ sparse canonical correlation analysis over all SNPs and all phenotypes:
    f2 <- scca(fn, Y, standx="binom2", standy="sd", lambda1=1e-2, lambda2=1e-3)
    diag(cor(f2$Px, f2$Py))
 
-   # Cross-validation
+   # Cross-validation isn't yet supported for PLINK data
 
    ```
 
