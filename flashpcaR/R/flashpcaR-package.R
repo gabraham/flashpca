@@ -1,5 +1,5 @@
 #' flashpcaR
-#' An R interface to flashpca for fast principal component analysis and
+#' An R interface to FlashPCA for fast principal component analysis and
 #' related analyses.
 #'
 #' \tabular{ll}{

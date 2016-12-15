@@ -80,22 +80,19 @@ set.seed(123)
 ## HapMap3 chr1 example
 data(hm3.chr1)
 ndim <- 10
-w <- sample(ncol(hm3.chr1$bed), 500) # prcomp too slow here
-X <- scale2(hm3.chr1$bed[,w])
+X <- scale2(hm3.chr1$bed)
 f1 <- flashpca(X, ndim=ndim, stand="none")
 
-# prcomp's eigenvalues are of XX'/(n-1), but
-# flashpca's are of XX'/m.
-r <- prcomp(X / sqrt(ncol(X)) * sqrt(nrow(X) - 1),
-  center=FALSE, scale.=FALSE)
+# prcomp's is too slow for this example
+r <- eigen(tcrossprod(X) / nrow(X), symmetric=TRUE)
 
 ## Compare eigenvalues
-eval <- cbind(r$sdev[1:ndim]^2, f1$values)
+eval <- cbind(r$values[1:ndim], f1$values)
 cor(eval)
 mean((eval[,1] - eval[,2])^2)
 
 ## Compare eigenvectors
-diag(cor(r$x[, 1:ndim], f1$projection))
+diag(cor(r$vectors[, 1:ndim], f1$vectors))
 
 ####################################
 # HapMap3 chr1 example, PLINK format
@@ -105,12 +102,12 @@ bedf <- gsub("\\\\.bed", "",
 
 f2 <- flashpca(bedf, ndim=ndim) 
 
-eval <- cbind(r$sdev[1:ndim]^2, f2$values)
+eval <- cbind(r$values[1:ndim], f2$values)
 cor(eval)
 mean((eval[,1] - eval[,2])^2)
 
 ## Compare eigenvectors
-diag(cor(r$x[, 1:ndim], f2$projection))
+diag(cor(r$vectors[, 1:ndim], f2$vectors))
 
 }
 
