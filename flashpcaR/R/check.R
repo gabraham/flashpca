@@ -16,7 +16,7 @@
 #' eigenvalues by number of columns of X ("p"), the number of 
 #' rows of X minus 1 ("n1") or none ("none").
 #' 
-#' @param blocksize Integer. Block size for PCA on PLINK files.
+#' @param block_size Integer. Block size for PCA on PLINK files.
 #' 
 #' @param verbose Logical. Verbose output.
 #' 
@@ -51,7 +51,7 @@
 #' @export
 check <- function(X, evec, eval,
    stand=c("binom2", "binom", "sd", "center", "none"),
-   divisor="p", blocksize=1000, verbose=FALSE,
+   divisor="p", block_size=1000, verbose=FALSE,
    check_geno=TRUE, check_fam=TRUE)
 {
    stand <- match.arg(stand)
@@ -83,7 +83,7 @@ check <- function(X, evec, eval,
       }
       if(check_fam) {
 	 fam <- read.table(paste0(X, ".fam"), header=FALSE, sep="",
-	    stringsAsFactor=FALSE)
+	    stringsAsFactors=FALSE)
 	 if(nrow(fam) != nrow(evec)) {
 	    stop(paste0("The number of rows in ", X, ".fam",
 	       " and evec don't match"))
@@ -122,7 +122,7 @@ check <- function(X, evec, eval,
 
    res <- try(
       if(is.character(X)) {
-	 check_plink_internal(X, stand_i, evec, eval, blocksize, div,
+	 check_plink_internal(X, stand_i, evec, eval, block_size, div,
 	    verbose)
       } else {
 	 check_internal(X, stand_i, evec, eval, div, verbose)

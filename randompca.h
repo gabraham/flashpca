@@ -26,7 +26,7 @@
 #include <SymEigsSolver.h>
 #endif
 
-#include "data.hpp"
+#include "data.h"
 
 using namespace Eigen;
 
@@ -69,7 +69,6 @@ class RandomPCA {
       double rmse;
 
       int stand_method_x, stand_method_y;
-      long seed;
       bool verbose;
       bool debug;
       int divisor;

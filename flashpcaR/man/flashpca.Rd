@@ -6,7 +6,7 @@
 \usage{
 flashpca(X, ndim = 10, stand = c("binom2", "binom", "sd", "center", "none"),
   divisor = c("p", "n", "none"), maxiter = 100, tol = 1e-04, seed = 1,
-  blocksize = 1000, verbose = FALSE, do_loadings = FALSE,
+  block_size = 1000, verbose = FALSE, do_loadings = FALSE,
   check_geno = TRUE, return_scale = TRUE)
 }
 \arguments{
@@ -29,7 +29,7 @@ rows of X minus 1 ("n1") or none ("none").}
 
 \item{seed}{Integer. Seed for random number generator.}
 
-\item{blocksize}{Integer. Block size for PCA on PLINK files.}
+\item{block_size}{Integer. Block size for PCA on PLINK files.}
 
 \item{verbose}{logical. More verbose output.}
 
@@ -79,8 +79,9 @@ set.seed(123)
 #######################
 ## HapMap3 chr1 example
 data(hm3.chr1)
-ndim <- 20
-X <- scale2(hm3.chr1$bed)
+ndim <- 10
+w <- sample(ncol(hm3.chr1$bed), 500) # prcomp too slow here
+X <- scale2(hm3.chr1$bed[,w])
 f1 <- flashpca(X, ndim=ndim, stand="none")
 
 # prcomp's eigenvalues are of XX'/(n-1), but

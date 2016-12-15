@@ -19,8 +19,8 @@
 #include <fstream>
 #include <sstream>
 
-#include "data.hpp"
-#include "randompca.hpp"
+#include "data.h"
+#include "randompca.h"
 
 using namespace Eigen;
 namespace po = boost::program_options;
@@ -578,10 +578,10 @@ int main(int argc, char * argv[])
 
    try
    {
-      Data data(seed);
+      Data data;
       data.verbose = verbose;
       data.stand_method_x = stand_method_x; //TODO: duplication with RandomPCA
-      std::cout << timestamp() << "seed: " << data.seed << std::endl;
+      std::cout << timestamp() << "seed: " << seed << std::endl;
 
       if(mode == MODE_CCA || mode == MODE_SCCA || mode == MODE_UCCA)
          data.read_pheno(pheno_file.c_str(), 3);

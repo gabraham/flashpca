@@ -73,8 +73,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // ucca_plink_internal
-List ucca_plink_internal(const std::string fn, const Eigen::Map<Eigen::MatrixXd> Y, const int stand_x, const int stand_y, const bool verbose, const bool return_scale);
-RcppExport SEXP flashpcaR_ucca_plink_internal(SEXP fnSEXP, SEXP YSEXP, SEXP stand_xSEXP, SEXP stand_ySEXP, SEXP verboseSEXP, SEXP return_scaleSEXP) {
+List ucca_plink_internal(const std::string fn, const Eigen::Map<Eigen::MatrixXd> Y, const int stand_x, const int stand_y, const bool verbose);
+RcppExport SEXP flashpcaR_ucca_plink_internal(SEXP fnSEXP, SEXP YSEXP, SEXP stand_xSEXP, SEXP stand_ySEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -83,8 +83,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const int >::type stand_x(stand_xSEXP);
     Rcpp::traits::input_parameter< const int >::type stand_y(stand_ySEXP);
     Rcpp::traits::input_parameter< const bool >::type verbose(verboseSEXP);
-    Rcpp::traits::input_parameter< const bool >::type return_scale(return_scaleSEXP);
-    rcpp_result_gen = Rcpp::wrap(ucca_plink_internal(fn, Y, stand_x, stand_y, verbose, return_scale));
+    rcpp_result_gen = Rcpp::wrap(ucca_plink_internal(fn, Y, stand_x, stand_y, verbose));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -115,8 +114,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // ucca_internal
-List ucca_internal(const Eigen::Map<Eigen::MatrixXd> X, const Eigen::Map<Eigen::MatrixXd> Y, const int stand_x, const int stand_y, const bool verbose, const bool return_scale);
-RcppExport SEXP flashpcaR_ucca_internal(SEXP XSEXP, SEXP YSEXP, SEXP stand_xSEXP, SEXP stand_ySEXP, SEXP verboseSEXP, SEXP return_scaleSEXP) {
+List ucca_internal(const Eigen::Map<Eigen::MatrixXd> X, const Eigen::Map<Eigen::MatrixXd> Y, const int stand_x, const int stand_y, const bool verbose);
+RcppExport SEXP flashpcaR_ucca_internal(SEXP XSEXP, SEXP YSEXP, SEXP stand_xSEXP, SEXP stand_ySEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -125,8 +124,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const int >::type stand_x(stand_xSEXP);
     Rcpp::traits::input_parameter< const int >::type stand_y(stand_ySEXP);
     Rcpp::traits::input_parameter< const bool >::type verbose(verboseSEXP);
-    Rcpp::traits::input_parameter< const bool >::type return_scale(return_scaleSEXP);
-    rcpp_result_gen = Rcpp::wrap(ucca_internal(X, Y, stand_x, stand_y, verbose, return_scale));
+    rcpp_result_gen = Rcpp::wrap(ucca_internal(X, Y, stand_x, stand_y, verbose));
     return rcpp_result_gen;
 END_RCPP
 }

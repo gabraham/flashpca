@@ -50,7 +50,11 @@
 #' @param V Numeric. A vector to initialise "v" in SCCA iterations. By
 #' default, it will be a vector of normally distributed variates.
 #'
-#' @param blocksize Integer. Size of blocks for reading PLINK data.
+#' @param block_size Integer. Size of blocks for reading PLINK data.
+#'
+#' @param simplify Logical. Whether to return a single \code{scca} object or a
+#' list when only one model is fitted.
+#'
 #'
 #' @return \code{scca} returns a list containing the following components:
 #'
@@ -80,6 +84,8 @@
 #'
 #' ## The canonical correlations
 #' diag(cor(s$Px, s$Py))
+#'
+#' @importFrom utils read.table
 #'
 #' @export
 scca <- function(X, Y, lambda1=0, lambda2=0,
@@ -232,6 +238,7 @@ scca <- function(X, Y, lambda1=0, lambda2=0,
 #' Prints an SCCA object
 #'
 #' @param x A flashpca object to be printed
+#' @param ... Ignored
 #' @export 
 print.scca <- function(x, ...)
 {
@@ -256,6 +263,8 @@ print.scca <- function(x, ...)
 #'
 #' @param parallel Logical. Whether to parallelise the cross-validation using
 #' the foreach package.
+#'
+#' @param ... Other arguments that will be passed to \code{scca}.
 #' 
 #' @details 
 #' Note that the default penalties may not be appropriate for every dataset
@@ -267,6 +276,8 @@ print.scca <- function(x, ...)
 #'    Dimension 1: the ndim different canonical dimensions;
 #'    Dimension 2: along the lambda1 penalties;
 #'    Dimension 3: along the lambda2 penalties.
+#'
+#' @importFrom stats cor
 #'
 #' @export
 cv.scca <- function(X, Y,
@@ -287,12 +298,12 @@ cv.scca <- function(X, Y,
 
    # https://cran.r-project.org/doc/manuals/r-release/R-exts.html#Suggested-packages
    if(parallel && requireNamespace("foreach", quietly=TRUE)) {
-      res <- foreach::foreach(fold=1:nfolds) %dopar% {
+      res <- foreach::`%dopar%`(foreach::foreach(fold=1:nfolds), {
          w <- folds != fold
          scca(X[w,], Y[w,], ndim=ndim,
 	    lambda1=lambda1, lambda2=lambda2,
 	    simplify=FALSE, ...)
-      }
+      })
    } else {
       res <- lapply(1:nfolds, function(fold) {
          w <- folds != fold
@@ -352,6 +363,8 @@ cv.scca <- function(X, Y,
 #'
 #' @param dim Integer. Which dimension to plot (all will be plotted by
 #' default).
+#' 
+#' @param ... Other arguments that will be passed to \code{plot}.
 #'
 #' @details
 #'    Plots the cross-validated Pearson correlation, as a function of the
@@ -369,19 +382,21 @@ cv.scca <- function(X, Y,
 #' X <- scale2(hm3.chr1$bed)
 #' n <- nrow(X)
 #' m <- ncol(X)
-#' k <- 10
+#' k <- 5
 #' B <- matrix(rnorm(m * k), m, k)
 #' Y <- X %*% B + rnorm(n * k)
 #'
 #' r <- cv.scca(X, Y, standx="sd", standy="sd", nfolds=3, ndim=2,
 #'    lambda1=seq(1e-3, 1e-1, length=10),
-#'    lambda2=seq(1e-4, 0.5, length=5))
+#'    lambda2=seq(1e-4, 0.5, length=3))
 #'
 #' par(mfrow=c(1, 2))
 #' plot(r, dim=1)
 #' plot(r, dim=2)
 #' 
 #' @importFrom abind abind
+#' @importFrom graphics matplot
+#' @importFrom graphics legend
 #'
 #' @export
 plot.cv.scca <- function(x, dim=NULL, ...)

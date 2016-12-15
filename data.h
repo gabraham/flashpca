@@ -19,9 +19,7 @@
 #include <Eigen/Dense>
 #include <Eigen/Eigen>
 
-//#include <boost/filesystem.hpp>
-
-#include "util.hpp"
+#include "util.h"
 
 #define PACK_DENSITY 4
 #define PLINK_NA 3
@@ -69,7 +67,6 @@ class Data {
       unsigned int nsnps;
       const char *geno_filename;
       bool verbose;
-      long seed;
       std::vector<std::string> fam_ids;
       std::vector<std::string> indiv_ids;
       std::vector<std::string> snp_ids;
@@ -79,7 +76,7 @@ class Data {
       bool use_preloaded_maf;
       int stand_method_x;
       
-      Data(long seed);
+      Data();
       ~Data();
       void prepare();
       void read_bed(bool transpose);

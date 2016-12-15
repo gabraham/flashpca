@@ -1,7 +1,7 @@
 Package: flashpcaR
 Depends: R(>= 3.0.2)
 Type: Package
-Title: R Interface to flashpca
+Title: R Interface to FlashPCA
 Version: 2.0
 Date: 2016-11-30
 Authors@R: c(

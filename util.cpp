@@ -8,7 +8,7 @@
  * All rights reserved.
  */
 
-#include "util.hpp"
+#include "util.h"
 
 using namespace Eigen;
 

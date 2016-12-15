@@ -61,7 +61,10 @@ rows in the eigenvectors.}
 \item{V}{Numeric. A vector to initialise "v" in SCCA iterations. By
 default, it will be a vector of normally distributed variates.}
 
-\item{blocksize}{Integer. Size of blocks for reading PLINK data.}
+\item{block_size}{Integer. Size of blocks for reading PLINK data.}
+
+\item{simplify}{Logical. Whether to return a single \code{scca} object or a
+list when only one model is fitted.}
 }
 \value{
 \code{scca} returns a list containing the following components:

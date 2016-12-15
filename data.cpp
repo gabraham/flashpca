@@ -9,16 +9,14 @@
  */
 
 
-#include "data.hpp"
+#include "data.h"
 
-Data::Data(long seed)
+Data::Data()
 {
    N = 0;
    p = 0;
    K = 0;
    nsnps = 0;
-   this->seed = seed;
-   srand48(seed);
    visited = NULL;
    tmp = NULL;
    tmp2 = NULL;
@@ -157,10 +155,9 @@ void Data::get_size()
 
    if(!in)
    {
-      std::cerr << "[Data::read_bed] Error reading file " 
-	 << geno_filename << ", error " << strerror(errno) << std::endl <<
-	 std::flush;
-      throw std::runtime_error("io error");
+      std::string err = std::string("[Data::read_bed] Error reading file ")
+	  + geno_filename + ", error " + strerror(errno);
+      throw std::runtime_error(err);
    }
 
    in.seekg(0, std::ifstream::end);
@@ -186,9 +183,9 @@ void Data::prepare()
 
    if(!in)
    {
-      std::cerr << "[Data::read_bed] Error reading file "
-	 << geno_filename << std::endl;
-      throw std::runtime_error("io error");
+      std::string err = std::string("[Data::read_bed] Error reading file ")
+	 + geno_filename;
+      throw std::runtime_error(err);
    }
 
    tmp = new unsigned char[np];
@@ -285,9 +282,9 @@ void Data::read_snp_block(unsigned int start_idx, unsigned int stop_idx,
 	       sd = sqrt(2.0 * P * (1 - P));
 	    else
 	    {
-	       std::string s = std::string("unknown standardisation method: ")
+	       std::string err = std::string("unknown standardisation method: ")
 		  + std::to_string(stand_method_x);
-	       throw std::runtime_error(s);
+	       throw std::runtime_error(err);
 	    }
 
 	    X_meansd(k, 0) = snp_avg;
@@ -297,7 +294,6 @@ void Data::read_snp_block(unsigned int start_idx, unsigned int stop_idx,
 	 {
 	    snp_avg = X_meansd(k, 0);
 	    sd = X_meansd(k, 1);
-	    //std::cout << k << " " << snp_avg << " " << sd << std::endl ;
 	 }
 
 	 // scaled genotyped initialised to zero
@@ -434,10 +430,9 @@ NamedMatrixWrapper read_text(const char *filename,
 
    if(!in)
    {
-      std::cerr << "Error reading file '" 
-	 << filename << "': '"
-	 << strerror(errno) << std::endl;
-      throw std::string("io error");
+      std::string err = std::string("Error reading file '")
+	 + filename + "': '" + strerror(errno);
+      throw std::string(err);
    }
    std::vector<std::string> lines;
    
@@ -480,12 +475,9 @@ NamedMatrixWrapper read_text(const char *filename,
       }
       else if(numfields_1st != numfields)
       {
-	 std::cerr << timestamp()
-	    << "Error reading file '"
-	    << filename << "': "
-	    << "inconsistent number of columns"
-	    << std::endl;
-	 throw std::runtime_error("io error");
+	 std::string err = std::string("Error reading file '")
+	    + filename + "': inconsistent number of columns";
+	 throw std::runtime_error(err);
       }
 
       VectorXd y(numfields);
@@ -497,13 +489,11 @@ NamedMatrixWrapper read_text(const char *filename,
 	 double m = std::strtod(tokens[j + firstcol - 1].c_str(), &err);
 	 if(*err != '\0' || errno != 0)
 	 {
-	    std::cerr << timestamp()
-	       << "Error reading file '"
-	       << filename << "' "
-	       << ", line " << (i + 1)
-	       << ": '" << tokens[j + firstcol - 1] << "'"
-	       << " cannot be parsed as a number" << std::endl;
-	    throw std::runtime_error("io error");
+	    std::string err = std::string("Error reading file '")
+	       + filename + "', line " + std::to_string(i + 1)
+	       + ": '" + tokens[j + firstcol - 1] + "'"
+	       + " cannot be parsed as a number";
+	    throw std::runtime_error(err);
 	 }
 	 y(j) = m;
       }
@@ -519,9 +509,9 @@ void Data::read_plink_bim(const char *filename)
 
    if(!in)
    {
-      std::cerr << "Error reading file " 
-	 << filename << std::endl;
-      throw std::string("io error");
+      std::string err = std::string("Error reading file ")
+	 + filename;
+      throw std::string(err);
    }
    std::vector<std::string> lines;
    
@@ -554,13 +544,10 @@ void Data::read_plink_bim(const char *filename)
       unsigned long long m = std::strtol(tokens[3].c_str(), &err, 10);
       if(*err != '\0' || errno != 0)
       {
-	 std::cerr << timestamp()
-	    << "Error reading file '"
-	    << filename << "' "
-	    << ", line " << (i + 1)
-	    << ": '" << tokens[3] << "'"
-	    << " cannot be parsed as a number" << std::endl;
-	 throw std::runtime_error("io error");
+	 std::string err = std::string("Error reading file '")
+	    + filename + "', line " + std::to_string(i + 1)
+	    + ": '" + tokens[3] + "' cannot be parsed as a number";
+	 throw std::runtime_error(err);
       }
       bp.push_back(m);
    }
@@ -572,9 +559,9 @@ void Data::read_plink_fam(const char *filename)
 
    if(!in)
    {
-      std::cerr << "[Data::read_plink_fam] Error reading file " 
-	 << filename << std::endl;
-      throw std::string("io error");
+      std::string err = std::string(
+	 "[Data::read_plink_fam] Error reading file ") + filename;
+      throw std::string(err);
    }
    std::vector<std::string> lines;
    

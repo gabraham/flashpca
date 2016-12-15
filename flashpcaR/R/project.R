@@ -19,7 +19,7 @@
 #' eigenvalues by number of columns of X ("p"), the number of
 #' rows of X minus 1 ("n1") or none ("none").
 #' 
-#' @param blocksize Integer. Block size for PCA on PLINK files.
+#' @param block_size Integer. Block size for PCA on PLINK files.
 #' 
 #' @param verbose Logical. Verbose output.
 #' 
@@ -34,15 +34,25 @@
 #' 
 #' @details
 #'
+#' \code{project} projects data Z onto existing principal components (PCs), i.e.,
+#' \deqn{P_z = Z V} where V is the matrix of SNPs loadings. The projected data
+#' must match the original data used to derive the PCs in terms of
+#' \describe{
+#'   \item{}{Same SNPs, in the same order}
+#'   \item{}{Same alleles and reference alleles}
+#'   \item{}{Same divisor specified (although not strictly necessary}.
+#'}
+#'
 #' @return \code{project} returns a list containing the following components:
 #' \describe{  
 #'    \item{projection}{A numeric matrix. The projections of the new data
 #'   onto the principal components.}
 #' }
 #'
+#' @importFrom utils read.table
 #' @export
 project <- function(X, loadings, orig_mean=NULL, orig_sd=NULL,
-   ref_alleles=NULL, divisor="p", blocksize=1000, verbose=FALSE,
+   ref_alleles=NULL, divisor="p", block_size=1000, verbose=FALSE,
    check_geno=TRUE, check_bim=TRUE)
 {
    divisor <- match.arg(divisor)
@@ -88,7 +98,7 @@ project <- function(X, loadings, orig_mean=NULL, orig_sd=NULL,
       #}
       if(check_bim) {
 	 bim <- read.table(paste0(X, ".bim"), header=FALSE, sep="",
-	    stringsAsFactor=FALSE)
+	    stringsAsFactors=FALSE)
 	 if(nrow(bim) != nrow(loadings)) {
 	    stop("The number of rows in ", X, ".bim",
 	       " and the number of columns in the loadings don't match")
@@ -109,7 +119,7 @@ project <- function(X, loadings, orig_mean=NULL, orig_sd=NULL,
 	 }
 	 rm(bim)
 	 fam <- read.table(paste0(X, ".fam"), header=FALSE, sep="",
-	    stringsAsFactor=FALSE)
+	    stringsAsFactors=FALSE)
 	 n <- nrow(fam)
 	 rm(fam)
       }
@@ -139,7 +149,7 @@ project <- function(X, loadings, orig_mean=NULL, orig_sd=NULL,
    res <- try(
       if(is.character(X)) {
 	 project_plink_internal(X, loadings, ref_alleles,
-	    orig_mean, orig_sd, blocksize, div, verbose)
+	    orig_mean, orig_sd, block_size, div, verbose)
       } else {
 	 list(projection=X %*% loadings / sqrt(div_val))
       }

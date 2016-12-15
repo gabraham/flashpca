@@ -4,7 +4,7 @@
 #include <Eigen/Core>
 #include <Eigen/Eigen>
 
-#include "data.hpp"
+#include "data.h"
 
 using namespace Eigen;
 

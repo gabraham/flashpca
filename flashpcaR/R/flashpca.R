@@ -19,7 +19,7 @@
 #'
 #' @param seed Integer. Seed for random number generator.
 #'
-#' @param blocksize Integer. Block size for PCA on PLINK files.
+#' @param block_size Integer. Block size for PCA on PLINK files.
 #'
 #' @param verbose logical. More verbose output.
 #'
@@ -65,8 +65,9 @@
 #' #######################
 #' ## HapMap3 chr1 example
 #' data(hm3.chr1)
-#' ndim <- 20
-#' X <- scale2(hm3.chr1$bed)
+#' ndim <- 10
+#' w <- sample(ncol(hm3.chr1$bed), 500) # prcomp too slow here
+#' X <- scale2(hm3.chr1$bed[,w])
 #' f1 <- flashpca(X, ndim=ndim, stand="none")
 #'
 #' # prcomp's eigenvalues are of XX'/(n-1), but
@@ -101,7 +102,7 @@
 flashpca <- function(X, ndim=10,
    stand=c("binom2", "binom", "sd", "center", "none"),
    divisor=c("p", "n", "none"),
-   maxiter=1e2, tol=1e-4, seed=1, blocksize=1000, verbose=FALSE,
+   maxiter=1e2, tol=1e-4, seed=1, block_size=1000, verbose=FALSE,
    do_loadings=FALSE, check_geno=TRUE, return_scale=TRUE)
 {
    stand <- match.arg(stand)
@@ -129,7 +130,7 @@ flashpca <- function(X, ndim=10,
       	 }
       }
 
-      blocksize <- min(blocksize, ncol(X))
+      block_size <- min(block_size, ncol(X))
    } else if(is.character(X)) {
       if(!stand %in% c("binom", "binom2")) {
 	 stop("When using PLINK data, you must use stand='binom' or 'binom2'")
@@ -167,7 +168,7 @@ flashpca <- function(X, ndim=10,
    res <- try(
       if(is.character(X)) {
 	 flashpca_plink_internal(X, stand_i, ndim, div,
-	    maxiter, blocksize, tol, seed,
+	    maxiter, block_size, tol, seed,
 	    verbose, do_loadings, return_scale)
       } else {
 	 flashpca_internal(X, stand_i, ndim, div, maxiter,
@@ -185,6 +186,8 @@ flashpca <- function(X, ndim=10,
 #' Prints a flashpca object
 #'
 #' @param x A flashpca object to be printed
+#' @param ... Ignored.
+#'
 #' @export 
 print.flashpca <- function(x, ...)
 {

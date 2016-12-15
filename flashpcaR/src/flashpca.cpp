@@ -11,7 +11,7 @@
 using namespace Rcpp;
 using namespace Eigen;
 
-#include "randompca.hpp"
+#include "randompca.h"
 
 // [[Rcpp::export]]
 List flashpca_internal(
@@ -118,7 +118,7 @@ List flashpca_plink_internal(
       bim_file = fn + std::string(".bim");
       fam_file = fn + std::string(".fam");
 
-      Data data(seed);
+      Data data;
       data.verbose = verbose;
       data.stand_method_x = stand; 
       data.read_pheno(fam_file.c_str(), 6);
@@ -259,8 +259,7 @@ List ucca_plink_internal(
    const Eigen::Map<Eigen::MatrixXd> Y,
    const int stand_x,
    const int stand_y,
-   const bool verbose,
-   const bool return_scale)
+   const bool verbose)
 {
    try{
       RandomPCA rpca;
@@ -276,7 +275,7 @@ List ucca_plink_internal(
       bim_file = fn + std::string(".bim");
       fam_file = fn + std::string(".fam");
 
-      Data data(1);
+      Data data;
       data.verbose = verbose;
       data.stand_method_x = stand_x; 
       data.Y = Y;
@@ -353,7 +352,7 @@ List scca_plink_internal(
       bim_file = fn + std::string(".bim");
       fam_file = fn + std::string(".fam");
 
-      Data data(seed);
+      Data data;
       data.verbose = verbose;
       data.stand_method_x = stand_x; 
       data.Y = Y;
@@ -410,8 +409,7 @@ List ucca_internal(
    const Eigen::Map<Eigen::MatrixXd> Y,
    const int stand_x,
    const int stand_y,
-   const bool verbose,
-   const bool return_scale)
+   const bool verbose)
 {
    try{
       Eigen::MatrixXd Xm = X;
@@ -523,7 +521,7 @@ List check_plink_internal(
       bim_file = fn + std::string(".bim");
       fam_file = fn + std::string(".fam");
 
-      Data data(1);
+      Data data;
       data.verbose = verbose;
       data.stand_method_x = stand; 
       data.read_pheno(fam_file.c_str(), 6);
@@ -614,9 +612,8 @@ List project_plink_internal(
       bim_file = fn + std::string(".bim");
       fam_file = fn + std::string(".fam");
 
-      Data data(1);
+      Data data;
       data.verbose = verbose;
-      std::cout << data.X_meansd.topRows(3) << std::endl;
       data.read_pheno(fam_file.c_str(), 6);
       data.read_plink_bim(bim_file.c_str());
       data.geno_filename = geno_file.c_str();

@@ -1,5 +1,5 @@
 
-#include "svdwide.hpp"
+#include "svdwide.h"
 
 void SVDWide::perform_op(double *x_in, double* y_out)
 {

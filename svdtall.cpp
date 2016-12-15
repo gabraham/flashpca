@@ -1,5 +1,5 @@
 
-#include "svdtall.hpp"
+#include "svdtall.h"
 
 void SVDTall::perform_op(double *x_in, double* y_out)
 {

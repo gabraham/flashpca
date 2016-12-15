@@ -1,1 +1,1 @@
-../../randompca.hpp
+../../randompca.h

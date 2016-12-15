@@ -8,10 +8,10 @@
  * All rights reserved.
  */
 
-#include "randompca.hpp"
-#include "util.hpp"
-#include "svdwide.hpp"
-#include "svdtall.hpp"
+#include "randompca.h"
+#include "util.h"
+#include "svdwide.h"
+#include "svdtall.h"
 
 MatrixXd make_gaussian(unsigned int rows, unsigned int cols, long seed)
 {
@@ -159,9 +159,9 @@ void RandomPCA::pca_fast(MatrixXd& X, unsigned int block_size,
    }
    else
    {
-      std::cerr
-	 << "Spectra eigen-decomposition was not successful, status: "
-	 << eigs.info() << std::endl;
+      throw new std::runtime_error(
+	 std::string("Spectra eigen-decomposition was not successful")
+	    + ", status: " + std::to_string(eigs.info()));
    }
 }
 
@@ -211,9 +211,9 @@ void RandomPCA::pca_fast(Data& dat, unsigned int block_size,
    }
    else
    {
-      std::cerr
-	 << "Spectra eigen-decomposition was not successful, status: "
-	 << eigs.info() << std::endl;
+      throw new std::runtime_error(
+	 std::string("Spectra eigen-decomposition was not successful")
+	    + ", status: " + std::to_string(eigs.info()));
    }
 }
 

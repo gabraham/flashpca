@@ -42,8 +42,7 @@
 #' @return \code{ucca} returns a list containing the following components:
 #'
 #' \describe{  
-#'    \item{result:}{A numeric matrix of the association results, in the
-#' original ordering.}
+#'    \item{result:}{A numeric matrix of the association results, in the original ordering.}
 #'    \item{npheno:}{The number of phenotypes used.}
 #'    \item{nsnps:}{The number of SNPs used.}
 #' }
@@ -76,11 +75,13 @@
 #' # Same result (to within numerical tolerance)
 #' mean((s1$result[, "Fstat"] - s2$result[, "Fstat"])^2)
 #'
+#' @importFrom utils read.table
+#'
 #' @export
 ucca <- function(X, Y,
    standx=c("binom2", "binom", "sd", "center", "none"),
    standy=c("binom2", "binom", "sd", "center", "none"),
-   check_geno=TRUE, check_fam=TRUE, verbose=FALSE, return_scale=FALSE)
+   check_geno=TRUE, check_fam=TRUE, verbose=FALSE)
 {
    standx <- match.arg(standx)
    standy <- match.arg(standy)
@@ -161,11 +162,9 @@ ucca <- function(X, Y,
 
    res <- try(
       if(is.character(X)) {
-	 ucca_plink_internal(X, Y, standx_i, standy_i,
-	    verbose, return_scale)
+	 ucca_plink_internal(X, Y, standx_i, standy_i, verbose)
       } else {
-	 ucca_internal(X, Y, standx_i, standy_i,
-	    verbose, return_scale)
+	 ucca_internal(X, Y, standx_i, standy_i, verbose)
       }
    )
    class(res) <- "ucca"
@@ -183,6 +182,8 @@ ucca <- function(X, Y,
 #' Prints a UCCA object
 #'
 #' @param x A flashpca object to be printed
+#' @param ... Ignored
+#'
 #' @export 
 print.ucca <- function(x, ...)
 {
