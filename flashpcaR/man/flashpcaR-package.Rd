@@ -5,7 +5,7 @@
 \alias{flashpcaR}
 \alias{flashpcaR-package}
 \title{flashpcaR
-An R interface to flashpca for fast principal component analysis and
+An R interface to FlashPCA for fast principal component analysis and
 related analyses.}
 \description{
 \tabular{ll}{

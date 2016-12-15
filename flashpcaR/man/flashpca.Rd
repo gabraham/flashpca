@@ -2,7 +2,7 @@
 % Please edit documentation in R/flashpca.R
 \name{flashpca}
 \alias{flashpca}
-\title{Principal Component Analysis using flashpca}
+\title{Principal Component Analysis using FlashPCA}
 \usage{
 flashpca(X, ndim = 10, stand = c("binom2", "binom", "sd", "center", "none"),
   divisor = c("p", "n", "none"), maxiter = 100, tol = 1e-04, seed = 1,
@@ -56,7 +56,7 @@ deviations used in standardizing the matrix X.}
 }
 }
 \description{
-Principal Component Analysis using flashpca
+Principal Component Analysis using FlashPCA
 }
 \details{
 The default decomposition is of X X' / m, where m is the number of SNPs
@@ -84,7 +84,7 @@ X <- scale2(hm3.chr1$bed)
 f1 <- flashpca(X, ndim=ndim, stand="none")
 
 # prcomp's is too slow for this example
-r <- eigen(tcrossprod(X) / nrow(X), symmetric=TRUE)
+r <- eigen(tcrossprod(X) / ncol(X), symmetric=TRUE)
 
 ## Compare eigenvalues
 eval <- cbind(r$values[1:ndim], f1$values)

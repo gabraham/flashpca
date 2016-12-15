@@ -70,7 +70,7 @@
 #' f1 <- flashpca(X, ndim=ndim, stand="none")
 #'
 #' # prcomp's is too slow for this example
-#' r <- eigen(tcrossprod(X) / nrow(X), symmetric=TRUE)
+#' r <- eigen(tcrossprod(X) / ncol(X), symmetric=TRUE)
 #' 
 #' ## Compare eigenvalues
 #' eval <- cbind(r$values[1:ndim], f1$values)
