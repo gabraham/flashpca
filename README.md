@@ -329,7 +329,7 @@ sparse canonical correlation analysis over all SNPs and all phenotypes:
    fn <- gsub("\\.bed", "",
       system.file("extdata", "data_chr1.bed", package="flashpcaR"))
    fn
-   f2 <- scca(X, Y, standx="binom2", standy="sd", lambda1=1e-2, lambda2=1e-3)
+   f2 <- scca(fn, Y, standx="binom2", standy="sd", lambda1=1e-2, lambda2=1e-3)
    diag(cor(f2$Px, f2$Py))
 
    # Cross-validation
