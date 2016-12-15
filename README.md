@@ -277,8 +277,7 @@ lowercase):
    f <- flashpca(fn, ndim=10)
    ```
 
-## UCCA (aka univariate canonical correlation analysis; aka ANOVA of each SNP
-## on multiple phenotypes)
+## UCCA (aka univariate canonical correlation analysis; aka ANOVA of each SNP on multiple phenotypes)
 
 ### On a numeric matrix
 
