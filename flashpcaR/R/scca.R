@@ -55,12 +55,12 @@
 #' @return \code{scca} returns a list containing the following components:
 #'
 #' \describe{  
-#'    \item{U}{Top ndim left canonical vectors of X^T Y.}
-#'    \item{V}{Top ndim right canonical vectors of X^T Y.}
-#'    \item{d}{Top ndim canonical covariances, i.e., diag(cov(X U, Y V)). 
+#'    \item{U:}{Top ndim left canonical vectors of X^T Y.}
+#'    \item{V:}{Top ndim right canonical vectors of X^T Y.}
+#'    \item{d:}{Top ndim canonical covariances, i.e., diag(cov(X U, Y V)). 
 #'	 Note that we don't divide by n-1.}
-#'    \item{Px}{X times U.}
-#'    \item{Py}{Y times V.}
+#'    \item{Px:}{X * U.}
+#'    \item{Py:}{Y * V.}
 #' }
 #'
 #' @examples
@@ -75,7 +75,8 @@
 #' B <- matrix(rnorm(m * k), m, k)
 #' Y <- X %*% B + rnorm(n * k)
 #'
-#' s <- scca(X, Y, lambda1=1e-2, lambda2=1e-2, ndim=5, standy="sd")
+#' s <- scca(X, Y, lambda1=1e-2, lambda2=1e-2, ndim=5,
+#'   standx="none", standy="sd")
 #'
 #' ## The canonical correlations
 #' diag(cor(s$Px, s$Py))
@@ -240,7 +241,8 @@ print.scca <- function(x, ...)
 
 #' Cross-validated grid search over SCCA penalties
 #'
-#' @param X A numeric matrix or character string pointing at a PLINK dataset
+#' @param X A numeric matrix. The use of PLINK datasets is currently not
+#' supported.
 #'
 #' @param Y A numeric matrix
 #'
@@ -254,9 +256,14 @@ print.scca <- function(x, ...)
 #'
 #' @param parallel Logical. Whether to parallelise the cross-validation using
 #' the foreach package.
+#' 
+#' @details 
+#' Note that the default penalties may not be appropriate for every dataset
+#' and for some values the algorithm may not converge (especially for small
+#' penalties).
 #'
 #' @return \code{cv.scca} returns an array containing the average
-#' cross-validatd canonical Pearson correlations between X and Y, as follows:
+#' cross-validated canonical Pearson correlations between X and Y, as follows:
 #'    Dimension 1: the ndim different canonical dimensions;
 #'    Dimension 2: along the lambda1 penalties;
 #'    Dimension 3: along the lambda2 penalties.
@@ -269,7 +276,7 @@ cv.scca <- function(X, Y,
    n <- nrow(Y)
    if(is.character(X)) {
       stop(
-	 "Cross-validation currently only supported when X is a matrix")
+	 "Cross-validation currently only supported when X is a numeric matrix")
    }
 
    folds <- sample(1:nfolds, n, replace=TRUE)
@@ -278,9 +285,9 @@ cv.scca <- function(X, Y,
    nzx <- array(0, c(ndim, length(lambda1), length(lambda2)))
    nzy <- array(0, c(ndim, length(lambda1), length(lambda2)))
 
-   if(parallel) {
-      require(foreach)
-      res <- foreach(fold=1:nfolds) %dopar% {
+   # https://cran.r-project.org/doc/manuals/r-release/R-exts.html#Suggested-packages
+   if(parallel && requireNamespace("foreach", quietly=TRUE)) {
+      res <- foreach::foreach(fold=1:nfolds) %dopar% {
          w <- folds != fold
          scca(X[w,], Y[w,], ndim=ndim,
 	    lambda1=lambda1, lambda2=lambda2,
@@ -310,10 +317,10 @@ cv.scca <- function(X, Y,
 
    for(i in seq(along=lambda1)) {
       for(j in seq(along=lambda2)) {
-	 mx <- sapply(res, function(x) colSums(x[[i]][[j]]$U != 0))
-	 my <- sapply(res, function(x) colSums(x[[i]][[j]]$V != 0))
-	 nzx[,i,j] <- rowMeans(mx)
-	 nzy[,i,j] <- rowMeans(my)
+	 mx <- sapply(res, function(x) colSums(x[[i]][[j]]$U != 0, na.rm=TRUE))
+	 my <- sapply(res, function(x) colSums(x[[i]][[j]]$V != 0, na.rm=TRUE))
+	 nzx[,i,j] <- rowMeans(rbind(mx))
+	 nzy[,i,j] <- rowMeans(rbind(my))
       }
    }
 
@@ -354,6 +361,28 @@ cv.scca <- function(X, Y,
 #'    \code{cv.scca} was run with 5x lambda1 values and 7x lambda2 values,
 #'    there will be 7 separate curves each with 5 points on the x-axis.
 #'
+#' @examples
+#'
+#' #######################
+#' ## HapMap3 chr1 example
+#' data(hm3.chr1)
+#' X <- scale2(hm3.chr1$bed)
+#' n <- nrow(X)
+#' m <- ncol(X)
+#' k <- 10
+#' B <- matrix(rnorm(m * k), m, k)
+#' Y <- X %*% B + rnorm(n * k)
+#'
+#' r <- cv.scca(X, Y, standx="sd", standy="sd", nfolds=3, ndim=2,
+#'    lambda1=seq(1e-3, 1e-1, length=10),
+#'    lambda2=seq(1e-4, 0.5, length=5))
+#'
+#' par(mfrow=c(1, 2))
+#' plot(r, dim=1)
+#' plot(r, dim=2)
+#' 
+#' @importFrom abind abind
+#'
 #' @export
 plot.cv.scca <- function(x, dim=NULL, ...)
 {
@@ -361,23 +390,24 @@ plot.cv.scca <- function(x, dim=NULL, ...)
       stop("x is not of class 'cv.scca'")
    }
 
-   dim <- as.integer(dim)
-
    if(is.null(dim)) {
       for(i in 1:x$ndim) {
-         matplot(x$nzero.x[1,,], g$corr[i,,],
+         matplot(x$nzero.x[1,,], x$corr[i,,],
             type="b", xlab="# of variables in X with non-zero weight",
                ylab="Pearson correlation", log="x",
                main=paste0("Canonical dimension ", i))
       }
    } else if(is.numeric(dim) && dim > 0 && dim <= x$ndim) {
-      matplot(x$nzero.x[dim,,], g$corr[dim,,],
+      matplot(x$nzero.x[dim,,], x$corr[dim,,],
 	 type="b", xlab="# of variables in X with non-zero weight",
 	 ylab="Pearson correlation", log="x",
 	 main=paste0("Canonical dimension ", dim))
    } else {
       stop(paste("dim must be a positive integer, <=", x$ndim))
    }
+   legend("bottomright", legend=round(x$lambda2, 6),
+      title="lambda2", lwd=2, lty=1:length(x$lambda2),
+      col=1:length(x$lambda2))
    invisible(x)
 }
 

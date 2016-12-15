@@ -67,12 +67,12 @@ default, it will be a vector of normally distributed variates.}
 \code{scca} returns a list containing the following components:
 
 \describe{  
-   \item{U}{Top ndim left canonical vectors of X^T Y.}
-   \item{V}{Top ndim right canonical vectors of X^T Y.}
-   \item{d}{Top ndim canonical covariances, i.e., diag(cov(X U, Y V)). 
+   \item{U:}{Top ndim left canonical vectors of X^T Y.}
+   \item{V:}{Top ndim right canonical vectors of X^T Y.}
+   \item{d:}{Top ndim canonical covariances, i.e., diag(cov(X U, Y V)). 
  Note that we don't divide by n-1.}
-   \item{Px}{X times U.}
-   \item{Py}{Y times V.}
+   \item{Px:}{X * U.}
+   \item{Py:}{Y * V.}
 }
 }
 \description{
@@ -90,7 +90,8 @@ k <- 10
 B <- matrix(rnorm(m * k), m, k)
 Y <- X \%*\% B + rnorm(n * k)
 
-s <- scca(X, Y, lambda1=1e-2, lambda2=1e-2, ndim=5, standy="sd")
+s <- scca(X, Y, lambda1=1e-2, lambda2=1e-2, ndim=5,
+  standx="none", standy="sd")
 
 ## The canonical correlations
 diag(cor(s$Px, s$Py))

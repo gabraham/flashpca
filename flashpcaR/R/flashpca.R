@@ -49,12 +49,12 @@
 #' 
 #' @return \code{flashpca} returns a list containing the following components:
 #' \describe{  
-#'    \item{values}{a numeric vector. The eigenvalues of X X' / m.}
-#'    \item{vectors}{a numeric matrix. The eigenvectors of X X' / m.}
-#'    \item{projection}{a numeric matrix. Equivalent to X V.}
-#'    \item{loadings}{a numeric matrix. The matrix of variable loadings, i.e., V
+#'    \item{values:}{a numeric vector. The eigenvalues of X X' / m.}
+#'    \item{vectors:}{a numeric matrix. The eigenvectors of X X' / m.}
+#'    \item{projection:}{a numeric matrix. Equivalent to X V.}
+#'    \item{loadings:}{a numeric matrix. The matrix of variable loadings, i.e., V
 #'    from SVD.}
-#'    \item{scale}{a list of two elements, ``center'' and ''scale'', which was
+#'    \item{scale:}{a list of two elements, ``center'' and ''scale'', which was
 #'	 used to standardise the input matrix X.}
 #' }
 #' 

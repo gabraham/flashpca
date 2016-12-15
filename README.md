@@ -12,7 +12,7 @@ Main features:
 * Scalable: memory requirements are bounded, scales to at least 1M individuals
 * Highly accurate results 
 * Natively reads PLINK bed/bim/fam files
-* Easy to use
+* Easy to use; can be called entirely within R
 
 ## Help
 
@@ -234,11 +234,26 @@ of the canonical components cor(X U, Y V) in independent test data.
 
 # <a name="R"></a>flashpcaR: flashpca in R
 
+FlashPCA can be called entirely within R.
+
 ## Installation
 
    ```R
    devtools::install_github("gabraham/flashpca/flashpcaR")
    ```
+
+Depends on packages:
+   
+   * Rcpp (>= 0.11.1)
+   * abind
+   * RcppEigen (>= 0.3.2.5.1)
+   * BH
+   * RSpectra
+
+Suggests:
+   
+   * foreach
+   * testthat (for unit tests)
 
 ## PCA
    

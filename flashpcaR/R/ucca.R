@@ -1,15 +1,11 @@
-#' Performs univariate canonical correlation analysis, i.e., ANOVA on each
-#' SNP.
+#' Performs univariate canonical correlation analysis, i.e., ANOVA of all
+#' phenotypes on each SNP.
 #'
 #' @param X An n by p numeric matrix, or a character string pointing to a
 #' PLINK dataset
 #'
-#' @param Y An n by k numeric matrix
+#' @param Y An n by k numeric matrix of phenotypes.
 #' 
-#' @param lambda1 Numeric. Non-negative L1 penalty on canonical vectors of X.
-#'
-#' @param lambda2 Numeric. Non-negative L1 penalty on canonical vectors of Y.
-#"
 #' @param standx Character. One of "binom" (zero mean, unit variance
 #' where variance is p * (1 - p), for SNP data), "binom2" (zero mean, unit
 #' variance where variance is 2 * p * (1 - p),
@@ -21,22 +17,7 @@
 #'
 #' @param standy Character. Stanardisation of Y.
 #'
-#' @param ndim Integer. Positive number of canonical vectors to compute.
-#'
-#' @param maxiter Integer. Positive, maximum number of iterations to perform.
-#'
-#' @param tol Numeric. Tolerance for convergence.
-#'
-#' @param seed Integer. Random seed for initialisation of CCA iterations.
-#'
 #' @param verbose Logical.
-#'
-#' @param num_threads Integer. Number of OpenMP threads to
-#' use (only supported under Linux and on Mac if compiled with GCC).
-#'
-#' @param mem Character. One of "low" or "high", where "low"
-#' doesn't explicitly compute X^T Y, and "high" does.
-#' This is useful for large X and Y.
 #'
 #' @param check_geno Logical. Whether to explicitly check if the matrices
 #' X and Y contain values other than {0, 1, 2}, when standx or standy is one 
@@ -48,25 +29,23 @@
 #' the PLINK fam file (if X is a character string) matches the number of
 #' rows in the eigenvectors.
 #' 
-#' @param V Numeric. A vector to initialise "v" in SCCA iterations. By
-#' default, it will be a vector of normally distributed variates.
-#'
 #' @details This is an efficient implementation of Ferreira and Purcell's
 #' plink.multivariate test for association between multiple phenotypes and one SNP at a time.
 #'
 #' This test is equivalent to the F-test for a linear regression of each SNP on the
-#' phenotypes, hence the number of phenotypes that can be tested is limited by
+#' phenotypes \code{lm(SNP ~ pheno1 + pheno2 + ...)},
+#' hence the number of phenotypes that can be tested is limited by
 #' the sample size (the model is not penalised).
+#'
+#' By default, \code{ucca} performs mean-imputation of missing values.
 #'
 #' @return \code{ucca} returns a list containing the following components:
 #'
 #' \describe{  
-#'    \item{U}{Top ndim left canonical vectors of X^T Y.}
-#'    \item{V}{Top ndim right canonical vectors of X^T Y.}
-#'    \item{d}{Top ndim canonical covariances, i.e., diag(cov(X U, Y V)). 
-#'	 Note that we don't divide by n-1.}
-#'    \item{Px}{X times U.}
-#'    \item{Py}{Y times V.}
+#'    \item{result:}{A numeric matrix of the association results, in the
+#' original ordering.}
+#'    \item{npheno:}{The number of phenotypes used.}
+#'    \item{nsnps:}{The number of SNPs used.}
 #' }
 #'
 #' @references M. A. R. Ferreira and S. M. Purcell (2009) _A multivariate test
@@ -74,20 +53,28 @@
 #'
 #' @examples
 #'
-#' n <- 500
-#' p <- 100
-#' k <- 50
-#' m <- 5
-#' M <- matrix(rnorm(n * m), n, m)
-#' Bx <- matrix(rnorm(m * p), m, p)
-#' By <- matrix(rnorm(m * k), m, k)
-#' X <- scale(M %*% Bx + rnorm(n * p))
-#' Y <- scale(M %*% By + rnorm(n * k))
+#' data(hm3.chr1)
+#' n <- nrow(hm3.chr1$bed)
+#' p <- ncol(hm3.chr1$bed)
+#' k <- 10
+#' X <- scale2(hm3.chr1$bed)
+#' By <- matrix(rnorm(p * k), p, k)
+#' Y <- scale(X %*% By + rnorm(n * k))
 #' 
-#' s <- ucca(X, Y, lambda1=1e-2, lambda2=1e-2, ndim=5, standx="sd", standy="sd")
+#' # Call on a numeric matrix X;
+#' # X has already been standardised
+#' s1 <- ucca(X, Y, standx="none", standy="sd")
+#' 
+#' # Call on a PLINK dataset
+#' bedf <- gsub("\\.bed", "",
+#'     system.file("extdata", "data_chr1.bed", package="flashpcaR"))
+#' s2 <- ucca(bedf, Y, standx="binom2", standy="sd")
 #'
-#' ## The canonical correlations
-#' diag(cor(s$Px, s$Py))
+#' head(s1$result)
+#' head(s2$result)
+#'
+#' # Same result (to within numerical tolerance)
+#' mean((s1$result[, "Fstat"] - s2$result[, "Fstat"])^2)
 #'
 #' @export
 ucca <- function(X, Y,
@@ -172,10 +159,6 @@ ucca <- function(X, Y,
    standx_i <- std[standx]
    standy_i <- std[standy]
 
-   # otherwise Rcpp will throw an exception
-   #storage.mode(X) <- "numeric"
-   #storage.mode(Y) <- "numeric"
-
    res <- try(
       if(is.character(X)) {
 	 ucca_plink_internal(X, Y, standx_i, standy_i,
@@ -186,6 +169,7 @@ ucca <- function(X, Y,
       }
    )
    class(res) <- "ucca"
+   res$npheno <- ncol(Y)
    if(is(res, "try-error")) {
       NULL
    } else {
@@ -202,7 +186,8 @@ ucca <- function(X, Y,
 #' @export 
 print.ucca <- function(x, ...)
 {
-   cat("ucca object; ndim=", length(x$d), "\n")
+   cat("ucca object; #phenotypes=",
+      x$npheno, ", #SNPs=", nrow(x$result), "\n")
    invisible(x)
 }
 

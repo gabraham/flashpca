@@ -6,12 +6,17 @@
 #' @param loadings A numeric matrix of right
 #' eigenvectors (SNPs on rows, ndim dimensions on columns).
 #'
-#' @param stand A character string indicating how to standardise X before PCA,
-#' one of "binom" (old Eigenstrat-style), "binom2" (new Eigenstrat-style),
-#' "sd" (zero-mean unit-variance), "center" (zero mean), or "none".
+#' @param orig_mean A numeric vector of the original SNP means (averages)
+#' used to standardise the genotypes before PCA.
+#'
+#' @param orig_sd A numeric vector of the original SNP standard deviations
+#' used to standardise the genotypes before PCA.
+#'
+#' @param ref_alleles A character vector of the reference alleles for each
+#' SNP. This must match the reference alleles used for PCA.
 #'
 #' @param divisor A character string indicating whether to divide the
-#' eigenvalues by number of columns of X ("p"), the number of 
+#' eigenvalues by number of columns of X ("p"), the number of
 #' rows of X minus 1 ("n1") or none ("none").
 #' 
 #' @param blocksize Integer. Block size for PCA on PLINK files.
@@ -126,15 +131,6 @@ project <- function(X, loadings, orig_mean=NULL, orig_sd=NULL,
    )
    div_val <- divisors_val[divisor]
 
-   #std <- c(
-   #   "none"=0L,
-   #   "sd"=1L,
-   #   "binom"=2L,
-   #   "binom2"=3L,
-   #   "center"=4L
-   #)
-   #stand_i <- std[stand]
-
    # If the matrix is integer, Rcpp will throw an exception
    if(is.numeric(X)) {
       storage.mode(X) <- "numeric"
@@ -145,8 +141,6 @@ project <- function(X, loadings, orig_mean=NULL, orig_sd=NULL,
 	 project_plink_internal(X, loadings, ref_alleles,
 	    orig_mean, orig_sd, blocksize, div, verbose)
       } else {
-	 #project_internal(X, loadings, ref_alleles,
-	 #   orig_mean, orig_sd, div, verbose)
 	 list(projection=X %*% loadings / sqrt(div_val))
       }
    )

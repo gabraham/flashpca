@@ -279,7 +279,6 @@ List ucca_plink_internal(
       Data data(1);
       data.verbose = verbose;
       data.stand_method_x = stand_x; 
-      //data.read_pheno(fam_file.c_str(), 6);
       data.Y = Y;
       data.N = Y.rows();
       data.read_plink_bim(bim_file.c_str());
@@ -293,40 +292,6 @@ List ucca_plink_internal(
       NumericMatrix P(wrap(rpca.Px));
       NumericVector d(wrap(rpca.d));
 
-      // STANDARDISE_NONE: 0
-      //if(return_scale && stand != 0)
-      //{
-      //   NumericMatrix X_meansd(wrap(rpca.X_meansd));
-      //   X_mean = X_meansd(_, 0);
-      //   X_sd = X_meansd(_, 1);
-      //}
-      
-      Rcpp::List res;
-
-      //if(do_loadings)
-      //{
-      //   NumericMatrix V(wrap(rpca.V));
-      //   res = Rcpp::List::create(
-      //      Rcpp::Named("values")=d,
-      //      Rcpp::Named("vectors")=U,
-      //      Rcpp::Named("projection")=P,
-      //      Rcpp::Named("loadings")=V,
-      //      Rcpp::Named("center")=X_mean,
-      //      Rcpp::Named("scale")=X_sd
-      //   );
-      //}
-      //else
-      //{
-      //   res = Rcpp::List::create(
-      //      Rcpp::Named("values")=d,
-      //      Rcpp::Named("vectors")=U,
-      //      Rcpp::Named("projection")=P,
-      //      Rcpp::Named("center")=X_mean,
-      //      Rcpp::Named("scale")=X_sd
-      //   );
-      //}
-      //return res;
-      
       NumericMatrix resM(wrap(rpca.res));
       colnames(resM) = StringVector::create("R", "Fstat", "P");
       StringVector rownamesV(data.snp_ids.size());
@@ -334,7 +299,7 @@ List ucca_plink_internal(
          rownamesV(i) = data.snp_ids[i];
       rownames(resM) = rownamesV;
 
-      res = Rcpp::List::create(
+      Rcpp::List res = Rcpp::List::create(
          Rcpp::Named("result")=resM
       );
 
@@ -460,70 +425,17 @@ List ucca_internal(
       NumericVector X_mean(0);
       NumericVector X_sd(0);
 
-      //std::string fam_file, geno_file, bim_file, pheno_file;
-      //geno_file = fn + std::string(".bed");
-      //bim_file = fn + std::string(".bim");
-      //fam_file = fn + std::string(".fam");
-
-      //Data data(1);
-      //data.verbose = verbose;
-      //data.stand_method_x = stand_x; 
-      ////data.read_pheno(fam_file.c_str(), 6);
-      //data.Y = Y;
-      //data.N = Y.rows();
-      //data.read_plink_bim(bim_file.c_str());
-      //data.geno_filename = geno_file.c_str();
-      //data.get_size();
-      //data.prepare();
-
       rpca.ucca(Xm, Ym);
       
       NumericMatrix U(wrap(rpca.U));
       NumericMatrix P(wrap(rpca.Px));
       NumericVector d(wrap(rpca.d));
 
-      // STANDARDISE_NONE: 0
-      //if(return_scale && stand != 0)
-      //{
-      //   NumericMatrix X_meansd(wrap(rpca.X_meansd));
-      //   X_mean = X_meansd(_, 0);
-      //   X_sd = X_meansd(_, 1);
-      //}
-      
-      Rcpp::List res;
-
-      //if(do_loadings)
-      //{
-      //   NumericMatrix V(wrap(rpca.V));
-      //   res = Rcpp::List::create(
-      //      Rcpp::Named("values")=d,
-      //      Rcpp::Named("vectors")=U,
-      //      Rcpp::Named("projection")=P,
-      //      Rcpp::Named("loadings")=V,
-      //      Rcpp::Named("center")=X_mean,
-      //      Rcpp::Named("scale")=X_sd
-      //   );
-      //}
-      //else
-      //{
-      //   res = Rcpp::List::create(
-      //      Rcpp::Named("values")=d,
-      //      Rcpp::Named("vectors")=U,
-      //      Rcpp::Named("projection")=P,
-      //      Rcpp::Named("center")=X_mean,
-      //      Rcpp::Named("scale")=X_sd
-      //   );
-      //}
-      //return res;
-      
       NumericMatrix resM(wrap(rpca.res));
       colnames(resM) = StringVector::create("R", "Fstat", "P");
-      //StringVector rownamesV(data.snp_ids.size());
-      //for(int i = 0 ; i < data.snp_ids.size() ; i++)
-      //   rownamesV(i) = data.snp_ids[i];
-      //rownames(resM) = rownamesV;
 
-      res = Rcpp::List::create(
+      // Rownames of 'result' will be assigned in the calling R code
+      Rcpp::List res = Rcpp::List::create(
          Rcpp::Named("result")=resM
       );
 
@@ -611,7 +523,6 @@ List check_plink_internal(
       bim_file = fn + std::string(".bim");
       fam_file = fn + std::string(".fam");
 
-      //Data data(seed);
       Data data(1);
       data.verbose = verbose;
       data.stand_method_x = stand; 
@@ -625,14 +536,6 @@ List check_plink_internal(
       VectorXd eval_(eval);
       rpca.check(data, block_size, evec_, eval_);
       
-      //// STANDARDISE_NONE: 0
-      //if(return_scale && stand != 0)
-      //{
-      //   NumericMatrix X_meansd(wrap(rpca.X_meansd));
-      //   X_mean = X_meansd(_, 0);
-      //   X_sd = X_meansd(_, 1);
-      //}
-
       Rcpp::List res = Rcpp::List::create(
          Rcpp::Named("err")=rpca.err,
 	 Rcpp::Named("mse")=rpca.mse,
