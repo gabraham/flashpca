@@ -244,16 +244,16 @@ FlashPCA can be called entirely within R.
 
 Depends on packages:
    
-   * Rcpp (>= 0.11.1)
-   * abind
-   * RcppEigen (>= 0.3.2.5.1)
-   * BH
-   * RSpectra
+   * (Rcpp)[https://cran.r-project.org/package=Rcpp] (>= 0.11.1)
+   * (abind)[https://cran.r-project.org/package=abind]
+   * (RcppEigen)[https://cran.r-project.org/package=RcppEigen] (>= 0.3.2.5.1)
+   * (BH)[https://cran.r-project.org/package=BH]
+   * (RSpectra)[https://cran.r-project.org/package=RSpectra]
 
 Suggests:
    
-   * foreach
-   * testthat (for unit tests)
+   * (foreach)[https://cran.r-project.org/package=foreach]
+   * (testthat)[https://cran.r-project.org/package=testthat] (for unit tests)
 
 ## PCA
    
@@ -277,7 +277,8 @@ lowercase):
    f <- flashpca(fn, ndim=10)
    ```
 
-## UCCA
+## UCCA (aka univariate canonical correlation analysis; aka ANOVA of each SNP
+## on multiple phenotypes)
 
 ### On a numeric matrix
 
