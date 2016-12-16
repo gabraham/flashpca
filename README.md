@@ -245,15 +245,18 @@ FlashPCA can be called (almost) entirely within R.
 Depends on packages:
    
    * [Rcpp](https://cran.r-project.org/package=Rcpp) (>= 0.11.1)
-   * [abind](https://cran.r-project.org/package=abind)
    * [RcppEigen](https://cran.r-project.org/package=RcppEigen) (>= 0.3.2.5.1)
    * [BH](https://cran.r-project.org/package=BH)
    * [RSpectra](https://cran.r-project.org/package=RSpectra)
+   * [abind](https://cran.r-project.org/package=abind)
 
 Suggests:
    
    * [foreach](https://cran.r-project.org/package=foreach)
    * [testthat](https://cran.r-project.org/package=testthat) (for unit tests)
+   * [knitr](https://cran.r-project.org/package=knitr)
+   * [rmarkdown](https://cran.r-project.org/package=rmarkdown)
+   * [qqman](https://cran.r-project.org/package=qqman)
 
 ## PCA
    
