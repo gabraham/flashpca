@@ -232,7 +232,7 @@ Applications to Genomic Data'. _Stat Appl Genet Mol Biol_ 8(1), Article 29.
 2. Parkhomenko 2009, `Sparse canonical correlation analysis with application 
 to genomic data integration'. _Stat Appl Genet Mol Biol_ 8(1), Article 1.
 
-### Univariate canonical correlation analysis (UCCA, aka ANOVA)
+### Univariate canonical correlation analysis (UCCA, aka per-SNP ANOVA)
 
 `flashpcaR` also implements the so-called canonical correlation analysis of
 `plink.multivariate --mqfam` (https://genepi.qimr.edu.au/staff/manuelF/multivariate/main.html),
