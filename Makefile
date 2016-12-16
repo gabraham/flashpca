@@ -37,13 +37,13 @@ debug: $(OBJ)
 	$(CXX) $(CXXFLAGS) -o flashpca $^ $(LDFLAGS)
 
 flashpca: LDFLAGS = $(BOOST)
-flashpca: CXXFLAGS += -g -O3 -DNDEBUG -DVERSION=\"$(VERSION)\" \
+flashpca: CXXFLAGS += -O3 -DNDEBUG -DVERSION=\"$(VERSION)\" \
    -funroll-loops -ftree-vectorize -ffast-math
 flashpca: flashpca.o randompca.o data.o util.o svdwide.o svdtall.o
 	$(CXX) $(CXXFLAGS) -o flashpca $^ $(LDFLAGS)
 
 flashpca_x86-64: LDFLAGS = $(BOOST) -Wl,--whole-archive -lpthread -Wl,--no-whole-archive
-flashpca_x86-64: CXXFLAGS += -g -O3 -DNDEBUG -DVERSION=\"$(VERSION)\" \
+flashpca_x86-64: CXXFLAGS += -O3 -DNDEBUG -DVERSION=\"$(VERSION)\" \
    -funroll-loops -ftree-vectorize -ffast-math -static
 flashpca_x86-64: $(OBJ)
 	$(CXX) $(CXXFLAGS) -o flashpca_x86-64 $^ $(LDFLAGS)
