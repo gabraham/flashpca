@@ -14,11 +14,6 @@ using namespace Eigen;
 
 bool show_timestamp;
 
-int inline is_nan(double x)
-{
-   return isnan(x);
-}
-
 // Standardise matrix column-wise to zero mean and unit variance.
 // *Standardises in place*
 // If a column is all zeros, it will remain zero.
