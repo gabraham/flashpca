@@ -24,5 +24,6 @@ Imports:
 LinkingTo:
    Rcpp, RcppEigen (>= 0.3.2.5.1), BH, RSpectra, RSpectra
 RoxygenNote: 5.0.1
-Suggests: testthat, foreach
+Suggests: testthat, foreach, knitr, rmarkdown, qqman
+VignetteBuilder: knitr
 

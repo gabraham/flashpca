@@ -170,7 +170,11 @@ head(f4$result)
 
 # Manhattan plot of the SNP associations
 d <- data.frame(hm3.chr1$bim, f4$result)
-qqman::manhattan(d, chr="V1", bp="V4", p="P", snp="V2")
+if(requireNamespace("qqman", quietly=TRUE)) {
+   qqman::manhattan(d, chr="V1", bp="V4", p="P", snp="V2")
+} else {
+   plot(I(-log10(P)) ~ V4, data=d)
+}
 ```
 
 #### References
