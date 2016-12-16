@@ -19,7 +19,20 @@ options(width=80)
 
 ## Introduction
 
-## Installation
+`flashpcaR` is an R package wrapper for `FlashPCA`, allowing large-scale analyses
+on R numeric matrices or PLINK datasets. `flashpcaR` implements
+
+1. Principal component analysis (PCA). The randomised algorithm used
+in FlashPCA 1 (Abraham & Inouye, 2014) has been replaced with the
+[Spectra](https://github.com/yixuan/spectra/) / [RSpectra](https://cran.r-project.org/package=RSpectra) library,
+making it faster and more robust. `flashpcaR` 
+enables PCA of datasets much larger than would fit in RAM (e.g. >1M
+individuals with 100,000 SNPs), using bounded amounts of memory.
+
+2. Sparse canonical correlation analysis (SCCA) of large SNP datasets.
+
+3. Univariate canonical correlation analysis (UCCA, aka per-SNP ANOVA)
+of large SNP datasets; this is the MQFAM model from `plink.multivariate`.
 
 ## Examples
 
@@ -54,22 +67,43 @@ $$X X^T = U S U^T,$$ where $S=D^2$ is the diagonal matrix of eigenvalues.
 
 $X$ is usually centred (mean-subtracted) or standardised (mean subtracted, then divided by standard deviation) before PCA.
 
+#### PCA of SNP genotypes
+
 For PCA of SNP genotypes (at least in diploid organisms), the common standardisation is
 $$X_{ij}^{\prime} = \frac{X_{ij} - 2p_j}{\sqrt{2 p_j (1 - p_j)}},$$
-where $X_{ij}$ is the genotype (minor allele dosage $\{0, 1, 2\}$) for the $i$th individual and the $j$th SNP, and $p_j$ is the minor allele frequency (MAF) for the $j$th SNP. In addition, the eigenvalues are divided by the number of SNPs $m$ (equivalent to performing the eigen-decomposition of $XX^T/m$).
+where $X_{ij}$ is the genotype (minor allele dosage $\{0, 1, 2\}$) for the $i$th individual and the $j$th SNP, and $p_j$ is the minor allele frequency (MAF) for the $j$th SNP. In addition, the eigenvalues are scaled by the number of SNPs $m$ (equivalent to performing the eigen-decomposition of $XX^T/m$).
 
-#### Using a numeric matrix
+**Important**: prior to PCA of SNPs, it is highly recommended to
+
+1. Perform standard quality control in [PLINK](https://www.cog-genomics.org/plink2)
+(at least MAF and call rates `--maf`, `--geno`, `--mind`).
+
+2. Remove several regions such as HLA and chr8 inversions (https://github.com/gabraham/flashpca/blob/master/exclusion_regions_hg19.txt).
+
+3. Thin the SNPs by linkage disequilibrium (`plink --indep-pairwise`).
+
+Steps 2 and 3 can done as
+```
+plink --bfile data --indep-pairwise 1000 50 0.05 --exclude range exclusion_regions_hg19.txt
+plink --bfile data --extract plink.prune.in --make-bed --out data_pruned
+```
+assuming that `data` is your original PLINK dataset.
+
+#### PCA using a numeric matrix
+
 ```{r}
 # X has already been standardised using scale2
 f1 <- flashpca(X, stand="none")
 ```
 
-#### Using a PLINK dataset
+#### PCA using a PLINK dataset
+
 ```{r}
 f2 <- flashpca(fn)
 ```
 
 #### Plot first two PCs
+
 ```{r}
 par(mfrow=c(1, 2), pty="s")
 plot(f1$vectors[,1:2], xlab="PC1", ylab="PC2",
@@ -79,6 +113,49 @@ plot(f2$vectors[,1:2], xlab="PC1", ylab="PC2",
    col=factor(hm3.chr1$population$population),
    main="PLINK data")
 ```
+
+#### Projecting new individuals onto the PCs
+
+Projection of a new set of individual X2 onto existing PCs can be done
+in two ways.
+
+##### For a new numeric matrix data X2
+
+Assuming X2 has the same SNPs and reference alleles
+as the data used to perform the PCA (with `do_loadings=TRUE`)
+
+```{r}
+# Rerun flashpca, this time with loadings
+f2 <- flashpca(fn, do_loadings=TRUE)
+
+# Simulate a new dataset X2
+n2 <- 100
+m <- length(f2$center)
+X2 <- matrix(rbinom(n2 * m, 2, prob=0.3), n2, m)
+
+# Project new data onto existing PCs, using original means and stdevs
+P2 <- project(X2, loadings=f2$loadings,
+   orig_mean=f2$center, orig_sd=f2$scale)
+head(P2$projection)
+```
+
+##### For new PLINK data
+
+```{r}
+# Project the same data onto itself, just for the sake of illustration
+ref <- hm3.chr1$bim[,5]
+names(ref) <- hm3.chr1$bim[,2]
+P3 <- project(fn, loadings=f2$loadings,
+   orig_mean=f2$center, orig_sd=f2$scale, ref_alleles=ref)
+head(P3$projection)
+par(pty="s")
+plot(P3$projection[, 1:2], col=factor(hm3.chr1$population$population),
+   xlab="PC1", ylab="PC2")
+```
+
+**Note**: `project` will check that the SNP ids and reference alleles match, but
+will not attempt to flip reference alleles or re-order SNPs; this can be done
+with PLINK.
 
 #### References
 
@@ -98,7 +175,8 @@ Hotelling's canonical correlation analysis (CCA).
 
 $$\arg \max_{u, v} u^T \Sigma_{XY} v$$
 $$\mbox{ s.t. } ||u||_2^2=1, ||v||_2^2=1, ||u||_1\le s_u, ||v||_1\le s_v,$$
-where $\Sigma_{XY}$ is the covariance matrix of $X$ and $Y$, $u$ and $v$ are the left and right canonical vectors respectively, and $s_u$ and $s_v$ are constraints on the $L_1$ norms of these vectors, respectively.
+where $\Sigma_{XY}$ is the covariance matrix of $X$ and $Y$, $u$ and $v$ are the left and right canonical vectors respectively, and $s_u$ and $s_v$ are constraints on the $L_1$ norms of these vectors, respectively. In `flashpcaR`, we use the Lagrangian form (iterative soft thresholding), which 
+requires specifying the non-negative penalties for $X$ (`lambda1`) and for $Y$ (`lambda2`).
 
 #### Example with simulated data
 
@@ -136,8 +214,14 @@ for the Y penalties.
 # Plot cross-validation results for dimension 1
 plot(cv3, dim=1)
 ```
-Based on these results, we would select a model with ~1000 SNPs; the choice of 
-penalty for Y does not seem to matter much here.
+
+Based on these results, we would select a penalty corresponding to
+model with 800-1000 SNPs; the choice of penalty for Y
+does not seem to matter too much here.
+
+`scca` can also be called on a PLINK dataset, however, cross-validation
+is not currently supported for PLINK data (you will need to split
+the data manually using PLINK).
 
 #### References
 
@@ -175,6 +259,15 @@ if(requireNamespace("qqman", quietly=TRUE)) {
 } else {
    plot(I(-log10(P)) ~ V4, data=d)
 }
+```
+
+```{r}
+# Can also be called directly on PLINK data
+f5 <- ucca(fn, Y, standx="binom2", standy="sd")
+head(f5$result)
+
+# Same result
+mean((f4$result[, "Fstat"] - f5$result[, "Fstat"])^2)
 ```
 
 #### References
