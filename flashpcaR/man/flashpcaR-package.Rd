@@ -5,13 +5,14 @@
 \alias{flashpcaR}
 \alias{flashpcaR-package}
 \title{flashpcaR
-An R interface to flashpca for fast principal component analysis.}
+An R interface to FlashPCA for fast principal component analysis and
+related analyses.}
 \description{
 \tabular{ll}{
-Package: \tab flashpca\cr
+Package: \tab flashpcaR\cr
 Type: \tab Package\cr
-Version: \tab 1.2.5\cr
-Date: \tab 2015-12-01\cr
+Version: \tab 2.0\cr
+Date: \tab 2016-12-15\cr
 License: \tab GPL (>= 3)\cr
 }
 }

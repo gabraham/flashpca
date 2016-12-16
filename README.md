@@ -1,21 +1,18 @@
-# flashpca
+# FlashPCA2
 
-flashpca performs fast principal component analysis (PCA) of single nucleotide
+FlashPCA performs fast principal component analysis (PCA) of single nucleotide
 polymorphism (SNP) data, similar to smartpca from EIGENSOFT
 (http://www.hsph.harvard.edu/alkes-price/software/) and shellfish
-(https://github.com/dandavison/shellfish). flashpca is based on the randomized
-PCA algorithm (Alg. 3) of Halko et al. 2011 (http://arxiv.org/abs/1007.5510).
+(https://github.com/dandavison/shellfish). FlashPCA is based on the
+[https://github.com/yixuan/spectra/](Spectra) library.
 
 Main features:
 
-* Fast: PCA of 15,000 individuals over 43,000 SNPs in &lt;10 min
- (multi-threaded)
+* Fast: partial PCA (_k_=20 dimensions) of 500,000 individuals with 100,000 SNPs in &lt;6h using 2GB RAM
+* Scalable: memory requirements are bounded, scales to at least 1M individuals
+* Highly accurate results 
 * Natively reads PLINK bed/bim/fam files
-* Easy to use
-* Two variants: the original high-memory version, and a slightly slower
-   version that uses less RAM (proportional to data size), useful for large datasets with many samples
-* flashpcaR, an R version is [available](#R)
-* Experimental: [kernel PCA](#kpca), [sparse CCA](#scca)
+* Easy to use; can be called entirely within R (package [flashpcaR](#flashpcaR))
 
 ## Help
 
@@ -26,10 +23,12 @@ Google Groups: [https://groups.google.com/forum/#!forum/flashpca-users](https://
 Gad Abraham, gad.abraham@unimelb.edu.au
 
 ## Citation
-G. Abraham and M. Inouye, Fast Principal Component Analysis of Large-Scale
-Genome-Wide Data, PLos ONE 9(4): e93766. [doi:10.1371/journal.pone.0093766](http://www.plosone.org/article/info:doi/10.1371/journal.pone.0093766)
 
-(preprint: http://biorxiv.org/content/early/2014/03/11/002238)
+version &geq;2: G. Abraham, Y. Qiu, and M. Inouye, ``FlashPCA2: principal
+component analysis of biobank-scale genotype datasets'', bioRxiv
+
+version &leq;1.2.6: G. Abraham and M. Inouye, ``Fast Principal Component
+Analysis of Large-Scale Genome-Wide Data'', PLOS ONE 9(4): e93766. [doi:10.1371/journal.pone.0093766](http://www.plosone.org/article/info:doi/10.1371/journal.pone.0093766)
 
 ## License
 This program is free software; you can redistribute it and/or modify
@@ -43,21 +42,7 @@ Portions of this code are based on SparSNP
 (https://github.com/gabraham/SparSNP), Copyright (C) 2011-2012 Gad Abraham
 and National ICT Australia (http://www.nicta.com.au).
 
-## Note on running flashpca large datasets
-
-* As of v1.2.5, flashpca supports loading PLINK datasets limited only by RAM
-  (fixing an overflow bug in previous versions which lead to reading an incorrect
-  number of SNPs, see [issue #9](https://github.com/gabraham/flashpca/issues/9)).
-* For example, we have successfully run flashpca on Linux on a dataset consisting of
-  160,000 individuals and 139,000 SNPs, requiring 166GB RAM, in 3-4 hours
-  (depending on required accuracy of the solution).
-* To analyze large datasets, use the option <code>--mem low</code>
-* Future versions of flashpca will aim to reduce the memory requirements by not loading
-  all data into RAM at once.
-* Note: the R package _flashpcaR_ is limited by the maximum matrix dimensions in R, and
-  running it on such large data may not be supported or practical.
-
-## Download statically linked version (stable versions only)
+## Download statically linked version (stable versions only, not for alpha versions)
 
 * We recommend compiling from source for best performance.
 * To get the devel version, you'll need to compile yourself
@@ -65,20 +50,12 @@ and National ICT Australia (http://www.nicta.com.au).
 See [Releases](https://github.com/gabraham/flashpca/releases) for statically-linked version for Linux x86-64 &ge; 2.6.15
 
 ### System requirements
-* 64-bit Linux or Mac ([flashpcaR](#R) supported on Linux, Mac, and Windows)
-* Using the original version (`--mem high`, the default), large datasets will require
-   large amounts of RAM, e.g. for 15,000 individuals (43K SNPs) you'll need
-   about 14GB RAM, for 150,000 individuals (43K SNPs) you'll need about 145GB
-   RAM (estimated using https://github.com/jhclark/memusg), roughly 8 &times;
-   min(n <sup>2</sup> &times; p + n &times; p, p <sup>2</sup> &times; n + n &times; p\)
-   bytes, where p is number of SNPs and n is number of individuals.
-   Using `--mem low`, you will only need about 8 &times; n &times; p bytes of
-   RAM.
+* 64-bit Linux or Mac
 
 ## Building from source
 
 To get the latest version:
-   ```
+   ```bash
    git clone git://github.com/gabraham/flashpca
    ```
 
@@ -90,55 +67,52 @@ On Linux:
 * g++ compiler
 * Eigen (http://eigen.tuxfamily.org), v3.2 or higher
    (if you get a compile error ``error: no match for 'operator/' in '1 / ((Eigen::MatrixBase...`` you'll need a more recent Eigen)
-* Boost (http://www.boost.org/), specifically boost_system/boost_system-mt,
-   boost_iostreams/boost_iostreams-mt,
-   boost_filesystem/boost_filesystem-mt,
-   boost_program_options/boost_program_options-mt.
+* Spectra (https://github.com/yixuan/spectra/)
+* Boost (http://www.boost.org/), specifically boost_program_options/boost_program_options-mt.
 * libgomp for openmp support
 * Recommended: plink2 (https://www.cog-genomics.org/plink2) for SNP
    thinning
 
 On Mac:
 
-* Homebrew (http://brew.sh) to install gcc/g++ and boost
+* Homebrew (http://brew.sh) to install boost
 * Eigen, as above
-* Set CXX to whatever g++ version you're using before calling make, e.g.:
-```
-export CXX=/usr/local/bin/g++-4.7
-```
+* Spectra, as above
+* clang C++ compiler
 
 ### To install
 
 The [Makefile](Makefile) contains three variables that need to be set according to where you have installed the Eigen
 headers and Boost headers and libraries on your system. The default values for these are: 
-   ```
+   ```bash
    EIGEN_INC=/usr/local/include/eigen
    BOOST_INC=/usr/local/include/boost
    BOOST_LIB=/usr/local/lib
+   SPECTRA_INC=spectra
    ```
    
  If your system has these libraries and header files in those locations, you can simply run make:
-   ```
+   ```bash
    cd flashpca
    make all
    ```
    
- If not, you can override their values on the make command line. For example, if you have the Eigen source in `/opt/eigen-3.2.5` and Boost 1.59.0 installed into `/opt/boost-1.59.0`, you could run: 
-   ```
+ If not, you can override their values on the make command line. For example,
+ if you have the Eigen source in `/opt/eigen-3.2.5`, spectra headers in
+ `/opt/spectra`, and Boost 1.59.0 installed into `/opt/boost-1.59.0`, you could run: 
+   ```bash
    cd flashpca
-   make all EIGEN_INC=/opt/eigen-3.2.5 BOOST_INC=/opt/boost-1.59.0/include BOOST_LIB=/opt/boost-1.59.0/lib
+   make all EIGEN_INC=/opt/eigen-3.2.5 \
+      BOOST_INC=/opt/boost-1.59.0/include \
+      BOOST_LIB=/opt/boost-1.59.0/lib \
+      SPECTRA_INC=/opt/spectra
    ```
  
-Note: the compilation process will first look for a local directory named
-Eigen. It should contain the file signature_of_eigen3_matrix_library. Next,
-it will look for the directory /usr/include/eigen3 (Debian/Ubuntu location
-for Eigen), although those available through apt-get tend to be older versions.
-
 ## Quick start
 
 First thin the data by LD (highly recommend
 [plink2](https://www.cog-genomics.org/plink2) for this):
-   ```
+   ```bash
    plink --bfile data --indep-pairwise 1000 50 0.05 --exclude range exclusion_regions_hg19.txt
    plink --bfile data --extract plink.prune.in --make-bed --out data_pruned
    ```
@@ -153,55 +127,35 @@ where [exclusion_regions_hg19.txt](exclusion_regions_hg19.txt) contains:
 number of SNPs for you dataset, 10,000-50,000 is usually enough.)
 
 To run on the pruned dataset:
-   ```
+   ```bash
    ./flashpca --bfile data_pruned
    ```
 
-We highly recommend using multi-threading, to run in multi-threaded mode with 8 threads:
-   ```
-   ./flashpca --bfile data_pruned --numthreads 8
-   ```
-
-Eigensoft-scaling of genotypes (default):
-   ```
-   ./flashpca --stand binom ...
-   ```
-
-To use genotype centering (compatible with R prcomp):
-   ```
-   ./flashpca --stand center ...
-   ```
-
-To use the low-memory version:
-   ```
-   ./flashpca --mem low ...
-   ```
-
 To append a custom suffix '_mysuffix.txt' to all output files:
-   ```
+   ```bash
    ./flashpca --suffix _mysuffix.txt ...
    ```
 
 To see all options
-   ```
+   ```bash
    ./flashpca --help 
    ```
 
 ## Output
 
-flashpca produces the following files:
+By default, flashpca produces the following files:
 
 * `eigenvectors.txt`: the top k eigenvectors of the covariance
-   X X<sup>T</sup> / (n - 1), same as matrix U from the SVD of the genotype matrix
-   X=UDV<sup>T</sup>.
+   X X<sup>T</sup> / p, same as matrix U from the SVD of the genotype matrix
+   X/sqrt(p)=UDV<sup>T</sup> (where p is the number of SNPs).
 * `pcs.txt`: the top k principal components (the projection of the data on the
 eigenvectors, scaled by the eigenvalues,  same as XV (or UD). This is the file
 you will want to plot the PCA plot from.
-* `eigenvalues.txt`: the top k eigenvalues of X X<sup>T</sup> / (n - 1). These are the
+* `eigenvalues.txt`: the top k eigenvalues of X X<sup>T</sup> / p. These are the
     square of the singular values D (square of sdev from prcomp).
 * `pve.txt`: the proportion of total variance explained by *each of the top k*
    eigenvectors (the total variance is given by the trace of the covariance
-   matrix X X<sup>T</sup> / (n - 1), which is the same as the sum of all eigenvalues).
+   matrix X X<sup>T</sup> / p, which is the same as the sum of all eigenvalues).
    To get the cumulative variance explained, simply
    do the cumulative sum of the variances (`cumsum` in R).
 
@@ -211,24 +165,43 @@ You must perform quality control using PLINK (at least filter using --geno, --mi
 --maf, --hwe) before running flashpca on your data. You will likely get
 spurious results otherwise.
 
-## Experimental features
+## Projection of new samples onto PCs
 
-### <a name="kpca"></a>Kernel PCA
+flashpca can project new samples onto existing principal components:
+   ```bash
+   ./flashpca --bfile newdata --project --inmeansd meansd.txt \
+      --outproj projections.txt --inload loadings.txt -v
+   ```
 
-* flashpca now experimentally supports low-rank [**kernel
-PCA**](http://en.wikipedia.org/wiki/Kernel_principal_component_analysis) using an RBF
-(Gaussian) kernel K(x, x') = exp(-||x - x'||<sub>2</sub><sup>2</sup> / sigma<sup>2</sup>) (specify using `--kernel
-rbf`).
-* The kernel is double-centred.
-* The default kernel parameter sigma is the median of the pairwise Euclidean distances of a random subset
-   of samples (controlled by `--rbfsample`, default=min(1000, n)), and can also
-   be specified using `--sigma`.
-* The rest of the options are the same as for standard PCA.
-* Currently, the proportion of variation explained is not computed for kPCA.
+To project data, you must ensure:
+
+* The old and new PLINK files contain _exactly_ the same SNPs and alleles (you
+can use `plink --reference-allele ...` to ensure consistent allele ordering).
+* You have previously run flashpca and saved the SNP loadings
+(`--outload loadings.txt`) and their means and standard deviations
+(`--outmeansd meansd.txt`).
+* You are using the same standardisation (`--standx`) for the old and new
+data, as well as the same divisor (`--div`; by default `p`). 
+
+
+## Checking accuracy of results
+
+flashpca can check how accurate a decomposition is, where accuracy is defined
+as || X X<sup>T</sup> / p - U D<sup>2</sup> ||<sub>F</sub><sup>2</sup> / (n
+&times; k).
+
+This is done using
+
+   ```bash
+   ./flashpca --bfile data --check \
+   --outvec eigenvectors.txt --outval eigenvalues.txt
+   ```
+
+The final mean squared error should be low (e.g., <1e-8).
 
 ### <a name="scca"></a>Sparse Canonical Correlation Analysis (SCCA)
 
-* flashpca now experimentally supports sparse CCA
+* flashpca now supports sparse CCA
    ([Parkhomenko 2009](http://dx.doi.org/10.2202/1544-6115.1406),
    [Witten 2009](http://dx.doi.org/10.1093/biostatistics/kxp008)),
    between SNPs and multivariate phenotypes.
@@ -238,11 +211,9 @@ rbf`).
    the FAM file*.
 * The L1 penalty for the SNPs is `--lambda1` and for the phenotypes is
  `--lambda2`.
-* Two versions: low memory (`--mem low`, roughly 8 x \#Samples x (\#SNPs + \#Phenotypes))
-   and high memory (`--mem high`, roughly 8bytes &times; \#SNPs &times; \#Phenotypes).
 
 #### Quick example
-   ```
+   ```bash
    ./flashpca --scca --bfile data --pheno pheno.txt \
    --lambda1 1e-3 --lambda2 1e-2 --ndim 10 --numthreads 8
    ```
@@ -261,80 +232,120 @@ of the canonical components cor(X U, Y V) in independent test data.
    parallel](http://www.gnu.org/software/parallel) is recommended)
 * R code for plotting the correlations [scca_pred.R](scca_pred.R)
 
-# <a name="R"></a>flashpcaR: flashpca in R
+# <a name="flashpcaR"></a>flashpcaR: flashpca in R
 
-flashpca is now available as an independent R package.
+FlashPCA can be called (almost) entirely within R.
 
+## Installation
 
-## Prebuilt R packages
-
-Ssee [Releases](https://github.com/gabraham/flashpca/releases) for prebuilt
-Mac/Windows binary packages and a source package for Linux.
-
-## Building from source
-
-### Requirements
-
-* R packages: Rcpp, RcppEigen, BH
-* C++ compiler
-
-As of version v1.2.5, flashpcaR will compile on Mac with either clang++ or g++.
-However, OpenMP multi-threading won't work with clang (see
-https://github.com/gabraham/flashpca/issues/5).
-
-### Several ways to install from source:
-
-* If you downloaded the Release source code:
-   ```
-   R CMD INSTALL flashpcaR_1.2.5.tar.gz
+   ```R
+   devtools::install_github("gabraham/flashpca/flashpcaR")
    ```
 
-* To install the latest (potentially unstable) version on Mac or Linux,
-   you can also use devtools::install_github:
-   ```
-   library(devtools)
-   install_github("gabraham/flashpca/flashpcaR")
-   ```
+Depends on packages:
+   
+   * [Rcpp](https://cran.r-project.org/package=Rcpp) (>= 0.11.1)
+   * [RcppEigen](https://cran.r-project.org/package=RcppEigen) (>= 0.3.2.5.1)
+   * [BH](https://cran.r-project.org/package=BH)
+   * [RSpectra](https://cran.r-project.org/package=RSpectra)
+   * [abind](https://cran.r-project.org/package=abind)
 
-* Alternatively, after cloning the git archive, install using:
-   ```
-   R CMD INSTALL flashpcaR
-   ```
-
+Suggests:
+   
+   * [foreach](https://cran.r-project.org/package=foreach)
+   * [testthat](https://cran.r-project.org/package=testthat) (for unit tests)
+   * [knitr](https://cran.r-project.org/package=knitr)
+   * [rmarkdown](https://cran.r-project.org/package=rmarkdown)
+   * [qqman](https://cran.r-project.org/package=qqman)
 
 ## PCA
+   
+### On a numeric matrix
 
-Example usage, assuming `X` is a 100-sample by 1000-SNP matrix in dosage
-coding (0, 1, 2) (an actual matrix, not a path to PLINK data)
-   ```
+   ```R
+   data(hm3.chr1)
+   X <- scale2(hm3.chr1$bed)
    dim(X)
-   [1]  100 1000
-   library(flashpcaR)
-   r <- flashpca(X, do_loadings=TRUE, verbose=TRUE, stand="binom", ndim=10,
-   nextra=100)
+   f <- flashpca(X, ndim=10, scale="none")
    ```
 
-PLINK data can be loaded into R either by recoding the data into raw format (`recode A`) or using package [plink2R](https://github.com/gabraham/plink2R).
+### On PLINK data
 
-Output:
-   * `values`: eigenvalues
-   * `vectors`: eigenvectors
-   * `projection`: projection of sample onto eigenvectors (X V)
-   * `loadings`: SNP loadings, if using a linear kernel
-
-## Sparse CCA
-
-Sparse CCA of matrices X and Y, with 5 components, penalties lambda1=0.1 and lambda2=0.1:
-
-   ```
-   dim(X)
-   [1]  100 1000
-   dim(Y)
-   [1]  100 50
-   r <- scca(X, Y, ndim=5, lambda1=0.1, lambda2=0.1)
+You can supply a path to a PLINK dataset (with extensions .bed/.bim/.fam, all
+lowercase):
+   ```R
+   fn <- gsub("\\.bed", "",
+      system.file("extdata", "data_chr1.bed", package="flashpcaR"))
+   fn
+   f <- flashpca(fn, ndim=10)
    ```
 
-# LD-pruned HapMap3 example data
+## UCCA (aka univariate canonical correlation analysis; aka ANOVA of each SNP on multiple phenotypes)
+
+### On a numeric matrix
+
+Use HapMap3 genotypes, standardise them, simulate some phenotypes, and test each
+SNP for association with all phenotypes:
+
+   ```R
+   data(hm3.chr1)
+   X <- scale2(hm3.chr1$bed)
+   k <- 10
+   B <- matrix(rnorm(ncol(X) * k), ncol=k)
+   Y <- X %*% B + rnorm(nrow(X) * k)
+   f1 <- ucca(X, Y, standx="none", standy="sd")
+   head(f1$result)
+   ```
+
+### On PLINK data
+
+   ```R
+   fn <- gsub("\\.bed", "",
+      system.file("extdata", "data_chr1.bed", package="flashpcaR"))
+   fn
+   f2 <- ucca(fn, Y, standx="binom2", standy="sd")
+   head(f2$result)
+   ```
+
+## Sparse Canonical Correlation Analysis (SCCA)
+
+### On a numeric matrix
+
+Use HapMap3 genotypes, standardise them, simulate some phenotypes, and run
+sparse canonical correlation analysis over all SNPs and all phenotypes:
+
+   ```R
+   data(hm3.chr1)
+   X <- scale2(hm3.chr1$bed)
+   k <- 10
+   B <- matrix(rnorm(ncol(X) * k), ncol=k)
+   Y <- X %*% B + rnorm(nrow(X) * k)
+   f1 <- scca(X, Y, standx="none", standy="sd", lambda1=1e-2, lambda2=1e-3)
+   diag(cor(f1$Px, f1$Py))
+
+   # 3-fold cross-validation
+   cv1 <- cv.scca(X, Y, standx="sd", standy="sd",
+      lambda1=seq(1e-3, 1e-1, length=10), lambda2=seq(1e-6, 1e-3, length=5),
+      ndim=3, nfolds=3)
+
+   # Plot the canonical correlations over the penalties, for the 1st dimension
+   plot(cv1, dim=1)
+   ```
+
+### On PLINK data
+
+   ```R
+   fn <- gsub("\\.bed", "",
+      system.file("extdata", "data_chr1.bed", package="flashpcaR"))
+   fn
+   f2 <- scca(fn, Y, standx="binom2", standy="sd", lambda1=1e-2, lambda2=1e-3)
+   diag(cor(f2$Px, f2$Py))
+
+   # Cross-validation isn't yet supported for PLINK data
+
+   ```
+
+# LD-pruned HapMap3 and 1000Genomes example data
 
 See the [HapMap3](HapMap3) directory
 

@@ -2,32 +2,26 @@
 % Please edit documentation in R/flashpca.R
 \name{flashpca}
 \alias{flashpca}
-\title{Principal Component Analysis using flashpca}
+\title{Principal Component Analysis using FlashPCA}
 \usage{
-flashpca(X, method = c("eigen", "svd"), stand = c("binom", "sd", "center",
-  "none"), transpose = NULL, ndim = 10, nextra = 10, maxiter = 100,
-  tol = 1e-04, seed = 1, kernel = c("linear", "rbf"), sigma = NULL,
-  rbf_center = TRUE, rbf_sample = 1000, save_kernel = FALSE,
-  do_orth = TRUE, verbose = FALSE, num_threads = 1, do_loadings = FALSE,
-  mem = c("low", "high"), check_geno = TRUE, return_scale = TRUE)
+flashpca(X, ndim = 10, stand = c("binom2", "binom", "sd", "center", "none"),
+  divisor = c("p", "n", "none"), maxiter = 100, tol = 1e-04, seed = 1,
+  block_size = 1000, verbose = FALSE, do_loadings = FALSE,
+  check_geno = TRUE, return_scale = TRUE)
 }
 \arguments{
-\item{X}{A numeric matrix to perform PCA on. X must not have any NAs.}
-
-\item{method}{A character string indicating which decomposition to use, one of "eigen"
-(eigen-decomposition of X'X / (n - 1)) or "svd" (SVD of X).}
-
-\item{stand}{A character string indicating how to standardize X before PCA,
-one of "binom" (Eigenstrat-style), "sd" (zero-mean unit-variance), "center"
-(zero mean), or "none".}
-
-\item{transpose}{Logical. If X is transposed (samples are on columns rather
-than rows), set to \code{TRUE}.}
+\item{X}{A numeric matrix to perform PCA on, or a
+character string pointing to a PLINK dataset.}
 
 \item{ndim}{Integer. How many dimensions to return in results.}
 
-\item{nextra}{Integer. How many extra dimensions to use for doing PCA.
-Increasing this will increase accuracy.}
+\item{stand}{A character string indicating how to standardise X before PCA,
+one of "binom" (old Eigenstrat-style), "binom2" (new Eigenstrat-style),
+"sd" (zero-mean unit-variance), "center" (zero mean), or "none".}
+
+\item{divisor}{A character string indicating whether to divide the
+eigenvalues by number of columns of X ("p"), the number of 
+rows of X minus 1 ("n1") or none ("none").}
 
 \item{maxiter}{Integer. How many iterations to use in PCA.}
 
@@ -35,32 +29,11 @@ Increasing this will increase accuracy.}
 
 \item{seed}{Integer. Seed for random number generator.}
 
-\item{kernel}{A character string, one of "linear" or "rbf", indicating whether
-to do standard (linear) PCA or use a radial basis function (RBF) kernel.}
-
-\item{sigma}{numeric. The sigma parameter for the RBF kernel.}
-
-\item{rbf_center}{Logical. Whether to center the data in feature space.}
-
-\item{rbf_sample}{integer. How many observations will be randomly sampled to
-determine the default RBF sigma (unless sigma is specified).}
-
-\item{save_kernel}{logical. Save the kernel to disk? (hardcoded as "kernel.txt")}
-
-\item{do_orth}{logical. Whether to re-orthogonoalize during each PCA step,
-tends to increase accuracy.}
+\item{block_size}{Integer. Block size for PCA on PLINK files.}
 
 \item{verbose}{logical. More verbose output.}
 
-\item{num_threads}{Integer. How many OpenMP threads to use, if compiled with
-OpenMP support.}
-
 \item{do_loadings}{Logical. Whether to compute loadings (matrix V from SVD).}
-
-\item{mem}{A character string, one of "high" or "low". "High" requires
-computing the X' X / (n - 1) covariance matrix which is memory intensive but fast if
-using multiple threads. "Low" does not compute X' X and uses less memory,
-but it tends to be slightly slower.}
 
 \item{check_geno}{Logical. Whether to explicitly check if the matrix X
 contains values other than {0, 1, 2}, when stand="binom". This can be
@@ -72,66 +45,69 @@ deviations used in standardizing the matrix X.}
 }
 \value{
 \code{flashpca} returns a list containing the following components:
-
 \describe{  
-   \item{values}{a numeric vector. The eigenvalues of X' X / (n - 1).}
-   \item{vectors}{a numeric matrix. The eigenvectors of X' X (n - 1), i.e., U from SVD.}
-   \item{projection}{a numeric matrix. Equivalent to X V.}
-   \item{loadings}{a numeric matrix. The matrix of variable loadings, i.e., V
+   \item{values:}{a numeric vector. The eigenvalues of X X' / m.}
+   \item{vectors:}{a numeric matrix. The eigenvectors of X X' / m.}
+   \item{projection:}{a numeric matrix. Equivalent to X V.}
+   \item{loadings:}{a numeric matrix. The matrix of variable loadings, i.e., V
    from SVD.}
-   \item{scale}{a list of two elements, ``center'' and ''scale'', which was
- used to standardize the input matrix X.}
+   \item{scale:}{a list of two elements, ``center'' and ''scale'', which was
+ used to standardise the input matrix X.}
 }
 }
 \description{
-Principal Component Analysis using flashpca
+Principal Component Analysis using FlashPCA
+}
+\details{
+The default decomposition is of X X' / m, where m is the number of SNPs
+   (the denominator can be changed using the 'divisor' argument).
+
+   The data is standardised by default. \code{stand = "binom"} uses the old Eigensoft
+   (Price 2006) formulation of
+       \deqn{p_j = sum_{i=1}^n X_{i,j} / (2 * n)}
+       \deqn{mean_j = 2 * p}
+       \deqn{sd_j = sqrt(p * (1 - p)),}
+   where j is the index for the SNP and i is the index for the sample.
+   Alternatively, `stand = "binom2"' uses the newer formula, which is
+   similar to the above except for
+       \deqn{sd_j = sqrt(2 * p * (1 - p)).}
 }
 \examples{
 
 set.seed(123)
 
-## Toy example
-n <- 200
-p <- 500
-x <- matrix(rnorm(n * p), n, p)
-ndim <- 20
-f1 <- flashpca(x, stand="sd", ndim=ndim, method="eigen")
-f2 <- flashpca(x, stand="sd", ndim=ndim, method="svd")
+#######################
+## HapMap3 chr1 example
+data(hm3.chr1)
+ndim <- 10
+X <- scale2(hm3.chr1$bed)
+f1 <- flashpca(X, ndim=ndim, stand="none")
 
-r <- prcomp(x, center=TRUE, scale.=TRUE)
+# prcomp's is too slow for this example
+r <- eigen(tcrossprod(X) / ncol(X), symmetric=TRUE)
 
 ## Compare eigenvalues
-eval <- cbind(r$sdev[1:ndim]^2, f1$values, f2$values)
-cor(eval)
-mean((eval[,1] - eval[,2])^2)
-mean((eval[,1] - eval[,3])^2)
-
-## Compare eigenvectors
-diag(cor(r$x[, 1:ndim], f1$projection))
-diag(cor(r$x[, 1:ndim], f2$projection))
-
-\dontrun{
-## First get data from
-## https://github.com/gabraham/flashpca/blob/devel/HapMap3/data.RData
-##
-## Missing genotypes have been imputed randomly according to genotype
-## proportions in each SNP.
-load("data.RData")
-ndim <- 20
-system.time({
-   f <- flashpca(hapmap3$bed, stand="center", ndim=ndim, nextra=50)
-})
-system.time({
-   r <- prcomp(hapmap3$bed)
-})
-
-eval <- cbind(r$sdev[1:ndim]^2, f$values)
+eval <- cbind(r$values[1:ndim], f1$values)
 cor(eval)
 mean((eval[,1] - eval[,2])^2)
 
 ## Compare eigenvectors
-diag(cor(r$x[, 1:ndim], f$projection))
-}
+diag(cor(r$vectors[, 1:ndim], f1$vectors))
+
+####################################
+# HapMap3 chr1 example, PLINK format
+
+bedf <- gsub("\\\\.bed", "",
+   system.file("extdata", "data_chr1.bed", package="flashpcaR"))
+
+f2 <- flashpca(bedf, ndim=ndim) 
+
+eval <- cbind(r$values[1:ndim], f2$values)
+cor(eval)
+mean((eval[,1] - eval[,2])^2)
+
+## Compare eigenvectors
+diag(cor(r$vectors[, 1:ndim], f2$vectors))
 
 }
 

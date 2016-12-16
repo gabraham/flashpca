@@ -1,0 +1,276 @@
+---
+title: "flashpcaR"
+author: "Gad Abraham"
+date: "`r Sys.Date()`"
+output:
+   rmarkdown::html_document:
+      highlight: tango
+      keep_md: true
+      toc: true
+vignette: >
+   %\VignetteIndexEntry{flashpcaR}
+   %\VignetteEngine{knitr::rmarkdown}
+   %\VignetteEncoding{UTF-8}
+---
+
+```{r, echo=FALSE, cache=FALSE}
+options(width=80)
+```
+
+## Introduction
+
+`flashpcaR` is an R package wrapper for `FlashPCA`, allowing large-scale analyses
+on R numeric matrices or PLINK datasets. `flashpcaR` implements
+
+1. Principal component analysis (PCA). The randomised algorithm used
+in FlashPCA 1 (Abraham & Inouye, 2014) has been replaced with the
+[Spectra](https://github.com/yixuan/spectra/) / [RSpectra](https://cran.r-project.org/package=RSpectra) library,
+making it faster and more robust. `flashpcaR` 
+enables PCA of datasets much larger than would fit in RAM (e.g. >1M
+individuals with 100,000 SNPs), using bounded amounts of memory.
+
+2. Sparse canonical correlation analysis (SCCA) of large SNP datasets.
+
+3. Univariate canonical correlation analysis (UCCA, aka per-SNP ANOVA)
+of large SNP datasets; this is the MQFAM model from `plink.multivariate`.
+
+## Examples
+
+We will use chromosome 1 SNPs from the HapMap3 project as a running example.
+
+
+```{r}
+library(flashpcaR)
+data(hm3.chr1)
+```
+
+Almost all analyses in `flashpcaR` can be run on either a numeric matrix or on a PLINK dataset (bed,bim,fam).
+
+```{r}
+# Standardise the genotypes, impute to mean (=0)
+X <- scale2(hm3.chr1$bed)
+```
+
+```{r}
+# Find the path to the PLINK data
+fn <- gsub("\\.bed", "",
+   system.file("extdata", "data_chr1.bed", package="flashpcaR"))
+```
+
+### Principal component analysis (PCA)
+
+Principal component analysis (PCA) is based on the singular-value decomposition
+of the the matrix $X$
+$$X = U D V^T,$$
+where $U$ are the left eigenvectors, $D$ is the diagonal matrix of singular values, and $V$ are the right eigenvectors (also called loadings). PCA can also be done using the eigen-decomposition of $X X^T$
+$$X X^T = U S U^T,$$ where $S=D^2$ is the diagonal matrix of eigenvalues.
+
+$X$ is usually centred (mean-subtracted) or standardised (mean subtracted, then divided by standard deviation) before PCA.
+
+#### PCA of SNP genotypes
+
+For PCA of SNP genotypes (at least in diploid organisms), the common standardisation is
+$$X_{ij}^{\prime} = \frac{X_{ij} - 2p_j}{\sqrt{2 p_j (1 - p_j)}},$$
+where $X_{ij}$ is the genotype (minor allele dosage $\{0, 1, 2\}$) for the $i$th individual and the $j$th SNP, and $p_j$ is the minor allele frequency (MAF) for the $j$th SNP. In addition, the eigenvalues are scaled by the number of SNPs $m$ (equivalent to performing the eigen-decomposition of $XX^T/m$).
+
+**Important**: prior to PCA of SNPs, it is highly recommended to
+
+1. Perform standard quality control in [PLINK](https://www.cog-genomics.org/plink2)
+(at least MAF and call rates `--maf`, `--geno`, `--mind`).
+
+2. Remove several regions such as HLA and chr8 inversions (https://github.com/gabraham/flashpca/blob/master/exclusion_regions_hg19.txt).
+
+3. Thin the SNPs by linkage disequilibrium (`plink --indep-pairwise`).
+
+Steps 2 and 3 can done as
+```
+plink --bfile data --indep-pairwise 1000 50 0.05 --exclude range exclusion_regions_hg19.txt
+plink --bfile data --extract plink.prune.in --make-bed --out data_pruned
+```
+assuming that `data` is your original PLINK dataset.
+
+#### PCA using a numeric matrix
+
+```{r}
+# X has already been standardised using scale2
+f1 <- flashpca(X, stand="none")
+```
+
+#### PCA using a PLINK dataset
+
+```{r}
+f2 <- flashpca(fn)
+```
+
+#### Plot first two PCs
+
+```{r}
+par(mfrow=c(1, 2), pty="s")
+plot(f1$vectors[,1:2], xlab="PC1", ylab="PC2",
+   col=factor(hm3.chr1$population$population),
+   main="Numeric matrix")
+plot(f2$vectors[,1:2], xlab="PC1", ylab="PC2",
+   col=factor(hm3.chr1$population$population),
+   main="PLINK data")
+```
+
+#### Projecting new individuals onto the PCs
+
+Projection of a new set of individual X2 onto existing PCs can be done
+in two ways.
+
+##### For a new numeric matrix data X2
+
+Assuming X2 has the same SNPs and reference alleles
+as the data used to perform the PCA (with `do_loadings=TRUE`)
+
+```{r}
+# Rerun flashpca, this time with loadings
+f2 <- flashpca(fn, do_loadings=TRUE)
+
+# Simulate a new dataset X2
+n2 <- 100
+m <- length(f2$center)
+X2 <- matrix(rbinom(n2 * m, 2, prob=0.3), n2, m)
+
+# Project new data onto existing PCs, using original means and stdevs
+P2 <- project(X2, loadings=f2$loadings,
+   orig_mean=f2$center, orig_sd=f2$scale)
+head(P2$projection)
+```
+
+##### For new PLINK data
+
+```{r}
+# Project the same data onto itself, just for the sake of illustration
+ref <- hm3.chr1$bim[,5]
+names(ref) <- hm3.chr1$bim[,2]
+P3 <- project(fn, loadings=f2$loadings,
+   orig_mean=f2$center, orig_sd=f2$scale, ref_alleles=ref)
+head(P3$projection)
+par(pty="s")
+plot(P3$projection[, 1:2], col=factor(hm3.chr1$population$population),
+   xlab="PC1", ylab="PC2")
+```
+
+**Note**: `project` will check that the SNP ids and reference alleles match, but
+will not attempt to flip reference alleles or re-order SNPs; this can be done
+with PLINK.
+
+#### References
+
+1. Patterson et al 2006, `Population structure and eigenanalysis', _PLOS Genet_ 2(12):e190.
+2. Price et al 2006, `Principal components analysis corrects for stratification in genome-wide association studies', _Nat Genet_ 38(8):904-909.
+3. Novembre et al 2008, `Genes mirror geography within Europe', _Nature_ 456(7218):98-101.
+4. Price et al 2010, `New approaches to population stratification in genome-wide association studies',
+_Nat Rev Genet_ 11(7):459-463.
+5. Abraham & Inouye 2014, `Fast Principal Component Analysis of Large-Scale Genome-Wide Data',
+_PLOS ONE_  9(4): e93766.
+6. Galinsky et al 2016, `Fast Principal-Component Analysis Reveals Convergent Evolution of ADH1B in Europe and East Asia', _Am J Hum Genet_ 98(3):456-472.
+
+### Sparse canonical correlation analysis (SCCA)
+
+Sparse canonical correlation analysis (SCCA; Witten et al 2009, Parkhomenko et al 2009) is an extension of
+Hotelling's canonical correlation analysis (CCA).
+
+$$\arg \max_{u, v} u^T \Sigma_{XY} v$$
+$$\mbox{ s.t. } ||u||_2^2=1, ||v||_2^2=1, ||u||_1\le s_u, ||v||_1\le s_v,$$
+where $\Sigma_{XY}$ is the covariance matrix of $X$ and $Y$, $u$ and $v$ are the left and right canonical vectors respectively, and $s_u$ and $s_v$ are constraints on the $L_1$ norms of these vectors, respectively. In `flashpcaR`, we use the Lagrangian form (iterative soft thresholding), which 
+requires specifying the non-negative penalties for $X$ (`lambda1`) and for $Y$ (`lambda2`).
+
+#### Example with simulated data
+
+We will simulate $k=20$ phenotypes and perform SCCA using the chr1 genotypes.
+
+```{r}
+# Simulate phenotypes
+k <- 20
+n <- nrow(X)
+m <- ncol(X)
+B <- matrix(rnorm(m * k), m, k)
+Y <- X %*% B + rnorm(n * k)
+```
+
+We run SCCA over a 7x3 grid of penalties, infer 3 canonical dimensions
+```{r}
+# X has already been standardised; Y needs to be standardised
+f3 <- scca(X, Y, ndim=3, lambda1=seq(1e-3, 1e-2, length=7),
+   lambda2=seq(1e-3, 1e-2, length=3), standx="none", standy="sd")
+```
+
+We can also do cross-validation over the grid of penalties
+```{r}
+# 3-fold cross-validation over a grid of penalties
+cv3 <- cv.scca(X, Y, ndim=3, nfolds=3, lambda1=seq(1e-3, 5e-2, length=7),
+   lambda2=seq(1e-3, 1e-2, length=3), standx="none", standy="sd")
+```
+
+We can plot the cross-validated Pearson correlations (higher is better)
+for each pair of penalties on the grid; the x-axis shows the number
+of variables with non-zero weight selected in X (higher penalty leads
+to fewer SNPs with non-zero weight) and different lines are plotted
+for the Y penalties.
+```{r}
+# Plot cross-validation results for dimension 1
+plot(cv3, dim=1)
+```
+
+Based on these results, we would select a penalty corresponding to
+model with 800-1000 SNPs; the choice of penalty for Y
+does not seem to matter too much here.
+
+`scca` can also be called on a PLINK dataset, however, cross-validation
+is not currently supported for PLINK data (you will need to split
+the data manually using PLINK).
+
+#### References
+
+1. Witten et al 2009, `A penalized matrix decomposition, with applications to 
+sparse principal components and canonical correlation analysis', _Biostatistics_ 10:515-534.
+2. Witten et al 2009, `Extensions of Sparse Canonical Correlation Analysis with 
+Applications to Genomic Data'. _Stat Appl Genet Mol Biol_ 8(1), Article 29.
+2. Parkhomenko 2009, `Sparse canonical correlation analysis with application 
+to genomic data integration'. _Stat Appl Genet Mol Biol_ 8(1), Article 1.
+
+### Univariate canonical correlation analysis (UCCA, aka per-SNP ANOVA)
+
+`flashpcaR` also implements the so-called canonical correlation analysis of
+`plink.multivariate --mqfam` (https://genepi.qimr.edu.au/staff/manuelF/multivariate/main.html),
+which is a per-SNP analysis of association with multiple phenotypes.
+To maintain the same familiar CCA terminology but to distinguish this
+model from the standard CCA or the SCCA models,
+we name it _univariate_ CCA (UCCA); it is actually equivalent to an
+F-test for the linear regression of each SNP on the phenotypes.
+
+#### Example with simulated data
+
+Using the same simulated phenotypes from before, we can test the association
+of _each SNP_ with all phenotypes.
+
+```{r}
+# X has already been standardised; standardise Y too
+f4 <- ucca(X, Y, standx="none", standy="sd")
+head(f4$result)
+
+# Manhattan plot of the SNP associations
+d <- data.frame(hm3.chr1$bim, f4$result)
+if(requireNamespace("qqman", quietly=TRUE)) {
+   qqman::manhattan(d, chr="V1", bp="V4", p="P", snp="V2")
+} else {
+   plot(I(-log10(P)) ~ V4, data=d)
+}
+```
+
+```{r}
+# Can also be called directly on PLINK data
+f5 <- ucca(fn, Y, standx="binom2", standy="sd")
+head(f5$result)
+
+# Same result
+mean((f4$result[, "Fstat"] - f5$result[, "Fstat"])^2)
+```
+
+#### References
+
+1. Ferreira & Purcell 2009, `A multivariate test of association',
+_Bioinformatics_ 25(1):132-133.

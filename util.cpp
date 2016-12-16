@@ -8,15 +8,25 @@
  * All rights reserved.
  */
 
-#include "util.hpp"
+#include "util.h"
 
 using namespace Eigen;
 
-// Standardize matrix column-wise to zero mean and unit variance.
-// *Standardizes in place*
+bool show_timestamp;
+
+int inline is_nan(double x)
+{
+   return isnan(x);
+}
+
+// Standardise matrix column-wise to zero mean and unit variance.
+// *Standardises in place*
 // If a column is all zeros, it will remain zero.
 // Returns p by 2 matrix [mean, sd]
-MatrixXd standardize(MatrixXd& X, int method, bool verbose)
+//
+// Imputes missing values (nan) to the mean, where the mean was computed over
+// all non-missing values
+MatrixXd standardise(MatrixXd& X, int method, bool verbose)
 {
 #ifndef RENV
    std::cout.setf(std::ios_base::unitbuf);
@@ -26,43 +36,152 @@ MatrixXd standardize(MatrixXd& X, int method, bool verbose)
    VectorXd mean = MatrixXd::Zero(X.cols(), 1);
    VectorXd sd = MatrixXd::Ones(X.cols(), 1);
 
-   if(method == STANDARDIZE_SD)
+   // Just check for missing values and impute to mean
+   if(method == STANDARDISE_NONE || method == STANDARDISE_CENTER)
    {
-      verbose && STDOUT << timestamp() << " standardizing matrix (SD)" 
+      for(unsigned int j = 0 ; j < p ; j++)
+      {
+	 mean(j) = 0;
+	 unsigned int nj = 0;
+	 for(unsigned int i = 0 ; i < n ; i++)
+	 {
+	    double xij = X(i, j);
+	    if(!std::isnan(xij))
+	    {
+	       mean(j) += xij;
+	       nj++;
+	    }
+	 }
+	 mean(j) /= (double)nj;
+
+	 if(method == STANDARDISE_NONE)
+	 {
+	    for(unsigned int i = 0 ; i < n ; i++)
+	       if(std::isnan(X(i, j)))
+		  X(i, j) = mean(j);
+	 }
+	 else
+	 {
+	    for(unsigned int i = 0 ; i < n ; i++)
+	    {
+	       if(std::isnan(X(i, j)))
+		  X(i, j) = 0;
+	       else
+		  X(i, j) = X(i, j) - mean(j);
+	    }
+	 }
+      }
+   }
+   else if(method == STANDARDISE_SD)
+   {
+      verbose && STDOUT << timestamp() << "standardising matrix (SD)" 
 	 << " p: " << p << std::endl;
 
       for(unsigned int j = 0 ; j < p ; j++)
       {
-	 mean(j) = X.col(j).sum() / n;
-	 sd(j) = std::sqrt((X.col(j).array() - mean(j)).square().sum() / (n - 1));
-	 if(sd(j) > VAR_TOL)
-	    X.col(j) = (X.col(j).array() - mean(j)) / sd(j);
+	 double sum = 0;
+	 double sum_sqr = 0;
+	 unsigned int nj = 0;
+	 // https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance,
+	 // shifted_data_variance algorithm
+	 double K = 1; // arbitrary
+	 for(unsigned int i = 0 ; i < n ; i++)
+	 {
+	    double xij = X(i, j);
+	    if(!std::isnan(xij))
+	    {
+	       sum += xij - K;
+	       sum_sqr += (xij - K) * (xij - K);
+	       nj++;
+	    }
+	 }
+	 double varj = (sum_sqr - (sum * sum) / nj) / (nj - 1);
+	 mean(j) = (sum + K * nj) / nj;
+	 sd(j) = std::sqrt(varj);
+
+	 // Note: using the stdev estimated on the subset of non-missing
+	 // observations will make the final stdev of X(_, j) not b
+	 // exactly 1.
+	 for(unsigned int i = 0 ; i < n ; i++)
+	 {
+	    if(std::isnan(X(i, j)))
+	       X(i, j) = 0;
+	    else
+	       X(i, j) = (X(i, j) - mean(j)) / sd(j);
+	 }
       }
    }
    // Same as Price 2006 eqn 3
-   else if(method == STANDARDIZE_BINOM)
+   else if(method == STANDARDISE_BINOM || method == STANDARDISE_BINOM2)
    {
-      verbose && STDOUT << timestamp() << " standardizing matrix (BINOM)" 
+      double mult = method == STANDARDISE_BINOM ? 1 : 2;
+
+      verbose && STDOUT << timestamp() << "standardising matrix (BINOM/BINOM2)" 
 	 << " p: " << p << std::endl;
 
-      double r;
       for(unsigned int j = 0 ; j < p ; j++)
       {
-	 mean(j) = X.col(j).sum() / n;
-	 r = mean(j) / 2.0;
-	 sd(j) = sqrt(r * (1 - r));
-	 if(sd(j) > VAR_TOL)
-	    X.col(j) = (X.col(j).array() - mean(j)) / sd(j);
+	 double sum = 0;
+	 unsigned int nj = 0;
+	 for(unsigned int i = 0 ; i < n ; i++)
+	 {
+	    double xij = X(i, j);
+	    if(!std::isnan(xij))
+	    {
+	       sum += xij;
+	       nj++;
+	    }
+	 }
+	 mean(j) = sum / nj;
+	 double r = mean(j) / 2.0;
+	 sd(j) = std::sqrt(mult * r * (1.0 - r));
+
+	 // Note: using the stdev estimated on the subset of non-missing
+	 // observations will make the final stdev of X(_, j) not b
+	 // exactly 1.
+	 for(unsigned int i = 0 ; i < n ; i++)
+	 {
+	    if(std::isnan(X(i, j)))
+	       X(i, j) = 0;
+	    else
+	       X(i, j) = (X(i, j) - mean(j)) / sd(j);
+	 }
       }
    }
-   else if(method == STANDARDIZE_CENTER)
-   {
-      for(unsigned int j = 0 ; j < p ; j++)
-      {
-         mean(j) = X.col(j).sum() / n;
-	 X.col(j) = X.col(j).array() - mean(j);
-      }
-   }
+   //else if(method == STANDARDISE_CENTER)
+   //{
+   //   for(unsigned int j = 0 ; j < p ; j++)
+   //   {
+   //      double sum = 0;
+   //      double sum_sqr = 0;
+   //      unsigned int nj = 0;
+   //      double K = 0;
+   //      for(unsigned int i = 0 ; i < n ; i++)
+   //      {
+   //         double xij = X(i, j);
+   //         if(!std::isnan(xij))
+   //         {
+   //            sum += xij - K;
+   //            sum_sqr += (xij - K) * (xij - K);
+   //            nj++;
+   //         }
+   //      }
+   //      double varj = (sum_sqr - (sum * sum) / nj) / (nj - 1);
+   //      mean(j) = (sum + K * nj) / nj;
+   //      sd(j) = std::sqrt(varj);
+
+   //      // Note: using the stdev estimated on the subset of non-missing
+   //      // observations will make the final stdev of X(_, j) not b
+   //      // exactly 1.
+   //      for(unsigned int i = 0 ; i < n ; i++)
+   //      {
+   //         if(std::isnan(X(i, j)))
+   //            X(i, j) = 0;
+   //         else
+   //            X(i, j) = (X(i, j) - mean(j)) / sd(j);
+   //      }
+   //   }
+   //}
    else
       throw std::string("unknown standardization method");
 
@@ -73,8 +192,8 @@ MatrixXd standardize(MatrixXd& X, int method, bool verbose)
    return P;
 }
 
-// Expects a p times N matrix X, standardized in-place
-MatrixXd standardize_transpose(MatrixXd& X, int method, bool verbose)
+// Expects a p times N matrix X, standardised in-place
+MatrixXd standardise_transpose(MatrixXd& X, int method, bool verbose)
 {
 #ifndef RENV
    std::cout.setf(std::ios_base::unitbuf);
@@ -84,10 +203,10 @@ MatrixXd standardize_transpose(MatrixXd& X, int method, bool verbose)
    VectorXd mean = MatrixXd::Zero(p, 1);
    VectorXd sd = MatrixXd::Ones(p, 1);
 
-   if(method == STANDARDIZE_SD)
+   if(method == STANDARDISE_SD)
    {
       verbose && STDOUT << timestamp() 
-	 << " standardizing transposed matrix (SD)" 
+	 << " standardising transposed matrix (SD)" 
 	 << " p: " << p << std::endl;
 
       for(unsigned int j = 0 ; j < p ; j++)
@@ -99,10 +218,10 @@ MatrixXd standardize_transpose(MatrixXd& X, int method, bool verbose)
       }
    }
    // Same as Price 2006 eqn 3
-   else if(method == STANDARDIZE_BINOM)
+   else if(method == STANDARDISE_BINOM)
    {
       verbose && STDOUT << timestamp() 
-	 << " standardizing transposed matrix (BINOM)" 
+	 << " standardising transposed matrix (BINOM)" 
 	 << " p: " << p << std::endl;
 
       double r;
@@ -115,7 +234,23 @@ MatrixXd standardize_transpose(MatrixXd& X, int method, bool verbose)
 	    X.row(j) = (X.row(j).array() - mean(j)) / sd(j);
       }
    }
-   else if(method == STANDARDIZE_CENTER)
+   else if(method == STANDARDISE_BINOM2)
+   {
+      verbose && STDOUT << timestamp() 
+	 << " standardising transposed matrix (BINOM2)"
+	 << " p: " << p << std::endl;
+
+      double r;
+      for(unsigned int j = 0 ; j < p ; j++)
+      {
+	 mean(j) = X.row(j).sum() / n;
+	 r = mean(j) / 2.0;
+	 sd(j) = sqrt(2 * r * (1 - r)); // Note the factor of 2
+	 if(sd(j) > VAR_TOL)
+	    X.row(j) = (X.row(j).array() - mean(j)) / sd(j);
+      }
+   }
+   else if(method == STANDARDISE_CENTER)
    {
       for(unsigned int j = 0 ; j < p ; j++)
       {
@@ -133,21 +268,19 @@ MatrixXd standardize_transpose(MatrixXd& X, int method, bool verbose)
    return P;
 }
 
-double myatof(char* c)
-{
-   if(c == 0)
-      return 0;
-   return atof(c);
-}
-
 std::string timestamp()
 {
-   time_t t = time(NULL);
-   char *s = asctime(localtime(&t));
-   s[strlen(s) - 1] = '\0';
-   std::string str(s);
-   str = std::string("[") + str + std::string("]");
-   return str;
+   if(show_timestamp)
+   {
+      time_t t = time(NULL);
+      char *s = asctime(localtime(&t));
+      s[strlen(s) - 1] = '\0';
+      std::string str(s);
+      str = std::string("[") + str + std::string("] ");
+      return str;
+   }
+   else
+      return std::string("");
 }
 
 /*

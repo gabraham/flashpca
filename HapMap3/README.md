@@ -1,9 +1,14 @@
-HapMap3 data
-============
 
-This dataset consists of 957 founders extracted from the HapMap3 phase iii data
-(http://ftp.ncbi.nlm.nih.gov/hapmap/genotypes/2009-01_phaseIII/plink_format)
-hapmap3_r2_b36_fwd.consensus.qc.poly.{bed,bim,fam}
+# Datasets
+
+
+## HapMap3 data
+
+Files: `HM3_thinned_autosomal_overlap.{bed,bim,fam}`
+
+This dataset consists of 957 founders extracted from the HapMap3 phase III data
+(http://ftp.ncbi.nlm.nih.gov/hapmap/genotypes/2009-01_phaseIII/plink_format),
+hapmap3_r2_b36_fwd.consensus.qc.poly.{bed,bim,fam},
 using PLINK options:
    ```
    --bfile hapmap3_r2_b36_fwd.consensus.qc.poly
@@ -12,6 +17,7 @@ using PLINK options:
    --mind 0.01
    --hwe 5e-6
    --filter-founders
+   --autosome
    ```
 
 The data was then LD-thinned with PLINK using
@@ -19,11 +25,13 @@ The data was then LD-thinned with PLINK using
    --indep-pairwise 1000 10 0.02
    ```
 
-Scripts
--------
+The final dataset has 14,079 autosomal SNPs.
 
-run.sh: runs flashpca, shellfish, and smartpca on the data
+## 1000 Genomes data, phase 1 release 3
 
-plot.R: runs R prcomp on the data and plots the results for HapMap3 (requires
-ggplot2 and plink2R, https://github.com/gabraham/plink2R)
+Files: `1kg.ref.phase1_release_v3.20101123_thinned_autosomal_overlap.{bed,bim,fam}`
+
+This data contains genotypes for 1,092 individuals from the 1000 Genomes
+project, for the same 14,079 SNPs from the HapMap3 dataset above.
+
 
