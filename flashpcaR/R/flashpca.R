@@ -119,7 +119,7 @@ flashpca <- function(X, ndim=10,
       }
 
       if(stand %in% c("binom", "binom2") && check_geno) {
-	 wx <- X %in% 0:2
+	 wx <- X %in% c(0:2, NA)
       	 if(sum(wx) != length(X)) {
       	    stop(
       	       "Your data contains values other than {0, 1, 2}, ",
