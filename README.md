@@ -248,7 +248,7 @@ flashpcaR packages for Windows, Mac, and Linux.
    devtools::install_github("gabraham/flashpca/flashpcaR")
    ```
 
-   This fail on Windows due to symbolic link issues; in that case use 
+   This may fail on Windows due to symbolic link issues; in that case use 
    ```bash
    git clone https://github.com/gabraham/flashpca
    cd flashpca
