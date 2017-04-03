@@ -645,13 +645,13 @@ int main(int argc, char * argv[])
       {
 	 //block_size = mem / ((double)data.N * 8.0);
 	 long long mem_req_bytes =
-	      2 * data.nsnps * 8 * 2			 // avg+stdev
-	    + 3 * data.nsnps * 8			 // genotypes
-	    + data.N * n_dim * 8			 // left eigenvectors U
+	      2 * (long long)data.nsnps * 8 * 2			 // avg+stdev
+	    + 3 * (long long)data.nsnps * 8			 // genotypes
+	    + (long long) data.N * n_dim * 8			 // left eigenvectors U
 	    + (do_loadings ? data.nsnps * n_dim * 8 : 0) // eigenvectors V
 	    + 2 * data.N				 // PLINK buffers
-	    + 2 * (data.N + data.nsnps) * n_dim * 8      // Spectra overheads?
-	    + 2 * 1024 * 1024 + data.N * 8;		 // extra space
+	    + 2 * (long long)(data.N + data.nsnps) * n_dim * 8      // Spectra overheads?
+	    + 2 * 1024 * 1024 + (long long)data.N * 8;		 // extra space
 	 long long mem_remain_bytes = mem - mem_req_bytes;
 
 	 verbose && STDOUT << timestamp() << "mem: "
