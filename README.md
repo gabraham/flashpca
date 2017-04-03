@@ -239,8 +239,21 @@ FlashPCA can be called (almost) entirely within R.
 
 ## Installation
 
+* See [Releases](https://github.com/gabraham/flashpca/releases) for pre-packaged
+flashpcaR packages for Windows, Mac, and Linux.
+
+* Compiling from source
+
    ```R
    devtools::install_github("gabraham/flashpca/flashpcaR")
+   ```
+
+   This may fail on Windows due to symbolic link issues; in that case use 
+   ```bash
+   git clone https://github.com/gabraham/flashpca
+   cd flashpca
+   R CMD build flashpcaR
+   R CMD INSTALL flashpcaR_2.0.tar.gz
    ```
 
 Depends on packages:
