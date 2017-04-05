@@ -431,8 +431,8 @@ NamedMatrixWrapper read_text(const char *filename,
    if(!in)
    {
       std::string err = std::string("Error reading file '")
-	 + filename + "': '" + strerror(errno);
-      throw std::string(err);
+	 + filename + "': " + strerror(errno);
+      throw std::runtime_error(err);
    }
    std::vector<std::string> lines;
    
@@ -511,7 +511,7 @@ void Data::read_plink_bim(const char *filename)
    {
       std::string err = std::string("Error reading file ")
 	 + filename;
-      throw std::string(err);
+      throw std::runtime_error(err);
    }
    std::vector<std::string> lines;
    
@@ -561,7 +561,7 @@ void Data::read_plink_fam(const char *filename)
    {
       std::string err = std::string(
 	 "[Data::read_plink_fam] Error reading file ") + filename;
-      throw std::string(err);
+      throw std::runtime_error(err);
    }
    std::vector<std::string> lines;
    

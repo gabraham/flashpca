@@ -19,7 +19,7 @@ OBJ = \
    data.o \
    util.o
 
-CXXFLAGS = -I${SPECTRA_INC} -I${BOOST_INC} -I${EIGEN_INC}
+CXXFLAGS += -I${SPECTRA_INC} -I${BOOST_INC} -I${EIGEN_INC}
 
 UNAME := $(shell uname)
 ifeq ($(UNAME), Darwin)

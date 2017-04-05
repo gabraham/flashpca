@@ -107,6 +107,7 @@ int main(int argc, char * argv[])
 
    show_timestamp = !vm.count("notime");
    bool save_vinit = vm.count("save-vinit");
+   bool verbose = vm.count("verbose");
 
    std::cout << timestamp() << "arguments: flashpca ";
    for(int i = 0 ; i < argc ; i++)
@@ -421,7 +422,6 @@ int main(int argc, char * argv[])
 
    std::string uccafile = "ucca" + suffix;
 
-   bool verbose = vm.count("verbose");
 
    int maxiter = 500;
    bool debug = vm.count("debug");
@@ -581,7 +581,7 @@ int main(int argc, char * argv[])
       Data data;
       data.verbose = verbose;
       data.stand_method_x = stand_method_x; //TODO: duplication with RandomPCA
-      std::cout << timestamp() << "seed: " << seed << std::endl;
+      verbose && std::cout << timestamp() << "seed: " << seed << std::endl;
 
       if(mode == MODE_CCA || mode == MODE_SCCA || mode == MODE_UCCA)
          data.read_pheno(pheno_file.c_str(), 3);
@@ -891,6 +891,7 @@ int main(int argc, char * argv[])
    }
    catch(...)
    {
+      std::cerr << timestamp() << "Caught unknown exception, terminating " << std::endl;
       return EXIT_FAILURE;
    }
 

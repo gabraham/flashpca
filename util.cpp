@@ -178,7 +178,7 @@ MatrixXd standardise(MatrixXd& X, int method, bool verbose)
    //   }
    //}
    else
-      throw std::string("unknown standardization method");
+      throw std::runtime_error(std::string("unknown standardization method"));
 
    MatrixXd P = MatrixXd::Zero(X.cols(), 2); // [mean, sd]
    P.col(0) = mean;
@@ -254,7 +254,7 @@ MatrixXd standardise_transpose(MatrixXd& X, int method, bool verbose)
       }
    }
    else
-      throw std::string("unknown standardization method");
+      throw std::runtime_error(std::string("unknown standardization method"));
 
    MatrixXd P = MatrixXd::Zero(p, 2); // [mean, sd]
    P.col(0) = mean;

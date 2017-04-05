@@ -655,7 +655,7 @@ void RandomPCA::check(Data& dat, unsigned int block_size,
 
    // X X' U / div = U D^2
    verbose && STDOUT << timestamp()
-      << "Checking mean square error between (X X' U) and (U D^2)"
+      << "Checking mean square error between (X X' U) / div and (U D^2)"
       << " for " << K << " dimensions"
       << std::endl;
 
