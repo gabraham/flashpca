@@ -200,6 +200,17 @@ This is done using
 
 The final mean squared error should be low (e.g., <1e-8).
 
+
+## Other issues
+
+### Outlier removal
+
+Unlike EIGENSOFT/smartpca, flashpca does not remove outliers automatically
+(`numoutlieriter` in EIGENSOFT). We recommend inspecting the PCA plot
+manually, and if you wish to remove outliers and repeat PCA on the remaining
+samples, use `plink --remove` to create a new bed/bim/fam fileset and run
+flashpca on the new data.
+
 ### <a name="scca"></a>Sparse Canonical Correlation Analysis (SCCA)
 
 * flashpca now supports sparse CCA
