@@ -200,10 +200,7 @@ This is done using
 
 The final mean squared error should be low (e.g., <1e-8).
 
-
-## Other issues
-
-### Outlier removal
+## Outlier removal
 
 Unlike EIGENSOFT/smartpca, flashpca does not remove outliers automatically
 (`numoutlieriter` in EIGENSOFT). We recommend inspecting the PCA plot
