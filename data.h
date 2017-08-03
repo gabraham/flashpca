@@ -14,6 +14,7 @@
 #include <fstream>
 #include <vector>
 #include <algorithm>
+#include <unordered_set>
 
 #include <Eigen/Core>
 #include <Eigen/Dense>
@@ -62,9 +63,9 @@ class Data {
       
       MatrixXd X, Y;
       MatrixXd X_meansd;
-      unsigned int N, p, K;
+      unsigned int N, N_pheno, p, K;
       unsigned long long len, np;
-      unsigned int nsnps;
+      unsigned int nsnps, nsnps_selected;
       const char *geno_filename;
       bool verbose;
       std::vector<std::string> fam_ids;
@@ -75,7 +76,12 @@ class Data {
       std::vector<std::string> alt_alleles;
       bool use_preloaded_maf;
       int stand_method_x;
-      
+      bool sample_select, snp_select, keep_sample, extract_snp;
+      std::unordered_set<std::string> snp_inclusion_list;
+      std::unordered_set<std::string> sample_inclusion_list;
+      std::vector<size_t> snp_included; // contain the index of the SNP in the file
+      std::vector<size_t> sample_included; // contain the o of the sample in the file
+
       Data();
       ~Data();
       void prepare();
@@ -86,7 +92,8 @@ class Data {
       void read_pheno(const char *filename, unsigned int firstcol);
       void read_plink_bim(const char *filename);
       void read_plink_fam(const char *filename);
-
+      void read_sample_select(const std::string &file_name, bool keep);
+      void read_snp_select(const std::string &file_name, bool extract);
       std::string tolower(const std::string& v);
 
    private:
@@ -98,11 +105,21 @@ class Data {
 
       // the standardised values for the 3 genotypes + NA, for each SNP
       ArrayXXd scaled_geno_lookup;
+
+
+
 };
 
+
 NamedMatrixWrapper read_text(
-   const char *filename, unsigned int firstcol,
-   unsigned int nrows=-1, unsigned int skip=0, bool verbose=false);
+		  const char *filename, unsigned int firstcol,
+	      const std::unordered_set<std::string> &sample_inclusion_list,
+		  bool	keep_sample=false, bool sample_select=false,
+		  unsigned int nrows=-1, unsigned int skip=0, bool verbose=false);
+
+NamedMatrixWrapper read_text(
+		  const char *filename, unsigned int firstcol,
+		  unsigned int nrows=-1, unsigned int skip=0, bool verbose=false);
 
 void decode_plink(unsigned char * __restrict__ out,
    const unsigned char * __restrict__ in,

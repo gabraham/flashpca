@@ -32,45 +32,45 @@ class SVDWide
 
 class SVDWideOnline
 {
-   public:
-      // Trace of X X'
-      double trace;
+public:
+	// Trace of X X'
+	double trace;
 
-   private:
-      Data& dat;
-      const unsigned int n, p;
-      unsigned int nblocks;
-      unsigned int *start, *stop;
-      int stand_method;
-      bool verbose;
-      unsigned int nops;
-      unsigned int block_size;
-      bool trace_done;
+private:
+	Data& dat;
+	const unsigned int n, p;
+	unsigned int nblocks;
+	unsigned int *start, *stop;
+	int stand_method;
+	bool verbose;
+	unsigned int nops;
+	unsigned int block_size;
+	bool trace_done;
 
-   public:
-      SVDWideOnline(Data& dat_, unsigned int block_size_, int stand_method_,
-	 bool verbose_): dat(dat_), n(dat_.N), p(dat_.nsnps)
-      {
-	 verbose = verbose_;
-	 block_size = block_size_;
-	 stand_method = stand_method_;
-	 nblocks = (unsigned int)ceil((double)p / block_size);
-	 verbose && STDOUT << timestamp()
-	    << "Using blocksize " << block_size << ", " <<
-	    nblocks << " blocks"<< std::endl;
-	 start = new unsigned int[nblocks];
-	 stop = new unsigned int[nblocks];
-	 for(unsigned int i = 0 ; i < nblocks ; i++)
-	 {
-	    start[i] = i * block_size;
-	    stop[i] = start[i] + block_size - 1;
-	    stop[i] = stop[i] >= p ? p - 1 : stop[i];
-	 }
+public:
+	SVDWideOnline(Data& dat_, unsigned int block_size_, int stand_method_, bool verbose_):
+		dat(dat_), n(dat_.N_pheno), p(dat_.nsnps_selected)
+	{
+		verbose = verbose_;
+		block_size = block_size_;
+		stand_method = stand_method_;
+		nblocks = (unsigned int)ceil((double)p / block_size);
+		verbose && STDOUT << timestamp() <<
+				"Using blocksize " << block_size << ", " <<
+				nblocks << " blocks"<< std::endl;
+		start = new unsigned int[nblocks];
+		stop = new unsigned int[nblocks];
+		for(unsigned int i = 0 ; i < nblocks ; i++)
+		{
+			start[i] = i * block_size;
+			stop[i] = start[i] + block_size - 1;
+			stop[i] = stop[i] >= p ? p - 1 : stop[i];
+		}
 
-	 nops = 1;
-	 trace = 0;
-	 trace_done = false;
-      }
+		nops = 1;
+		trace = 0;
+		trace_done = false;
+	}
 
       ~SVDWideOnline();
 
