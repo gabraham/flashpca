@@ -431,6 +431,7 @@ void Data::read_pheno(const char *filename, unsigned int firstcol)
     		sample_select, keep_sample);
     Y = M.X;
     N_pheno = M.X.rows(); // note: N_pheno is the number of sample selected
+    //N = M.N;
 }
 
 // Reads PLINK phenotype files:
@@ -535,6 +536,9 @@ void Data::read_plink_fam(const char *filename)
   			sample_included.push_back(i);
   		}
   	}
+  	N=lines.size();
+  	// might want a more elegant way to do this though this should be safer
+  	// as what we really want is the number of samples in the bed file
 }
 
 std::string Data::tolower(const std::string& v)
@@ -592,12 +596,10 @@ void Data::read_snp_select(const std::string &file_name, bool extract)
 		std::stringstream ss(line);
 		std::string s;
 		std::vector<std::string> tokens;
-
-		while(ss >> s)
-			tokens.push_back(s);
-		if(snp_inclusion_list.find(tokens[1])==snp_inclusion_list.end())
+		ss >> s;
+		if(snp_inclusion_list.find(s)==snp_inclusion_list.end())
 		{
-			snp_inclusion_list.insert(tokens[1]);
+			snp_inclusion_list.insert(s);
 		}
 	}
 	input.close();
@@ -787,6 +789,7 @@ NamedMatrixWrapper read_text(
 		}
 		M.X.row(i) = y;
 	}
+	//M.N = lines.size();
 
 	return M;
 }

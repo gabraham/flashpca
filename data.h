@@ -54,6 +54,7 @@ using namespace Eigen;
 class NamedMatrixWrapper {
    public:
       MatrixXd X;
+      //size_t N=0;
       std::vector<std::string> rownames;
       std::vector<std::string> colnames;
 };
