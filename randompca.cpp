@@ -169,52 +169,52 @@ void RandomPCA::pca_fast(Data& dat, unsigned int block_size,
    unsigned int ndim, unsigned int maxiter, double tol,
    long seed, bool do_loadings)
 {
-   unsigned int N = dat.N, p = dat.nsnps;
-   SVDWideOnline op(dat, block_size, stand_method_x, verbose);
-   Spectra::SymEigsSolver<double, Spectra::LARGEST_ALGE,
-      SVDWideOnline> eigs(&op, ndim, ndim * 2 + 1);
+	unsigned int N = dat.N_pheno, p = dat.nsnps_selected;
+	SVDWideOnline op(dat, block_size, stand_method_x, verbose);
+	Spectra::SymEigsSolver<double, Spectra::LARGEST_ALGE,
+		SVDWideOnline> eigs(&op, ndim, ndim * 2 + 1);
 
-   eigs.init();
-   eigs.compute(maxiter, tol);
+	eigs.init();
+	eigs.compute(maxiter, tol);
 
-   double div = 1;
-   if(divisor == DIVISOR_N1)
-      div = N - 1;
-   else if(divisor == DIVISOR_P)
-      div = p;
+	double div = 1;
+	if(divisor == DIVISOR_N1)
+		div = N - 1;
+	else if(divisor == DIVISOR_P)
+		div = p;
 
-   if(eigs.info() == Spectra::SUCCESSFUL)
-   {
-      U = eigs.eigenvectors();
-      // Note: _eigenvalues_, not singular values
-      d = eigs.eigenvalues().array() / div;
-      if(do_loadings)
-      {
-         V = MatrixXd::Zero(dat.nsnps, U.cols());
-         verbose && STDOUT << "Computing loadings" << std::endl;
-         VectorXd v(dat.nsnps);
-         for(unsigned int j = 0 ; j < U.cols() ; j++)
-         {
-	    verbose && STDOUT << "loading " << j << std::endl;
-            VectorXd u = U.col(j);
-            op.crossprod(u.data(), v.data());
-            double s = d(j);
-            V.col(j) = v * (1.0 / sqrt(s)) / sqrt(div);
-         }
-      }
-      trace = op.trace / div;
-      pve = d / trace;
-      Px = U * d.array().sqrt().matrix().asDiagonal();
-      X_meansd = dat.X_meansd; // TODO: duplication
+	if(eigs.info() == Spectra::SUCCESSFUL)
+	{
+		U = eigs.eigenvectors();
+		// Note: _eigenvalues_, not singular values
+		d = eigs.eigenvalues().array() / div;
+		if(do_loadings)
+		{
+			V = MatrixXd::Zero(dat.nsnps_selected, U.cols());
+			verbose && STDOUT << "Computing loadings" << std::endl;
+			VectorXd v(dat.nsnps_selected);
+			for(unsigned int j = 0 ; j < U.cols() ; j++)
+			{
+				verbose && STDOUT << "loading " << j << std::endl;
+				VectorXd u = U.col(j);
+				op.crossprod(u.data(), v.data());
+				double s = d(j);
+				V.col(j) = v * (1.0 / sqrt(s)) / sqrt(div);
+			}
+		}
+		trace = op.trace / div;
+		pve = d / trace;
+		Px = U * d.array().sqrt().matrix().asDiagonal();
+		X_meansd = dat.X_meansd; // TODO: duplication
 
-      verbose && STDOUT << timestamp() << "GRM trace: " << trace << std::endl;
-   }
-   else
-   {
-      throw new std::runtime_error(
-	 std::string("Spectra eigen-decomposition was not successful")
-	    + ", status: " + std::to_string(eigs.info()));
-   }
+		verbose && STDOUT << timestamp() << "GRM trace: " << trace << std::endl;
+	}
+	else
+	{
+		throw new std::runtime_error(
+				std::string("Spectra eigen-decomposition was not successful")
+				+ ", status: " + std::to_string(eigs.info()));
+	}
 }
 
 double inline sign_scalar(double x)
@@ -438,7 +438,7 @@ void RandomPCA::scca(Data &dat, double lambda1, double lambda2,
 
    SVDWideOnline op(dat, block_size, stand_method_x, verbose);
 
-   unsigned int p = dat.nsnps;
+   unsigned int p = dat.nsnps_selected;
 
    this->V0 = V0;
    V = V0;
@@ -568,8 +568,8 @@ void RandomPCA::ucca(Data& data)
 {
    Y_meansd = standardise(data.Y, stand_method_y);
 
-   unsigned int n = data.N;
-   unsigned int p = data.nsnps;
+   unsigned int n = data.N_pheno;
+   unsigned int p = data.nsnps_selected;
    double varx;
    RowVectorXd covXY;
 
@@ -661,9 +661,9 @@ void RandomPCA::check(Data& dat, unsigned int block_size,
 
    double div = 1;
    if(divisor == DIVISOR_N1)
-      div = dat.N - 1;
+      div = dat.N_pheno - 1;
    else if(divisor == DIVISOR_P)
-      div = dat.nsnps;
+      div = dat.nsnps_selected;
 
    MatrixXd XXU = op.perform_op_mat(evec);
    XXU /= div;

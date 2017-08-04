@@ -273,7 +273,7 @@ void Data::read_snp_block(unsigned int start_idx, unsigned int stop_idx,
 	   double snp_avg = 0;
 	   unsigned int ngood = 0;
 	   // We've seen this SNP, don't need to compute its average again
-	   if(!visited[snp_id])
+	   if(!visited[k])
 	   {
 		   // decode the genotypes and convert to 0/1/2/NA
 		   decode_plink(tmp2, tmp, np);
@@ -306,13 +306,13 @@ void Data::read_snp_block(unsigned int start_idx, unsigned int stop_idx,
 				   throw std::runtime_error(err);
 			   }
 
-			   X_meansd(snp_id, 0) = snp_avg;
-			   X_meansd(snp_id, 1) = sd;
+			   X_meansd(k, 0) = snp_avg;
+			   X_meansd(k, 1) = sd;
 		   }
 		   else
 		   {
-			   snp_avg = X_meansd(snp_id, 0);
-			   sd = X_meansd(snp_id, 1);
+			   snp_avg = X_meansd(k, 0);
+			   sd = X_meansd(k, 1);
 		   }
 
 		   // scaled genotyped initialised to zero
@@ -332,12 +332,12 @@ void Data::read_snp_block(unsigned int start_idx, unsigned int stop_idx,
 			   //* heterozygous:     10 => numeric 2     01 => numeric 1
 			   //* major homozygous: 11 => numeric 3     00 => numeric 0
 			   //* missing:          01 => numeric 1     11 => numeric 3
-			   scaled_geno_lookup(3, snp_id) = (0 - snp_avg) / sd;
-			   scaled_geno_lookup(2, snp_id) = (1 - snp_avg) / sd;
-			   scaled_geno_lookup(0, snp_id) = (2 - snp_avg) / sd;
-			   scaled_geno_lookup(1, snp_id) = 0; // impute to average
+			   scaled_geno_lookup(3, k) = (0 - snp_avg) / sd;
+			   scaled_geno_lookup(2, k) = (1 - snp_avg) / sd;
+			   scaled_geno_lookup(0, k) = (2 - snp_avg) / sd;
+			   scaled_geno_lookup(1, k) = 0; // impute to average
 		   }
-		   visited[snp_id] = true;
+		   visited[k] = true;
 	   }
 
 	   // Unpack the genotypes, but don't convert to 0/1/2/NA, keep in
@@ -412,7 +412,7 @@ void Data::read_bed(bool transpose)
 
 	   if(verbose && j % md == md - 1)
 		   STDOUT << timestamp() << "Reading genotypes, "
-		   << roundl(((double)j / nsnps) * 100) << "% done"
+		   << roundl(((double)j / nsnps_selected) * 100) << "% done"
 		   << std::endl;
    }
 
