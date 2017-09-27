@@ -25,11 +25,13 @@ Gad Abraham, gad.abraham@unimelb.edu.au
 ## Citation
 
 version &geq;2: G. Abraham, Y. Qiu, and M. Inouye, ``FlashPCA2: principal
-component analysis of biobank-scale genotype datasets'', bioRxiv
-[https://doi.org/10.1101/094714](https://doi.org/10.1101/094714)
+component analysis of biobank-scale genotype datasets'', (2017) Bioinformatics
+33(17): 2776-2778.
+[doi:10.1093/bioinformatics/btx299](https://doi.org/10.1093/bioinformatics/btx299)
+ (bioRxiv preprint [https://doi.org/10.1101/094714](https://doi.org/10.1101/094714))
 
 version &leq;1.2.6: G. Abraham and M. Inouye, ``Fast Principal Component
-Analysis of Large-Scale Genome-Wide Data'', PLOS ONE 9(4): e93766. [doi:10.1371/journal.pone.0093766](http://www.plosone.org/article/info:doi/10.1371/journal.pone.0093766)
+Analysis of Large-Scale Genome-Wide Data'', (2016) PLOS ONE 9(4): e93766. [doi:10.1371/journal.pone.0093766](http://www.plosone.org/article/info:doi/10.1371/journal.pone.0093766)
 
 ## License
 This program is free software; you can redistribute it and/or modify
