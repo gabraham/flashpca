@@ -91,7 +91,7 @@ headers and Boost headers and libraries on your system. The default values for t
    EIGEN_INC=/usr/local/include/eigen
    BOOST_INC=/usr/local/include/boost
    BOOST_LIB=/usr/local/lib
-   SPECTRA_INC=spectra
+   SPECTRA_INC=spectra/include
    ```
    
  If your system has these libraries and header files in those locations, you can simply run make:
