@@ -1,9 +1,9 @@
 
 #include "svdtall.h"
 
-void SVDTall::perform_op(double *x_in, double* y_out)
+void SVDTall::perform_op(const double *x_in, double* y_out)
 {
-   Map<VectorXd> x(x_in, n);
+   Map<const VectorXd> x(x_in, n);
    Map<VectorXd> y(y_out, n);
    verbose && STDOUT << timestamp() << "Matrix operation "
       << nops << std::endl;
@@ -18,9 +18,9 @@ SVDTallOnline::~SVDTallOnline()
 }
 
 // y = X X' * x
-void SVDTallOnline::perform_op(double *x_in, double* y_out)
+void SVDTallOnline::perform_op(const double *x_in, double* y_out)
 {
-   Map<VectorXd> x(x_in, n);
+   Map<const VectorXd> x(x_in, n);
    Map<VectorXd> y(y_out, n);
    unsigned int actual_block_size;
 

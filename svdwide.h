@@ -27,7 +27,7 @@ class SVDWide
       inline unsigned int rows() const { return n; }
       inline unsigned int cols() const { return n; }
 
-      void perform_op(double *x_in, double* y_out);
+      void perform_op(const double *x_in, double* y_out);
 };
 
 class SVDWideOnline
@@ -78,7 +78,7 @@ class SVDWideOnline
       inline unsigned int cols() const { return n; }
 
       // y = X X' * x
-      void perform_op(double *x_in, double* y_out);
+      void perform_op(const double *x_in, double* y_out);
 
       // y = X X' * x
       MatrixXd perform_op_mat(const MatrixXd x);

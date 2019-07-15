@@ -1,9 +1,9 @@
 
 #include "svdwide.h"
 
-void SVDWide::perform_op(double *x_in, double* y_out)
+void SVDWide::perform_op(const double *x_in, double* y_out)
 {
-   Map<VectorXd> x(x_in, n);
+   Map<const VectorXd> x(x_in, n);
    Map<VectorXd> y(y_out, n);
    verbose && STDOUT << timestamp() << "Matrix operation "
       << nops << std::endl;
@@ -18,9 +18,9 @@ SVDWideOnline::~SVDWideOnline()
 }
 
 // y = X X' * x
-void SVDWideOnline::perform_op(double *x_in, double* y_out)
+void SVDWideOnline::perform_op(const double *x_in, double* y_out)
 {
-   Map<VectorXd> x(x_in, n);
+   Map<const VectorXd> x(x_in, n);
    Map<VectorXd> y(y_out, n);
    unsigned int actual_block_size;
 
