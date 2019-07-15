@@ -462,7 +462,7 @@ void RandomPCA::scca(Data &dat, double lambda1, double lambda2,
 	 // deflate u
 	 if(j > 0)
 	 {
-	    uj -= U.leftCols(j) * d.head(j - 1).asDiagonal()
+	    uj -= U.leftCols(j) * d.head(j).asDiagonal()
 		  * V.leftCols(j).transpose() * vj;
 	 }
 
@@ -476,7 +476,7 @@ void RandomPCA::scca(Data &dat, double lambda1, double lambda2,
 	 // deflate v
 	 if(j > 0)
 	 {
-	    vj -= V.leftCols(j) * d.head(j - 1).asDiagonal()
+	    vj -= V.leftCols(j) * d.head(j).asDiagonal()
 		  * U.leftCols(j).transpose() * uj;
 	 }
 
