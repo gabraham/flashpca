@@ -24,7 +24,7 @@ Y <- scale(X %*% By + rnorm(n * k))
 # very small penalties, to ensure the SCCA of X with X converges to the
 # eigen-decomposition
 l1 <- 1e-6
-l2 <- 1e-6
+l3 <- 1e-6
 test.tol <- 1e-4
 ndim <- min(n, m, k, 5)
 

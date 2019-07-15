@@ -2,10 +2,10 @@ Package: flashpcaR
 Depends: R(>= 3.0.2)
 Type: Package
 Title: R Interface to FlashPCA
-Version: 2.0
-Date: 2016-15-12
+Version: 2.1
+Date: 2019-07-15
 Authors@R: c(
-   person("Gad", "Abraham", , "gad.abraham@unimelb.edu.au", c("aut", "cre")),
+   person("Gad", "Abraham", , "gad.abraham@gmail.edu.au", c("aut", "cre")),
    person("Yixuan", "Qiu", , "yixuan.qiu@cos.name", c("aut"))
    )
 Description: FlashPCA is an efficient implementation of principal
