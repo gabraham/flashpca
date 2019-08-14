@@ -3,7 +3,7 @@
 
 VERSION=2.0
 
-EIGEN_INC=/usr/local/include/eigen
+EIGEN_INC=/mnt/hgfs/KCL/development/flashpca/lib/
 BOOST_INC=/usr/local/include/boost
 BOOST_LIB=/usr/local/lib
 SPECTRA_INC=spectra/include

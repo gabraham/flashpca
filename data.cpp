@@ -14,15 +14,21 @@
 Data::Data()
 {
    N = 0;
+   N_pheno = 0;
    p = 0;
    K = 0;
    nsnps = 0;
+   nsnps_selected = 0;
    visited = NULL;
    tmp = NULL;
    tmp2 = NULL;
    avg = NULL;
    verbose = false;
    use_preloaded_maf = false;
+   sample_select = false;
+   snp_select = false;
+   keep_sample = false;
+   extract_snp = false;
 }
 
 Data::~Data()
@@ -149,30 +155,38 @@ void decode_plink_simple(unsigned char * __restrict__ out,
 
 void Data::get_size()
 {
-   verbose && STDOUT << timestamp() << "Analyzing BED file '" 
-      << geno_filename << "'";
-   std::ifstream in(geno_filename, std::ios::in | std::ios::binary);
+	verbose && STDOUT << timestamp() << "Analyzing BED file '"
+			<< geno_filename << "'";
+	std::ifstream in(geno_filename, std::ios::in | std::ios::binary);
 
-   if(!in)
-   {
-      std::string err = std::string("[Data::read_bed] Error reading file ")
-	  + geno_filename + ", error " + strerror(errno);
-      throw std::runtime_error(err);
-   }
+	if(!in)
+	{
+		std::string err = std::string("[Data::read_bed] Error reading file ")
+		+ geno_filename + ", error " + strerror(errno);
+		throw std::runtime_error(err);
+	}
 
-   in.seekg(0, std::ifstream::end);
+	in.seekg(0, std::ifstream::end);
 
-   // file size in bytes, ignoring first 3 bytes (2byte magic number + 1byte mode)
-   len = (unsigned long long)in.tellg() - 3;
+	// file size in bytes, ignoring first 3 bytes (2byte magic number + 1byte mode)
+	len = (unsigned long long)in.tellg() - 3;
 
-   // size of packed data, in bytes, per SNP
-   np = (unsigned long long)ceil((double)N / PACK_DENSITY);
-   nsnps = (unsigned int)(len / np);
-   in.seekg(3, std::ifstream::beg);
-   in.close();
+	// size of packed data, in bytes, per SNP
+	np = (unsigned long long)ceil((double)N / PACK_DENSITY);
+	nsnps = (unsigned int)(len / np);
+	in.seekg(3, std::ifstream::beg);
+	in.close();
 
-   verbose && STDOUT << ", found " << (len + 3) << " bytes, "
-      << nsnps << " SNPs" << std::endl;
+	verbose && STDOUT << ", found " << (len + 3) << " bytes, "
+			<< nsnps << " SNPs" << std::endl;
+	// but then, we don't want to include all the SNPs
+	nsnps_selected = snp_included.size();
+	// check if we have the correct number of samples
+	if(N_pheno != sample_included.size())
+	{
+		std::string err = std::string("Error: Fam file and Phenotype file mismatched");
+		throw std::runtime_error(err);
+	}
 }
 
 // Prepare input stream etc before reading in SNP blocks
@@ -193,11 +207,12 @@ void Data::prepare()
    // Allocate more than the sample size since data must take up whole bytes
    tmp2 = new unsigned char[np * PACK_DENSITY];
 
-   avg = new double[nsnps](); 
-   visited = new bool[nsnps]();
-   X_meansd = MatrixXd::Zero(nsnps, 2); // TODO: duplication here with avg
+   // we only want the selected SNPs
+   avg = new double[nsnps_selected]();
+   visited = new bool[nsnps_selected]();
+   X_meansd = MatrixXd::Zero(nsnps_selected, 2); // TODO: duplication here with avg
 
-   scaled_geno_lookup = ArrayXXd::Zero(4, nsnps);
+   scaled_geno_lookup = ArrayXXd::Zero(4, nsnps_selected);
 
    verbose && STDOUT << timestamp() << "Detected BED file: "
       << geno_filename << " with " << (len + 3)
@@ -215,7 +230,9 @@ void Data::prepare()
 void Data::read_snp_block(unsigned int start_idx, unsigned int stop_idx,
    bool transpose, bool resize)
 {
-   in.seekg(3 + np * start_idx);
+	// we will change such that the start_idx and stop_idx are index of the
+	// snp_inclusion_list vector
+   //in.seekg(3 + np * sample_included.at(start_idx)); // jump to the first SNP of this block
 
    unsigned int actual_block_size = stop_idx - start_idx + 1;
 
@@ -223,114 +240,116 @@ void Data::read_snp_block(unsigned int start_idx, unsigned int stop_idx,
    // $blocksize$
    if(transpose)
    {
-      if(X.rows() == 0 || (resize && X.rows() != actual_block_size))
-      {
-         verbose && STDOUT << timestamp()
-	    << "Reallocating memory: " << X.rows() << " -> " <<
-	    actual_block_size << std::endl;
-         if(X.rows() > actual_block_size)
-	 {
-            X = MatrixXd(actual_block_size, N);
-	 }
-      }
+	   if(X.rows() == 0 || (resize && X.rows() != actual_block_size))
+	   {
+		   verbose && STDOUT << timestamp()
+	    		<< "Reallocating memory: " << X.rows() << " -> " <<
+				actual_block_size << std::endl;
+		   if(X.rows() > actual_block_size)
+		   {
+			   X = MatrixXd(actual_block_size, N_pheno); // we only store the selected samples
+		   }
+	   }
    }
    else if(X.cols() == 0 || (resize && X.cols() != actual_block_size))
    {
-      verbose && STDOUT << timestamp()
-	 << "Reallocating memory: " << X.cols() << " -> " <<
-	 actual_block_size << std::endl;
-      X = MatrixXd(N, actual_block_size);
+	   verbose && STDOUT << timestamp()
+			 << "Reallocating memory: " << X.cols() << " -> " <<
+			 actual_block_size << std::endl;
+	   X = MatrixXd(N_pheno, actual_block_size);
    }
 
    for(unsigned int j = 0; j < actual_block_size; j++)
    {
-      unsigned int k = start_idx + j;
+	   unsigned int k = start_idx+j;
+	   size_t snp_id = snp_included.at(k);
+	   // read raw genotypes (Here they assume continuous read)
+	   // we want discontinuous read just so we can jump around
+	   // jump jump jump, hop hop hop
+	   in.seekg(3 + np * snp_id);
+	   in.read((char*)tmp, sizeof(char) * np);
 
-      // read raw genotypes
-      in.read((char*)tmp, sizeof(char) * np);
+	   // Compute average per SNP, excluding missing values
+	   double snp_avg = 0;
+	   unsigned int ngood = 0;
+	   // We've seen this SNP, don't need to compute its average again
+	   if(!visited[k])
+	   {
+		   // decode the genotypes and convert to 0/1/2/NA
+		   decode_plink(tmp2, tmp, np);
 
-      // Compute average per SNP, excluding missing values
-      double snp_avg = 0;
-      unsigned int ngood = 0;
+		   double P, sd;
 
-      // We've seen this SNP, don't need to compute its average again
-      if(!visited[k])
-      {
-	 // decode the genotypes and convert to 0/1/2/NA
-	 decode_plink(tmp2, tmp, np);
+		   if(!use_preloaded_maf)
+		   {
+			   for(auto &&sample : sample_included)
+			   {
+				   double s = (double) tmp2[sample];
+				   if(tmp2[sample]!= PLINK_NA)
+				   {
+					   snp_avg+=s;
+					   ngood++;
+				   }
+			   }
+			   snp_avg /= ngood;
 
-	 double P, sd;
+			   // Store the 4 possible standardised genotypes for each SNP
+			   P = snp_avg / 2.0;
+			   if(stand_method_x == STANDARDISE_BINOM)
+				   sd = sqrt(P * (1 - P));
+			   else if(stand_method_x == STANDARDISE_BINOM2)
+				   sd = sqrt(2.0 * P * (1 - P));
+			   else
+			   {
+				   std::string err = std::string("unknown standardisation method: ")
+				   + std::to_string(stand_method_x);
+				   throw std::runtime_error(err);
+			   }
 
-	 if(!use_preloaded_maf)
-	 {
-	    for(unsigned int i = 0 ; i < N ; i++)
-      	    {
-      	       double s = (double)tmp2[i];
-      	       if(tmp2[i] != PLINK_NA)
-      	       {
-      	          snp_avg += s;
-      	          ngood++;
-      	       }
-      	    }
-      	    snp_avg /= ngood;
+			   X_meansd(k, 0) = snp_avg;
+			   X_meansd(k, 1) = sd;
+		   }
+		   else
+		   {
+			   snp_avg = X_meansd(k, 0);
+			   sd = X_meansd(k, 1);
+		   }
 
-	    // Store the 4 possible standardised genotypes for each SNP
-	    P = snp_avg / 2.0;
-	    if(stand_method_x == STANDARDISE_BINOM)
-	       sd = sqrt(P * (1 - P));
-	    else if(stand_method_x == STANDARDISE_BINOM2)
-	       sd = sqrt(2.0 * P * (1 - P));
-	    else
-	    {
-	       std::string err = std::string("unknown standardisation method: ")
-		  + std::to_string(stand_method_x);
-	       throw std::runtime_error(err);
-	    }
+		   // scaled genotyped initialised to zero
+		   if(sd > VAR_TOL)
+		   {
+			   // Note thet scaled values for the genotypes are stored based on
+			   // the PLINK indexing rather than the actual dosage indexing,
+			   // which lets us later just read the PLINK data and not have to
+			   // convert the dosages.
+			   //
+			   // plink '3' -> actual dosage '0'
+			   // plink '2' -> actual dosage '1'
+			   // plink '0' -> actual dosage '2'
+			   // plink '1' -> actual dosage '3' (NA)
+			   //*                   plink BED           sparsnp
+			   //* minor homozyous:  00 => numeric 0     10 => numeric 2
+			   //* heterozygous:     10 => numeric 2     01 => numeric 1
+			   //* major homozygous: 11 => numeric 3     00 => numeric 0
+			   //* missing:          01 => numeric 1     11 => numeric 3
+			   scaled_geno_lookup(3, k) = (0 - snp_avg) / sd;
+			   scaled_geno_lookup(2, k) = (1 - snp_avg) / sd;
+			   scaled_geno_lookup(0, k) = (2 - snp_avg) / sd;
+			   scaled_geno_lookup(1, k) = 0; // impute to average
+		   }
+		   visited[k] = true;
+	   }
 
-	    X_meansd(k, 0) = snp_avg;
-	    X_meansd(k, 1) = sd;
-	 }
-	 else
-	 {
-	    snp_avg = X_meansd(k, 0);
-	    sd = X_meansd(k, 1);
-	 }
+	   // Unpack the genotypes, but don't convert to 0/1/2/NA, keep in
+	   // original format (see comments for decode_plink).
+	   // There is a bit of waste here in the first time the SNP is visited, as
+	   // we unpack the data twice, once with decoding and once without.
+	   decode_plink_simple(tmp2, tmp, np);
 
-	 // scaled genotyped initialised to zero
-	 if(sd > VAR_TOL)
-	 {
-	    // Note thet scaled values for the genotypes are stored based on
-	    // the PLINK indexing rather than the actual dosage indexing,
-	    // which lets us later just read the PLINK data and not have to
-	    // convert the dosages.
-	    //
-	    // plink '3' -> actual dosage '0'
-	    // plink '2' -> actual dosage '1'
-	    // plink '0' -> actual dosage '2'
-	    // plink '1' -> actual dosage '3' (NA)
-	    //*                   plink BED           sparsnp
- 	    //* minor homozyous:  00 => numeric 0     10 => numeric 2
- 	    //* heterozygous:     10 => numeric 2     01 => numeric 1
- 	    //* major homozygous: 11 => numeric 3     00 => numeric 0
- 	    //* missing:          01 => numeric 1     11 => numeric 3
-	    scaled_geno_lookup(3, k) = (0 - snp_avg) / sd;
-	    scaled_geno_lookup(2, k) = (1 - snp_avg) / sd;
-	    scaled_geno_lookup(0, k) = (2 - snp_avg) / sd;
-	    scaled_geno_lookup(1, k) = 0; // impute to average
-	 }
-	 visited[k] = true;
-      }
-
-      // Unpack the genotypes, but don't convert to 0/1/2/NA, keep in
-      // original format (see comments for decode_plink).
-      // There is a bit of waste here in the first time the SNP is visited, as
-      // we unpack the data twice, once with decoding and once without.
-      decode_plink_simple(tmp2, tmp, np);
-
-      for(unsigned int i = 0 ; i < N ; i++)
-      {
-	 X(i, j) = scaled_geno_lookup(tmp2[i], k);
-      }
+	   for(unsigned int i = 0 ; i < sample_included.size() ; i++)
+	   {
+		   X(i, j) = scaled_geno_lookup(tmp2[sample_included[i]], k);
+	   }
    }
 }
 
@@ -338,78 +357,81 @@ void Data::read_snp_block(unsigned int start_idx, unsigned int stop_idx,
 // Expects PLINK bed in SNP-major format
 void Data::read_bed(bool transpose)
 {
-   if(transpose)
-      X = MatrixXd(nsnps, N);
-   else
-      X = MatrixXd(N, nsnps);
+	if(transpose)
+		X = MatrixXd(nsnps_selected, N_pheno);
+	else
+		X = MatrixXd(N_pheno, nsnps_selected);
 
-   unsigned int md = nsnps / 50;
+   unsigned int md = nsnps_selected / 50;
 
    // iterate over all SNPs
-   for(unsigned int j = 0 ; j < nsnps; j++)
+   for(unsigned int j = 0 ; j < nsnps_selected; j++)
    {
-      // read raw genotypes
-      in.read((char*)tmp, sizeof(char) * np);
+	   in.seekg(3 + np * snp_included.at(j)); // this will slow down the program, but whatever
+	   // read raw genotypes
+	   in.read((char*)tmp, sizeof(char) * np);
 
-      // decode the genotypes
-      decode_plink(tmp2, tmp, np);
+	   // decode the genotypes
+	   decode_plink(tmp2, tmp, np);
 
-      // Compute average per SNP, excluding missing values
-      avg[j] = 0;
-      unsigned int ngood = 0;
-      for(unsigned int i = 0 ; i < N ; i++)
-      {
-	 double s = (double)tmp2[i];
-	 if(tmp2[i] != PLINK_NA)
-	 {
-	    avg[j] += s;
-	    ngood++;
-	 }
-      }
-      avg[j] /= ngood;
+	   // Compute average per SNP, excluding missing values
+	   avg[j] = 0;
+	   unsigned int ngood = 0;
+	   for(auto &&sample: sample_included)
+	   {
+		   double s = (double)tmp2[sample];
+		   if(tmp2[sample]!=PLINK_NA)
+		   {
+			   avg[j] += s;
+			   ngood++;
+		   }
+	   }
+	   avg[j] /= ngood;
 
-      // Impute using average per SNP
-      for(unsigned int i = 0 ; i < N ; i++)
-      {
-	 double s = (double)tmp2[i];
-	 {
-	    if(transpose)
-	    {
-	       if(s != PLINK_NA)
-		  X(j, i) = s;
-	       else
-		  X(j, i) = avg[j];
-	    }
-	    else
-	    {
-	       if(s != PLINK_NA)
-		  X(i, j) = s;
-	       else
-		  X(i, j) = avg[j];
-	    }
-	 }
-      }
+	   // Impute using average per SNP
+	   for(unsigned int i = 0 ; i < sample_included.size() ; i++)
+	   {
+		   double s = (double)tmp2[sample_included[i]];
+		   {
+			   if(transpose)
+			   {
+				   if(s != PLINK_NA)
+					   X(j, i) = s;
+				   else
+					   X(j, i) = avg[j];
+			   }
+			   else
+			   {
+				   if(s != PLINK_NA)
+					   X(i, j) = s;
+				   else
+					   X(i, j) = avg[j];
+			   }
+		   }
+	   }
 
-      if(verbose && j % md == md - 1)
-	 STDOUT << timestamp() << "Reading genotypes, "
-	    << roundl(((double)j / nsnps) * 100) << "% done" 
-	    << std::endl;
+	   if(verbose && j % md == md - 1)
+		   STDOUT << timestamp() << "Reading genotypes, "
+		   << roundl(((double)j / nsnps_selected) * 100) << "% done"
+		   << std::endl;
    }
 
    if(transpose)
-      p = X.rows();
+	   p = X.rows();
    else
-      p = X.cols();
+	   p = X.cols();
 
    verbose && STDOUT << timestamp() << "Loaded genotypes: "
-      << N << " samples, " << p << " SNPs" << std::endl;
+		   << N_pheno << " samples, " << p << " SNPs" << std::endl;
 }
 
 void Data::read_pheno(const char *filename, unsigned int firstcol)
 {
-    NamedMatrixWrapper M = read_text(filename, firstcol);
+    NamedMatrixWrapper M = read_text(filename, firstcol, sample_inclusion_list,
+    		sample_select, keep_sample);
     Y = M.X;
-    N = M.X.rows();
+    N_pheno = M.X.rows(); // note: N_pheno is the number of sample selected
+    //N = M.N;
 }
 
 // Reads PLINK phenotype files:
@@ -418,91 +440,6 @@ void Data::read_pheno(const char *filename, unsigned int firstcol)
 // 
 // firstcol is _one-based_, 3 for pheno file, 6 for FAM file (ignoring sex),
 // 5 for FAM file (with gender)
-NamedMatrixWrapper read_text(const char *filename,
-   unsigned int firstcol, unsigned int nrows, unsigned int skip,
-   bool verbose)
-{
-   NamedMatrixWrapper M;
-
-   unsigned int line_num = 0;
-
-   std::ifstream in(filename, std::ios::in);
-
-   if(!in)
-   {
-      std::string err = std::string("Error reading file '")
-	 + filename + "': " + strerror(errno);
-      throw std::runtime_error(err);
-   }
-   std::vector<std::string> lines;
-   
-   while(in)
-   {
-      std::string line;
-      std::getline(in, line);
-      if(!in.eof() && (nrows == -1 || line_num < nrows))
-      {
-	 if(line_num >= skip)
-	    lines.push_back(line);
-	 line_num++;
-      }
-   }
-
-   verbose && STDOUT << timestamp() << "Detected text file " <<
-      filename << ", " << lines.size() << " rows" << std::endl;
-
-   in.close();
-
-   unsigned int numtok = 0, numfields, numfields_1st = 0;
-
-   M.X = MatrixXd(0, 0);
-
-   for(unsigned int i = 0 ; i < lines.size() ; i++)
-   {
-      std::stringstream ss(lines[i]);
-      std::string s;
-      std::vector<std::string> tokens;
-
-      while(ss >> s)
-	 tokens.push_back(s);
-
-      numtok = tokens.size();
-      numfields = numtok - firstcol + 1;
-      if(i == 0)
-      {
-	 M.X.resize(lines.size(), numfields);
-	 numfields_1st = numfields;
-      }
-      else if(numfields_1st != numfields)
-      {
-	 std::string err = std::string("Error reading file '")
-	    + filename + "': inconsistent number of columns";
-	 throw std::runtime_error(err);
-      }
-
-      VectorXd y(numfields);
-      char* err;
-      errno = 0;
-      for(unsigned int j = 0 ; j < numfields ; j++)
-      {
-	 //y(j) = std::atof(tokens[j + firstcol - 1].c_str());
-	 double m = std::strtod(tokens[j + firstcol - 1].c_str(), &err);
-	 if(*err != '\0' || errno != 0)
-	 {
-	    std::string err = std::string("Error reading file '")
-	       + filename + "', line " + std::to_string(i + 1)
-	       + ": '" + tokens[j + firstcol - 1] + "'"
-	       + " cannot be parsed as a number";
-	    throw std::runtime_error(err);
-	 }
-	 y(j) = m;
-      }
-      M.X.row(i) = y;
-   }
-
-   return M;
-}
-
 void Data::read_plink_bim(const char *filename)
 {
    std::ifstream in(filename, std::ios::in);
@@ -514,7 +451,7 @@ void Data::read_plink_bim(const char *filename)
       throw std::runtime_error(err);
    }
    std::vector<std::string> lines;
-   
+
    while(in)
    {
       std::string line;
@@ -529,63 +466,79 @@ void Data::read_plink_bim(const char *filename)
 
    for(unsigned int i = 0 ; i < lines.size() ; i++)
    {
-      std::stringstream ss(lines[i]);
-      std::string s;
-      std::vector<std::string> tokens;
+	   std::stringstream ss(lines[i]);
+	   std::string s;
+	   std::vector<std::string> tokens;
 
-      while(ss >> s)
-	 tokens.push_back(s);
-      snp_ids.push_back(tokens[1]);
-      ref_alleles.push_back(tokens[4]);
-      alt_alleles.push_back(tokens[5]);
+	   while(ss >> s)
+		   tokens.push_back(s);
+	   if(!snp_select ||
+			   (extract_snp && snp_inclusion_list.find(tokens[1])!=snp_inclusion_list.end()) ||
+			   (!extract_snp && snp_inclusion_list.find(tokens[1])==snp_inclusion_list.end()) )
+	   {
+		   snp_ids.push_back(tokens[1]);
+		   ref_alleles.push_back(tokens[4]);
+		   alt_alleles.push_back(tokens[5]);
 
-      char* err;
-      errno = 0;
-      unsigned long long m = std::strtol(tokens[3].c_str(), &err, 10);
-      if(*err != '\0' || errno != 0)
-      {
-	 std::string err = std::string("Error reading file '")
-	    + filename + "', line " + std::to_string(i + 1)
-	    + ": '" + tokens[3] + "' cannot be parsed as a number";
-	 throw std::runtime_error(err);
-      }
-      bp.push_back(m);
+		   char* err;
+		   errno = 0;
+		   unsigned long long m = std::strtol(tokens[3].c_str(), &err, 10);
+		   if(*err != '\0' || errno != 0)
+		   {
+			   std::string err = std::string("Error reading file '")
+			   + filename + "', line " + std::to_string(i + 1)
+			   + ": '" + tokens[3] + "' cannot be parsed as a number";
+			   throw std::runtime_error(err);
+		   }
+		   bp.push_back(m);
+		   snp_included.push_back(i);
+	   }
    }
 }
 
 void Data::read_plink_fam(const char *filename)
 {
-   std::ifstream in(filename, std::ios::in);
+	std::ifstream in(filename, std::ios::in);
 
-   if(!in)
-   {
-      std::string err = std::string(
-	 "[Data::read_plink_fam] Error reading file ") + filename;
-      throw std::runtime_error(err);
-   }
-   std::vector<std::string> lines;
-   
-   while(in)
-   {
-      std::string line;
-      std::getline(in, line);
-      if(!in.eof())
-	 lines.push_back(line);
-   }
+	if(!in)
+	{
+		std::string err = std::string(
+				"[Data::read_plink_fam] Error reading file ") + filename;
+		throw std::runtime_error(err);
+	}
+	std::vector<std::string> lines;
 
-   in.close();
+  	while(in)
+  	{
+  		std::string line;
+  		std::getline(in, line);
+  		if(!in.eof())
+  			lines.push_back(line);
+  	}
 
-   for(unsigned int i = 0 ; i < lines.size() ; i++)
-   {
-      std::stringstream ss(lines[i]);
-      std::string s;
-      std::vector<std::string> tokens;
+  	in.close();
 
-      while(ss >> s)
-	 tokens.push_back(s);
-      fam_ids.push_back(tokens[0]);
-      indiv_ids.push_back(tokens[1]);
-   }
+  	for(unsigned int i = 0 ; i < lines.size() ; i++)
+  	{
+  		std::stringstream ss(lines[i]);
+  		std::string s;
+  		std::vector<std::string> tokens;
+
+  		while(ss >> s)
+  			tokens.push_back(s);
+  		std::string id = tokens[0]+"_"+tokens[1];
+  		if(!sample_select ||
+  				(keep_sample && sample_inclusion_list.find(id)!=sample_inclusion_list.end()) ||
+				(!keep_sample && sample_inclusion_list.find(id)==sample_inclusion_list.end()))
+  		{
+  			fam_ids.push_back(tokens[0]);
+  			indiv_ids.push_back(tokens[1]);
+  			sample_included.push_back(i);
+  		}
+  	}
+  	N=lines.size();
+  	// might want a more elegant way to do this though this should be safer
+  	// as what we really want is the number of samples in the bed file
 }
 
 std::string Data::tolower(const std::string& v)
@@ -594,4 +547,251 @@ std::string Data::tolower(const std::string& v)
    std::transform(r.begin(), r.end(), r.begin(), ::tolower);
    return r;
 }
+
+void Data::read_sample_select(const std::string &file_name, bool keep)
+{
+	sample_select = true;
+	keep_sample = keep;
+	std::ifstream input;
+	input.open(file_name.c_str());
+	if(!input.is_open())
+	{
+		std::string err = std::string("Error reading file ")
+			+ file_name;
+		throw std::runtime_error(err);
+	}
+	std::string line;
+	while(std::getline(input, line))
+	{
+		std::stringstream ss(line);
+		std::string s;
+		std::vector<std::string> tokens;
+
+		while(ss >> s)
+			tokens.push_back(s);
+		std::string id = tokens[0]+"_"+tokens[1];
+		if(sample_inclusion_list.find(id)==sample_inclusion_list.end())
+		{
+			sample_inclusion_list.insert(id);
+		}
+	}
+	input.close();
+}
+
+void Data::read_snp_select(const std::string &file_name, bool extract)
+{
+	snp_select = true;
+	extract_snp = extract;
+	std::ifstream input;
+	input.open(file_name.c_str());
+	if(!input.is_open())
+	{
+		std::string err = std::string("Error reading file ")
+			+ file_name;
+		throw std::runtime_error(err);
+	}
+	std::string line;
+	while(std::getline(input, line))
+	{
+		std::stringstream ss(line);
+		std::string s;
+		std::vector<std::string> tokens;
+		ss >> s;
+		if(snp_inclusion_list.find(s)==snp_inclusion_list.end())
+		{
+			snp_inclusion_list.insert(s);
+		}
+	}
+	input.close();
+}
+
+NamedMatrixWrapper read_text(const char *filename,
+		unsigned int firstcol, unsigned int nrows, unsigned int skip,
+		bool verbose)
+{
+	NamedMatrixWrapper M;
+
+	unsigned int line_num = 0;
+
+	std::ifstream in(filename, std::ios::in);
+
+	if(!in)
+	{
+		std::string err = std::string("Error reading file '")
+			+ filename + "': " + strerror(errno);
+		throw std::runtime_error(err);
+	}
+	std::vector<std::string> lines;
+
+	while(in)
+	{
+		std::string line;
+		std::getline(in, line);
+		if(!in.eof() && (nrows == -1 || line_num < nrows))
+		{
+			if(line_num >= skip)
+			{
+				lines.push_back(line);
+			}
+			line_num++;
+		}
+	}
+
+	verbose && STDOUT << timestamp() << "Detected text file " <<
+			filename << ", " << lines.size() << " rows" << std::endl;
+
+	in.close();
+
+	unsigned int numtok = 0, numfields, numfields_1st = 0;
+
+	M.X = MatrixXd(0, 0);
+
+	for(unsigned int i = 0 ; i < lines.size() ; i++)
+	{
+		std::stringstream ss(lines[i]);
+		std::string s;
+		std::vector<std::string> tokens;
+
+		while(ss >> s)
+			tokens.push_back(s);
+
+		numtok = tokens.size();
+		numfields = numtok - firstcol + 1;
+		if(i == 0)
+		{
+			M.X.resize(lines.size(), numfields);
+			numfields_1st = numfields;
+		}
+		else if(numfields_1st != numfields)
+		{
+			std::string err = std::string("Error reading file '")
+				+ filename + "': inconsistent number of columns";
+			throw std::runtime_error(err);
+		}
+
+		VectorXd y(numfields);
+		char* err;
+		errno = 0;
+		for(unsigned int j = 0 ; j < numfields ; j++)
+		{
+			//y(j) = std::atof(tokens[j + firstcol - 1].c_str());
+			double m = std::strtod(tokens[j + firstcol - 1].c_str(), &err);
+			if(*err != '\0' || errno != 0)
+			{
+				std::string err = std::string("Error reading file '")
+					+ filename + "', line " + std::to_string(i + 1)
+					+ ": '" + tokens[j + firstcol - 1] + "'"
+					+ " cannot be parsed as a number";
+				throw std::runtime_error(err);
+			}
+			y(j) = m;
+		}
+		M.X.row(i) = y;
+	}
+
+	return M;
+}
+
+NamedMatrixWrapper read_text(
+		  const char *filename, unsigned int firstcol,
+	      const std::unordered_set<std::string> &sample_inclusion_list,
+		  bool	keep_sample, bool sample_select,
+		  unsigned int nrows, unsigned int skip, bool verbose)
+{
+	NamedMatrixWrapper M;
+
+	unsigned int line_num = 0;
+
+	std::ifstream in(filename, std::ios::in);
+
+	if(!in)
+	{
+		std::string err = std::string("Error reading file '")
+			+ filename + "': " + strerror(errno);
+		throw std::runtime_error(err);
+	}
+	std::vector<std::string> lines;
+
+	while(in)
+	{
+		std::string line;
+		std::getline(in, line);
+		if(!in.eof() && (nrows == -1 || line_num < nrows))
+		{
+			if(line_num >= skip)
+			{
+				std::stringstream ss(line);
+				std::string s;
+				std::vector<std::string> tokens;
+
+				while(ss >> s)
+					tokens.push_back(s);
+				std::string id = tokens[0]+"_"+tokens[1];
+				if(!sample_select ||
+						(keep_sample && sample_inclusion_list.find(id)!=sample_inclusion_list.end()) ||
+						(!keep_sample && sample_inclusion_list.find(id)==sample_inclusion_list.end()) )
+				{
+					lines.push_back(line);
+				}
+			}
+			line_num++;
+		}
+	}
+
+	verbose && STDOUT << timestamp() << "Detected text file " <<
+			filename << ", " << lines.size() << " rows" << std::endl;
+
+	in.close();
+
+	unsigned int numtok = 0, numfields, numfields_1st = 0;
+
+	M.X = MatrixXd(0, 0);
+
+	for(unsigned int i = 0 ; i < lines.size() ; i++)
+	{
+		std::stringstream ss(lines[i]);
+		std::string s;
+		std::vector<std::string> tokens;
+
+		while(ss >> s)
+			tokens.push_back(s);
+
+		numtok = tokens.size();
+		numfields = numtok - firstcol + 1;
+		if(i == 0)
+		{
+			M.X.resize(lines.size(), numfields);
+			numfields_1st = numfields;
+		}
+		else if(numfields_1st != numfields)
+		{
+			std::string err = std::string("Error reading file '")
+				+ filename + "': inconsistent number of columns";
+			throw std::runtime_error(err);
+		}
+
+		VectorXd y(numfields);
+		char* err;
+		errno = 0;
+		for(unsigned int j = 0 ; j < numfields ; j++)
+		{
+			//y(j) = std::atof(tokens[j + firstcol - 1].c_str());
+			double m = std::strtod(tokens[j + firstcol - 1].c_str(), &err);
+			if(*err != '\0' || errno != 0)
+			{
+				std::string err = std::string("Error reading file '")
+					+ filename + "', line " + std::to_string(i + 1)
+					+ ": '" + tokens[j + firstcol - 1] + "'"
+					+ " cannot be parsed as a number";
+				throw std::runtime_error(err);
+			}
+			y(j) = m;
+		}
+		M.X.row(i) = y;
+	}
+	//M.N = lines.size();
+
+	return M;
+}
+
 
