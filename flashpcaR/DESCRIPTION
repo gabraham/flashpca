@@ -23,7 +23,7 @@ NeedsCompilation: yes
 Imports: 
     Rcpp (>= 0.11.1), methods, abind
 LinkingTo:
-   Rcpp, RcppEigen (>= 0.3.2.5.1), BH, RSpectra
+   Rcpp, RcppEigen (>= 0.3.2.5.1), BH, RSpectra (>= 0.14)
 RoxygenNote: 5.0.1
 Suggests: testthat, foreach, knitr, rmarkdown, qqman
 VignetteBuilder: knitr

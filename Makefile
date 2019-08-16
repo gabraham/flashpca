@@ -1,7 +1,7 @@
 
 .PHONY: all
 
-VERSION=2.0
+VERSION=2.1
 
 EIGEN_INC=/usr/local/include/eigen
 BOOST_INC=/usr/local/include/boost
@@ -23,7 +23,7 @@ CXXFLAGS += -I${SPECTRA_INC} -I${BOOST_INC} -I${EIGEN_INC}
 
 UNAME := $(shell uname)
 ifeq ($(UNAME), Darwin)
-   CXXFLAGS += -msse2 -DEIGEN_DONT_PARALLELIZE -std=c++11
+   CXXFLAGS += -msse2 -DEIGEN_DONT_PARALLELIZE -std=c++11 -fvisibility=hidden
    BOOST = ${BOOST_LIB}/libboost_program_options.a
 else
    CXXFLAGS += -march=native -fopenmp -std=c++0x
