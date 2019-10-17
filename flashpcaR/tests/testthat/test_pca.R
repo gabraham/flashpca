@@ -3,7 +3,6 @@ context("Testing PCA")
 n <- 500
 p <- 1000
 ndim <- 50
-nextra <- 100
 tol <- 1e-4
 
 data(hm3.chr1)
@@ -45,9 +44,10 @@ compare_eigenvecs <- function(...)
 
 test_that("Testing PCA with stand='binom'", {
    S <- scale2(hm3.chr1$bed, type="1")
-
    #f1 <- prcomp(S, center=FALSE, scale.=FALSE)
    f1 <- eigen(tcrossprod(S) / ncol(S), symmetric=TRUE)
+	 #sometimes values too close to zero are annotated as negative values
+	 f1$values <- abs(f1$values)
    f1$projection <- with(f1, vectors %*% diag(sqrt(values)))
    f2 <- flashpca(S, ndim=ndim, stand="none")
    f3 <- flashpca(bedf, ndim=ndim, stand="binom")
