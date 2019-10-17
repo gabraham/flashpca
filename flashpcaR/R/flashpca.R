@@ -136,7 +136,11 @@ flashpca <- function(X, ndim=10,
       stop("X must be a numeric matrix or a string naming a PLINK fileset")
    }
 
-   divisors <- c(
+	 if(ndim < 1) {
+		 stop("ndim can't be less than 1")
+	 }
+	 
+	 divisors <- c(
       "p"=2,
       "n1"=1,
       "none"=0
@@ -153,8 +157,22 @@ flashpca <- function(X, ndim=10,
    stand_i <- std[stand]
 
    if(is.numeric(X)) {
-      maxdim <- min(dim(X))
-      ndim <- min(maxdim, ndim)
+		 # Spectra recommends to run with
+		 #   1 <= nev < n
+		 #   nev < ncv < n
+		 #   ncv >= 2 nev
+		 # where nev is number of requested eigenvectors, ncv is the extra
+		 # dimensions required for the computation.
+		 # We use ncv = 2*ndim+1 --> ndim<(n-1)/2
+		 # see
+		 # http://yixuan.cos.name/spectra/doc/classSpectra_1_1SymEigsSolver.html
+		 maxdim <- ((min(dim(X)) - 1) / 2.0)
+		 if(ndim > maxdim) {
+			 msg <- paste("You asked for ", ndim,
+										" dimensions, but only ", as.integer(maxdim), 
+										" allowed", sep="")
+			 stop(msg)
+		 }
    }
 
    # If the matrix is integer, Rcpp will throw an exception
