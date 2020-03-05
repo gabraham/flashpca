@@ -100,6 +100,10 @@ class Data {
       ArrayXXd scaled_geno_lookup;
 };
 
+NamedMatrixWrapper read_MAF(
+   const char *filename, std::vector<std::string> &snp_ids, 
+	 unsigned int nrows=-1, bool verbose=false);
+
 NamedMatrixWrapper read_text(
    const char *filename, unsigned int firstcol,
    unsigned int nrows=-1, unsigned int skip=0, bool verbose=false);

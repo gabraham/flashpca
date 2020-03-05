@@ -354,15 +354,15 @@ int main(int argc, char * argv[])
    {
       std::string m = vm["standy"].as<std::string>();
       if(m == "binom")
-	 stand_method_x = STANDARDISE_BINOM;
+	 stand_method_y = STANDARDISE_BINOM;
       else if(m == "binom2")
-	 stand_method_x = STANDARDISE_BINOM2;
+	 stand_method_y = STANDARDISE_BINOM2;
       else if(m == "sd")
-	 stand_method_x = STANDARDISE_SD;
+	 stand_method_y = STANDARDISE_SD;
       else if(m == "center")
-	 stand_method_x = STANDARDISE_CENTER;
+	 stand_method_y = STANDARDISE_CENTER;
       else if(m == "none")
-	 stand_method_x = STANDARDISE_NONE;
+	 stand_method_y = STANDARDISE_NONE;
       else
       {
 	 std::cerr << "Error: unknown standardization method (--standy): "
@@ -617,17 +617,19 @@ int main(int argc, char * argv[])
       //    ncv >= 2 nev
       // where nev is number of requested eigenvectors, ncv is the extra
       // dimensions required for the computation.
+			// We use ncv = 2*ndim+1 --> ndim<(n-1)/2
       // see
       // http://yixuan.cos.name/spectra/doc/classSpectra_1_1SymEigsSolver.html
-      unsigned int max_dim = fminl(data.N, data.nsnps) / 3.0;
-
+      unsigned int max_dim = (fminl(data.N, data.nsnps) - 1) / 2.0;
       if(n_dim > max_dim)
       {
-	 std::cout << timestamp() << "You asked for "
-	    << n_dim << " dimensions, but only "
-	    << max_dim << " allowed, using " << max_dim
-	    << " instead" << std::endl;
-         n_dim = max_dim;
+				std::cerr << "Error: You asked for " << n_dim << " dimensions, but only " << max_dim << "allowed" << std::endl;
+				return EXIT_FAILURE;
+				//std::cout << timestamp() << "You asked for "
+				//	<< n_dim << " dimensions, but only "
+				//	<< max_dim << " allowed, using " << max_dim
+				//	<< " instead" << std::endl;
+				//n_dim = max_dim;
       }
 
       //double mem = (double)memory * 1073741824;

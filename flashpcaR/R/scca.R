@@ -178,8 +178,24 @@ scca <- function(X, Y, lambda1=0, lambda2=0,
    standx_i <- std[standx]
    standy_i <- std[standy]
 
-   #maxdim <- min(dim(X), dim(Y))
-   #ndim <- min(maxdim, ndim)
+
+	 # Spectra recommends to run with
+   #   1 <= nev < n
+   #   nev < ncv < n
+   #   ncv >= 2 nev
+   # where nev is number of requested eigenvectors, ncv is the extra
+   # dimensions required for the computation.
+   # We use ncv = 2*ndim+1 --> ndim<(n-1)/2
+   # see
+   # http://yixuan.cos.name/spectra/doc/classSpectra_1_1SymEigsSolver.html
+   if(ndim < 1) {
+     stop("ndim can't be less than 1")
+   }
+   max_dim <- ( (min(ncol(X),nrow(X),ncol(Y),nrow(Y))-1) / 2.0)
+   if(ndim > max_dim) {
+     msg <- paste("You asked for ", ndim," dimensions, but only ", as.integer(max_dim), " allowed", sep="")
+     stop(msg)
+   }
 
    if(mem == "high") {
       mem_i <- 2L

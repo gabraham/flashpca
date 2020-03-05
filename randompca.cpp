@@ -751,7 +751,7 @@ void RandomPCA::project(Data& dat, unsigned int block_size,
       // TODO: missing/non-numeric values?
       verbose && STDOUT << timestamp() << "Reading MAF file "
 	 << maf_file << std::endl;
-      NamedMatrixWrapper M2 = read_text(maf_file.c_str(), 3, -1, 1);
+      NamedMatrixWrapper M2 = read_MAF(maf_file.c_str(), dat.snp_ids, -1, 1);
       dat.X_meansd = maf2meansd(M2.X);
       dat.use_preloaded_maf = true;
    }
