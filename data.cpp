@@ -417,82 +417,82 @@ void Data::read_pheno(const char *filename, unsigned int firstcol)
 // Format:
 //  CHR SNP A1 A2 MAF NCHROB
 NamedMatrixWrapper read_MAF(const char *filename,
-		std::vector<std::string> &snp_ids, unsigned int nrows,
-		bool verbose)
+      std::vector<std::string> &snp_ids, unsigned int nrows,
+      bool verbose)
 {
-	NamedMatrixWrapper M;
-	unsigned int line_num = 0;
-	std::ifstream in(filename, std::ios::in);
+   NamedMatrixWrapper M;
+   unsigned int line_num = 0;
+   std::ifstream in(filename, std::ios::in);
 
-	if(!in)
-	{
-		std::string err = std::string("Error reading file '")
-			+ filename + "': " + strerror(errno);
-		throw std::runtime_error(err);
-	}
-	std::vector<std::string> lines;
+   if(!in)
+   {
+      std::string err = std::string("Error reading file '")
+	 + filename + "': " + strerror(errno);
+      throw std::runtime_error(err);
+   }
+   std::vector<std::string> lines;
 
-	while(in)
-	{
-		std::string line;
-		std::getline(in, line);
-		if(!in.eof() && (nrows == -1 || line_num < nrows))
-		{
-			if(line_num >= 1) //skip header of .frq
-				lines.push_back(line);
-			line_num++;
-		}
-	}
-	verbose && STDOUT << timestamp() << "Detected text file " <<
-		filename << ", " << lines.size() << " rows" << std::endl;
-	in.close();
-	//check that we have the same number of snps
-	if(lines.size() != snp_ids.size()) {
-		std::string err = std::string("Error number of SNPs in '")
-			+ filename + "': different number of SNPs than in the bim file'";
-		throw std::runtime_error(err);
-	}
-	unsigned int numtok = 0, numfields, numfields_1st = 0;
-	M.X = MatrixXd(0, 0);
-	for(unsigned int i = 0 ; i < lines.size() ; i++)
-	{
-		std::stringstream ss(lines[i]);
-		std::string s;
-		std::vector<std::string> tokens;
-		while(ss >> s)
-			tokens.push_back(s);
-		numtok = tokens.size();
-		if(numtok != 6) { //(CHR SNP A1 A2 MAF NCHROBS)
-			std::string err = std::string("Error reading file '")
-				+ filename + "': inconsistent number of columns";
-			throw std::runtime_error(err);
-		}
-		else {
-			if(tokens[1].compare(snp_ids[i]) != 0) {
-				std::cout << tokens[1] << "  " << snp_ids[i] << std::endl;
-				std::string err = std::string("Error reading file '")
-					+ filename + "': inconsistent SNP id at row':" + std::to_string(i);
-				throw std::runtime_error(err);
-			}
-		}
-		if(i == 0)
-			M.X.resize(lines.size(), 1);
-		VectorXd y(1);
-		char* err;
-		errno = 0;
-		double m = std::strtod(tokens[4].c_str(), &err);
-		if(*err != '\0' || errno != 0)
-		{
-			std::string err = std::string("Error reading file '")
-				+ filename + "', line " + std::to_string(i + 1)
-				+ ": '" + tokens[4] + "'"
-				+ " cannot be parsed as a number";
-			throw std::runtime_error(err);
-		}
-		y(0) = m;
-		M.X.row(i) = y;
-	}
-	return M;
+   while(in)
+   {
+      std::string line;
+      std::getline(in, line);
+      if(!in.eof() && (nrows == -1 || line_num < nrows))
+      {
+	 if(line_num >= 1) //skip header of .frq
+	    lines.push_back(line);
+	 line_num++;
+      }
+   }
+   verbose && STDOUT << timestamp() << "Detected text file " <<
+      filename << ", " << lines.size() << " rows" << std::endl;
+   in.close();
+   //check that we have the same number of snps
+   if(lines.size() != snp_ids.size()) {
+      std::string err = std::string("Error number of SNPs in '")
+	 + filename + "': different number of SNPs than in the bim file'";
+      throw std::runtime_error(err);
+   }
+   unsigned int numtok = 0;
+   M.X = MatrixXd(0, 0);
+   for(unsigned int i = 0 ; i < lines.size() ; i++)
+   {
+      std::stringstream ss(lines[i]);
+      std::string s;
+      std::vector<std::string> tokens;
+      while(ss >> s)
+	 tokens.push_back(s);
+      numtok = tokens.size();
+      if(numtok != 6) { //(CHR SNP A1 A2 MAF NCHROBS)
+	 std::string err = std::string("Error reading file '")
+	    + filename + "': inconsistent number of columns";
+	 throw std::runtime_error(err);
+      }
+      else {
+	 if(tokens[1].compare(snp_ids[i]) != 0) {
+	    std::cout << tokens[1] << "  " << snp_ids[i] << std::endl;
+	    std::string err = std::string("Error reading file '")
+	       + filename + "': inconsistent SNP id at row':" + std::to_string(i);
+	    throw std::runtime_error(err);
+	 }
+      }
+      if(i == 0)
+	 M.X.resize(lines.size(), 1);
+      VectorXd y(1);
+      char* err;
+      errno = 0;
+      double m = std::strtod(tokens[4].c_str(), &err);
+      if(*err != '\0' || errno != 0)
+      {
+	 std::string err = std::string("Error reading file '")
+	    + filename + "', line " + std::to_string(i + 1)
+	    + ": '" + tokens[4] + "'"
+	    + " cannot be parsed as a number";
+	 throw std::runtime_error(err);
+      }
+      y(0) = m;
+      M.X.row(i) = y;
+   }
+   return M;
 }
 
 // Reads PLINK phenotype files:

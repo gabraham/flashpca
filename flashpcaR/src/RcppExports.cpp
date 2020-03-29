@@ -8,7 +8,7 @@ using namespace Rcpp;
 
 // flashpca_internal
 List flashpca_internal(const Eigen::Map<Eigen::MatrixXd> X, const int stand, const unsigned int ndim, const unsigned int divisor, const unsigned int maxiter, const double tol, const long seed, const bool verbose, const bool do_loadings, const bool return_scale);
-RcppExport SEXP flashpcaR_flashpca_internal(SEXP XSEXP, SEXP standSEXP, SEXP ndimSEXP, SEXP divisorSEXP, SEXP maxiterSEXP, SEXP tolSEXP, SEXP seedSEXP, SEXP verboseSEXP, SEXP do_loadingsSEXP, SEXP return_scaleSEXP) {
+RcppExport SEXP _flashpcaR_flashpca_internal(SEXP XSEXP, SEXP standSEXP, SEXP ndimSEXP, SEXP divisorSEXP, SEXP maxiterSEXP, SEXP tolSEXP, SEXP seedSEXP, SEXP verboseSEXP, SEXP do_loadingsSEXP, SEXP return_scaleSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -28,7 +28,7 @@ END_RCPP
 }
 // flashpca_plink_internal
 List flashpca_plink_internal(const std::string fn, const int stand, const unsigned int ndim, const unsigned int divisor, const unsigned int maxiter, const unsigned int block_size, const double tol, const long seed, const bool verbose, const bool do_loadings, const bool return_scale);
-RcppExport SEXP flashpcaR_flashpca_plink_internal(SEXP fnSEXP, SEXP standSEXP, SEXP ndimSEXP, SEXP divisorSEXP, SEXP maxiterSEXP, SEXP block_sizeSEXP, SEXP tolSEXP, SEXP seedSEXP, SEXP verboseSEXP, SEXP do_loadingsSEXP, SEXP return_scaleSEXP) {
+RcppExport SEXP _flashpcaR_flashpca_plink_internal(SEXP fnSEXP, SEXP standSEXP, SEXP ndimSEXP, SEXP divisorSEXP, SEXP maxiterSEXP, SEXP block_sizeSEXP, SEXP tolSEXP, SEXP seedSEXP, SEXP verboseSEXP, SEXP do_loadingsSEXP, SEXP return_scaleSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -48,8 +48,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // scca_internal
-List scca_internal(const Eigen::Map<Eigen::MatrixXd> X, const Eigen::Map<Eigen::MatrixXd> Y, const double lambda1, const double lambda2, const unsigned int ndim, const int stand_x, const int stand_y, const int mem, const long seed, const int maxiter, const double tol, const bool verbose, const unsigned int num_threads, const bool useV, const Eigen::Map<Eigen::MatrixXd> Vinit);
-RcppExport SEXP flashpcaR_scca_internal(SEXP XSEXP, SEXP YSEXP, SEXP lambda1SEXP, SEXP lambda2SEXP, SEXP ndimSEXP, SEXP stand_xSEXP, SEXP stand_ySEXP, SEXP memSEXP, SEXP seedSEXP, SEXP maxiterSEXP, SEXP tolSEXP, SEXP verboseSEXP, SEXP num_threadsSEXP, SEXP useVSEXP, SEXP VinitSEXP) {
+List scca_internal(const Eigen::Map<Eigen::MatrixXd> X, const Eigen::Map<Eigen::MatrixXd> Y, const double lambda1, const double lambda2, const unsigned int ndim, const int stand_x, const int stand_y, const int divisor, const int mem, const long seed, const int maxiter, const double tol, const bool verbose, const unsigned int num_threads, const bool useV, const Eigen::Map<Eigen::MatrixXd> Vinit);
+RcppExport SEXP _flashpcaR_scca_internal(SEXP XSEXP, SEXP YSEXP, SEXP lambda1SEXP, SEXP lambda2SEXP, SEXP ndimSEXP, SEXP stand_xSEXP, SEXP stand_ySEXP, SEXP divisorSEXP, SEXP memSEXP, SEXP seedSEXP, SEXP maxiterSEXP, SEXP tolSEXP, SEXP verboseSEXP, SEXP num_threadsSEXP, SEXP useVSEXP, SEXP VinitSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -60,6 +60,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const unsigned int >::type ndim(ndimSEXP);
     Rcpp::traits::input_parameter< const int >::type stand_x(stand_xSEXP);
     Rcpp::traits::input_parameter< const int >::type stand_y(stand_ySEXP);
+    Rcpp::traits::input_parameter< const int >::type divisor(divisorSEXP);
     Rcpp::traits::input_parameter< const int >::type mem(memSEXP);
     Rcpp::traits::input_parameter< const long >::type seed(seedSEXP);
     Rcpp::traits::input_parameter< const int >::type maxiter(maxiterSEXP);
@@ -68,13 +69,13 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const unsigned int >::type num_threads(num_threadsSEXP);
     Rcpp::traits::input_parameter< const bool >::type useV(useVSEXP);
     Rcpp::traits::input_parameter< const Eigen::Map<Eigen::MatrixXd> >::type Vinit(VinitSEXP);
-    rcpp_result_gen = Rcpp::wrap(scca_internal(X, Y, lambda1, lambda2, ndim, stand_x, stand_y, mem, seed, maxiter, tol, verbose, num_threads, useV, Vinit));
+    rcpp_result_gen = Rcpp::wrap(scca_internal(X, Y, lambda1, lambda2, ndim, stand_x, stand_y, divisor, mem, seed, maxiter, tol, verbose, num_threads, useV, Vinit));
     return rcpp_result_gen;
 END_RCPP
 }
 // ucca_plink_internal
 List ucca_plink_internal(const std::string fn, const Eigen::Map<Eigen::MatrixXd> Y, const int stand_x, const int stand_y, const bool verbose);
-RcppExport SEXP flashpcaR_ucca_plink_internal(SEXP fnSEXP, SEXP YSEXP, SEXP stand_xSEXP, SEXP stand_ySEXP, SEXP verboseSEXP) {
+RcppExport SEXP _flashpcaR_ucca_plink_internal(SEXP fnSEXP, SEXP YSEXP, SEXP stand_xSEXP, SEXP stand_ySEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -88,8 +89,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // scca_plink_internal
-List scca_plink_internal(const std::string fn, const Eigen::Map<Eigen::MatrixXd> Y, const double lambda1, const double lambda2, const unsigned int ndim, const int stand_x, const int stand_y, const int mem, const long seed, const int maxiter, const double tol, const bool verbose, const unsigned int num_threads, const unsigned int block_size, const bool useV, const Eigen::Map<Eigen::MatrixXd> Vinit);
-RcppExport SEXP flashpcaR_scca_plink_internal(SEXP fnSEXP, SEXP YSEXP, SEXP lambda1SEXP, SEXP lambda2SEXP, SEXP ndimSEXP, SEXP stand_xSEXP, SEXP stand_ySEXP, SEXP memSEXP, SEXP seedSEXP, SEXP maxiterSEXP, SEXP tolSEXP, SEXP verboseSEXP, SEXP num_threadsSEXP, SEXP block_sizeSEXP, SEXP useVSEXP, SEXP VinitSEXP) {
+List scca_plink_internal(const std::string fn, const Eigen::Map<Eigen::MatrixXd> Y, const double lambda1, const double lambda2, const unsigned int ndim, const int stand_x, const int stand_y, const int divisor, const int mem, const long seed, const int maxiter, const double tol, const bool verbose, const unsigned int num_threads, const unsigned int block_size, const bool useV, const Eigen::Map<Eigen::MatrixXd> Vinit);
+RcppExport SEXP _flashpcaR_scca_plink_internal(SEXP fnSEXP, SEXP YSEXP, SEXP lambda1SEXP, SEXP lambda2SEXP, SEXP ndimSEXP, SEXP stand_xSEXP, SEXP stand_ySEXP, SEXP divisorSEXP, SEXP memSEXP, SEXP seedSEXP, SEXP maxiterSEXP, SEXP tolSEXP, SEXP verboseSEXP, SEXP num_threadsSEXP, SEXP block_sizeSEXP, SEXP useVSEXP, SEXP VinitSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -100,6 +101,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const unsigned int >::type ndim(ndimSEXP);
     Rcpp::traits::input_parameter< const int >::type stand_x(stand_xSEXP);
     Rcpp::traits::input_parameter< const int >::type stand_y(stand_ySEXP);
+    Rcpp::traits::input_parameter< const int >::type divisor(divisorSEXP);
     Rcpp::traits::input_parameter< const int >::type mem(memSEXP);
     Rcpp::traits::input_parameter< const long >::type seed(seedSEXP);
     Rcpp::traits::input_parameter< const int >::type maxiter(maxiterSEXP);
@@ -109,13 +111,13 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const unsigned int >::type block_size(block_sizeSEXP);
     Rcpp::traits::input_parameter< const bool >::type useV(useVSEXP);
     Rcpp::traits::input_parameter< const Eigen::Map<Eigen::MatrixXd> >::type Vinit(VinitSEXP);
-    rcpp_result_gen = Rcpp::wrap(scca_plink_internal(fn, Y, lambda1, lambda2, ndim, stand_x, stand_y, mem, seed, maxiter, tol, verbose, num_threads, block_size, useV, Vinit));
+    rcpp_result_gen = Rcpp::wrap(scca_plink_internal(fn, Y, lambda1, lambda2, ndim, stand_x, stand_y, divisor, mem, seed, maxiter, tol, verbose, num_threads, block_size, useV, Vinit));
     return rcpp_result_gen;
 END_RCPP
 }
 // ucca_internal
 List ucca_internal(const Eigen::Map<Eigen::MatrixXd> X, const Eigen::Map<Eigen::MatrixXd> Y, const int stand_x, const int stand_y, const bool verbose);
-RcppExport SEXP flashpcaR_ucca_internal(SEXP XSEXP, SEXP YSEXP, SEXP stand_xSEXP, SEXP stand_ySEXP, SEXP verboseSEXP) {
+RcppExport SEXP _flashpcaR_ucca_internal(SEXP XSEXP, SEXP YSEXP, SEXP stand_xSEXP, SEXP stand_ySEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -130,7 +132,7 @@ END_RCPP
 }
 // standardise_impute
 NumericMatrix standardise_impute(const Eigen::Map<Eigen::MatrixXd> XX, const int method);
-RcppExport SEXP flashpcaR_standardise_impute(SEXP XXSEXP, SEXP methodSEXP) {
+RcppExport SEXP _flashpcaR_standardise_impute(SEXP XXSEXP, SEXP methodSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -142,7 +144,7 @@ END_RCPP
 }
 // check_internal
 List check_internal(const Eigen::MatrixXd& X, const int stand, const Eigen::MatrixXd& evec, const Eigen::VectorXd& eval, const unsigned int divisor, const bool verbose);
-RcppExport SEXP flashpcaR_check_internal(SEXP XSEXP, SEXP standSEXP, SEXP evecSEXP, SEXP evalSEXP, SEXP divisorSEXP, SEXP verboseSEXP) {
+RcppExport SEXP _flashpcaR_check_internal(SEXP XSEXP, SEXP standSEXP, SEXP evecSEXP, SEXP evalSEXP, SEXP divisorSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -158,7 +160,7 @@ END_RCPP
 }
 // check_plink_internal
 List check_plink_internal(const std::string fn, const int stand, const Eigen::MatrixXd evec, const Eigen::VectorXd eval, const unsigned int block_size, const unsigned int divisor, const bool verbose);
-RcppExport SEXP flashpcaR_check_plink_internal(SEXP fnSEXP, SEXP standSEXP, SEXP evecSEXP, SEXP evalSEXP, SEXP block_sizeSEXP, SEXP divisorSEXP, SEXP verboseSEXP) {
+RcppExport SEXP _flashpcaR_check_plink_internal(SEXP fnSEXP, SEXP standSEXP, SEXP evecSEXP, SEXP evalSEXP, SEXP block_sizeSEXP, SEXP divisorSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -175,7 +177,7 @@ END_RCPP
 }
 // project_plink_internal
 List project_plink_internal(const std::string fn, const Eigen::MatrixXd& loadings, const std::vector<std::string> ref_alleles, const Eigen::VectorXd& orig_mean, const Eigen::VectorXd& orig_sd, const unsigned int block_size, const unsigned int divisor, const bool verbose);
-RcppExport SEXP flashpcaR_project_plink_internal(SEXP fnSEXP, SEXP loadingsSEXP, SEXP ref_allelesSEXP, SEXP orig_meanSEXP, SEXP orig_sdSEXP, SEXP block_sizeSEXP, SEXP divisorSEXP, SEXP verboseSEXP) {
+RcppExport SEXP _flashpcaR_project_plink_internal(SEXP fnSEXP, SEXP loadingsSEXP, SEXP ref_allelesSEXP, SEXP orig_meanSEXP, SEXP orig_sdSEXP, SEXP block_sizeSEXP, SEXP divisorSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -190,4 +192,23 @@ BEGIN_RCPP
     rcpp_result_gen = Rcpp::wrap(project_plink_internal(fn, loadings, ref_alleles, orig_mean, orig_sd, block_size, divisor, verbose));
     return rcpp_result_gen;
 END_RCPP
+}
+
+static const R_CallMethodDef CallEntries[] = {
+    {"_flashpcaR_flashpca_internal", (DL_FUNC) &_flashpcaR_flashpca_internal, 10},
+    {"_flashpcaR_flashpca_plink_internal", (DL_FUNC) &_flashpcaR_flashpca_plink_internal, 11},
+    {"_flashpcaR_scca_internal", (DL_FUNC) &_flashpcaR_scca_internal, 16},
+    {"_flashpcaR_ucca_plink_internal", (DL_FUNC) &_flashpcaR_ucca_plink_internal, 5},
+    {"_flashpcaR_scca_plink_internal", (DL_FUNC) &_flashpcaR_scca_plink_internal, 17},
+    {"_flashpcaR_ucca_internal", (DL_FUNC) &_flashpcaR_ucca_internal, 5},
+    {"_flashpcaR_standardise_impute", (DL_FUNC) &_flashpcaR_standardise_impute, 2},
+    {"_flashpcaR_check_internal", (DL_FUNC) &_flashpcaR_check_internal, 6},
+    {"_flashpcaR_check_plink_internal", (DL_FUNC) &_flashpcaR_check_plink_internal, 7},
+    {"_flashpcaR_project_plink_internal", (DL_FUNC) &_flashpcaR_project_plink_internal, 8},
+    {NULL, NULL, 0}
+};
+
+RcppExport void R_init_flashpcaR(DllInfo *dll) {
+    R_registerRoutines(dll, NULL, CallEntries, NULL, NULL);
+    R_useDynamicSymbols(dll, FALSE);
 }

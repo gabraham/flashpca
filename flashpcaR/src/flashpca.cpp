@@ -189,6 +189,7 @@ List scca_internal(
    const unsigned int ndim,
    const int stand_x,
    const int stand_y,
+   const int divisor,
    const int mem,
    const long seed,
    const int maxiter,
@@ -210,6 +211,7 @@ List scca_internal(
       RandomPCA rpca;
       rpca.stand_method_x = stand_x;
       rpca.stand_method_y = stand_y;
+      rpca.divisor = divisor;
       rpca.verbose = verbose;
 
       if(useV)
@@ -324,6 +326,7 @@ List scca_plink_internal(
    const unsigned int ndim,
    const int stand_x,
    const int stand_y,
+   const int divisor,
    const int mem,
    const long seed,
    const int maxiter,
@@ -345,6 +348,7 @@ List scca_plink_internal(
       RandomPCA rpca;
       rpca.stand_method_x = stand_x;
       rpca.stand_method_y = stand_y;
+      rpca.divisor = divisor;
       rpca.verbose = verbose;
 
       std::string fam_file, geno_file, bim_file, pheno_file;

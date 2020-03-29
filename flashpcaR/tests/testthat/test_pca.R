@@ -80,6 +80,10 @@ test_that("Testing PCA with stand='binom2'", {
    compare_eigenvecs(
       f1$projection[, 1:ndim], f2$projection, f3$projection
    )
+
+   f1.pve <- f1$values / sum(f1$values)
+   expect_equal(f1.pve[1:ndim], f2$pve)
+   expect_equal(f1.pve[1:ndim], f3$pve)
 })
 
 

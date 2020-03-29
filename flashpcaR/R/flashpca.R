@@ -98,7 +98,7 @@
 #' @export
 flashpca <- function(X, ndim=10,
    stand=c("binom2", "binom", "sd", "center", "none"),
-   divisor=c("p", "n", "none"),
+   divisor=c("p", "n1", "none"),
    maxiter=1e2, tol=1e-4, seed=1, block_size=1000, verbose=FALSE,
    do_loadings=FALSE, check_geno=TRUE, return_scale=TRUE)
 {
@@ -136,11 +136,11 @@ flashpca <- function(X, ndim=10,
       stop("X must be a numeric matrix or a string naming a PLINK fileset")
    }
 
-	 if(ndim < 1) {
-		 stop("ndim can't be less than 1")
-	 }
+   if(ndim < 1) {
+      stop("ndim can't be less than 1")
+   }
 	 
-	 divisors <- c(
+   divisors <- c(
       "p"=2,
       "n1"=1,
       "none"=0
@@ -157,22 +157,22 @@ flashpca <- function(X, ndim=10,
    stand_i <- std[stand]
 
    if(is.numeric(X)) {
-		 # Spectra recommends to run with
-		 #   1 <= nev < n
-		 #   nev < ncv < n
-		 #   ncv >= 2 nev
-		 # where nev is number of requested eigenvectors, ncv is the extra
-		 # dimensions required for the computation.
-		 # We use ncv = 2*ndim+1 --> ndim<(n-1)/2
-		 # see
-		 # http://yixuan.cos.name/spectra/doc/classSpectra_1_1SymEigsSolver.html
-		 maxdim <- ((min(dim(X)) - 1) / 2.0)
-		 if(ndim > maxdim) {
-			 msg <- paste("You asked for ", ndim,
-										" dimensions, but only ", as.integer(maxdim), 
-										" allowed", sep="")
-			 stop(msg)
-		 }
+      # Spectra recommends to run with
+      #   1 <= nev < n
+      #   nev < ncv < n
+      #   ncv >= 2 nev
+      # where nev is number of requested eigenvectors, ncv is the extra
+      # dimensions required for the computation.
+      # We use ncv = 2*ndim+1 --> ndim<(n-1)/2
+      # see
+      # http://yixuan.cos.name/spectra/doc/classSpectra_1_1SymEigsSolver.html
+      maxdim <- ((min(dim(X)) - 1) / 2.0)
+      if(ndim > maxdim) {
+	 msg <- paste("You asked for ", ndim,
+	       " dimensions, but only ", as.integer(maxdim), 
+	       " allowed", sep="")
+	 stop(msg)
+      }
    }
 
    # If the matrix is integer, Rcpp will throw an exception

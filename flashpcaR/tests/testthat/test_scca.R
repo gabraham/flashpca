@@ -30,9 +30,9 @@ ndim <- min(n, m, k, 5)
 
 test_that(paste0("Testing self-self SCCA (X with X), l1=", l1, ", l2=", l2), {
 
-   eval <- eigen(tcrossprod(X))$val[1:ndim]
+   eval <- eigen(tcrossprod(X / sqrt(n - 1)))$val[1:ndim]
    
-   # Essentially power method for eigen-decomposition of XX'
+   # Essentially power method for eigen-decomposition of XX' / n
    s1 <- scca(X, X, lambda1=l1, lambda2=l2, ndim=ndim,	 
       standx="none", standy="none", mem="high")
    s2 <- scca(X, X, lambda1=l1, lambda2=l2, ndim=ndim,	 
@@ -51,12 +51,36 @@ test_that(paste0("Testing self-self SCCA (X with X), l1=", l1, ", l2=", l2), {
    expect_equal(rep(1, length(r2)), r2, tol=test.tol)
 })
 
-test_that("Testing self-self SCCA (X with X), initialising V0", {
+test_that(paste0("Testing self-self SCCA (X with X), l1=", l1, ", l2=", l2,
+   "(no dividing by n)"), {
+
    eval <- eigen(tcrossprod(X))$val[1:ndim]
+   
+   # Essentially power method for eigen-decomposition of XX' / n
+   s1 <- scca(X, X, lambda1=l1, lambda2=l2, ndim=ndim,	 
+      standx="none", standy="none", mem="high", divisor="none")
+   s2 <- scca(X, X, lambda1=l1, lambda2=l2, ndim=ndim,	 
+      standx="none", standy="none", mem="low", divisor="none")
+   s3 <- scca(bedf, X, lambda1=l1, lambda2=l2, ndim=ndim,	 
+      standx="binom2", standy="none", divisor="none")
+   r1 <- diag(cor(s1$Px, s1$Py))
+   r2 <- diag(cor(s2$Px, s2$Py))
+   r3 <- diag(cor(s3$Px, s3$Py))
+
+   expect_equal(s1$d, eval, tol=test.tol)
+   expect_equal(s1$d, s2$d, tol=test.tol)
+   expect_equal(s1$d, s3$d, tol=test.tol)
+
+   expect_equal(rep(1, length(r1)), r1, tol=test.tol)
+   expect_equal(rep(1, length(r2)), r2, tol=test.tol)
+})
+
+test_that("Testing self-self SCCA (X with X), initialising V0", {
+   eval <- eigen(tcrossprod(X / sqrt(n - 1)))$val[1:ndim]
 
    Vx <- matrix(rnorm(m * ndim), m, ndim)
    
-   # Essentially power method for eigen-decomposition of XX'
+   # Essentially power method for eigen-decomposition of XX'/n
    s1 <- scca(X, X, lambda1=l1, lambda2=l2, ndim=ndim,	 
       standx="none", standy="none", mem="high", V=Vx)
    s2 <- scca(X, X, lambda1=l1, lambda2=l2, ndim=ndim,	 
@@ -81,7 +105,6 @@ test_that("Testing SCCA (X with Y)", {
    l1 <- runif(1, 1e-6, 1e-3)
    l2 <- runif(1, 1e-6, 1e-3)
 
-   # Essentially power method for eigen-decomposition of XX'
    s1 <- scca(X, Y, lambda1=l1, lambda2=l2, ndim=ndim,	 
       standx="none", standy="none", mem="high")
    s2 <- scca(X, Y, lambda1=l1, lambda2=l2, ndim=ndim,	 
@@ -111,6 +134,61 @@ test_that("Testing SCCA (X with Y)", {
    expect_equal(r1, r3, tol=test.tol)
 })
 
+test_that("Testing SCCA (X with Y, no divide by n)", {
+
+   # These penalties don't have to be tiny
+   l1 <- runif(1, 1e-6, 1e-3)
+   l2 <- runif(1, 1e-6, 1e-3)
+
+   s1 <- scca(X, Y, lambda1=l1, lambda2=l2, ndim=ndim,	 
+      standx="none", standy="none", mem="high")
+   s2 <- scca(X, Y, lambda1=l1, lambda2=l2, ndim=ndim,	 
+      standx="none", standy="none", mem="low")
+   s3 <- scca(bedf, Y, lambda1=l1, lambda2=l2, ndim=ndim,	 
+      standx="binom2", standy="none")
+
+   s4 <- scca(X, Y, lambda1=l1, lambda2=l2, ndim=ndim,	 
+      standx="none", standy="none", mem="high", divisor="none")
+   s5 <- scca(X, Y, lambda1=l1, lambda2=l2, ndim=ndim,	 
+      standx="none", standy="none", mem="low", divisor="none")
+   s6 <- scca(bedf, Y, lambda1=l1, lambda2=l2, ndim=ndim,	 
+      standx="binom2", standy="none", divisor="none")
+
+   r1 <- diag(cor(s1$Px, s1$Py))
+   r2 <- diag(cor(s2$Px, s2$Py))
+   r3 <- diag(cor(s3$Px, s3$Py))
+
+   r4 <- diag(cor(s4$Px, s4$Py))
+   r5 <- diag(cor(s5$Px, s5$Py))
+   r6 <- diag(cor(s6$Px, s6$Py))
+
+   n <- nrow(X)
+
+   expect_equal(s1$d, s4$d / (n - 1), tol=test.tol)
+   expect_equal(s2$d, s5$d / (n - 1), tol=test.tol)
+   expect_equal(s3$d, s6$d / (n - 1), tol=test.tol)
+
+   expect_equal(s1$V[,1], s4$V[,1], tol=test.tol)
+   expect_equal(s2$V[,1], s5$V[,1], tol=test.tol)
+   expect_equal(s3$V[,1], s6$V[,1], tol=test.tol)
+
+   expect_equal(s1$V[,2], s4$V[,2], tol=test.tol)
+   expect_equal(s2$V[,2], s5$V[,2], tol=test.tol)
+   expect_equal(s3$V[,2], s6$V[,2], tol=test.tol)
+
+   expect_equal(s1$U[,1], s4$U[,1], tol=test.tol)
+   expect_equal(s2$U[,1], s5$U[,1], tol=test.tol)
+   expect_equal(s3$U[,1], s6$U[,1], tol=test.tol)
+
+   expect_equal(s1$U[,2], s4$U[,2], tol=test.tol)
+   expect_equal(s2$U[,2], s5$U[,2], tol=test.tol)
+   expect_equal(s3$U[,2], s6$U[,2], tol=test.tol)
+
+   expect_equal(r1, r4, tol=test.tol)
+   expect_equal(r2, r5, tol=test.tol)
+   expect_equal(r3, r6, tol=test.tol)
+})
+
 test_that("Testing SCCA (X with Y), initialising V0", {
 
    # These penalties don't have to be tiny
@@ -119,7 +197,6 @@ test_that("Testing SCCA (X with Y), initialising V0", {
 
    V0 <- matrix(rnorm(k * ndim), k, ndim)
 
-   # Essentially power method for eigen-decomposition of XX'
    s1 <- scca(X, Y, lambda1=l1, lambda2=l2, ndim=ndim,	 
       standx="none", standy="none", mem="high", V=V0)
    s2 <- scca(X, Y, lambda1=l1, lambda2=l2, ndim=ndim,	 

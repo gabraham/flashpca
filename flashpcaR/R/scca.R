@@ -23,6 +23,9 @@
 #'
 #' @param ndim Integer. Positive number of canonical vectors to compute.
 #'
+#' @param divisor A character string indicating whether to divide the
+#' eigenvalues by number of rows of X minus 1 ("n1") or none ("none").
+#'
 #' @param maxiter Integer. Positive, maximum number of iterations to perform.
 #'
 #' @param tol Numeric. Tolerance for convergence.
@@ -91,13 +94,21 @@
 scca <- function(X, Y, lambda1=0, lambda2=0,
    standx=c("binom2", "binom", "sd", "center", "none"),
    standy=c("binom2", "binom", "sd", "center", "none"),
-   ndim=10, maxiter=1e3, tol=1e-4, seed=1L, verbose=FALSE, num_threads=1,
+   ndim=10, divisor=c("n1", "none"),
+   maxiter=1e3, tol=1e-4, seed=1L, verbose=FALSE, num_threads=1,
    mem=c("low", "high"), check_geno=TRUE, check_fam=TRUE,
    V=NULL, block_size=500, simplify=TRUE)
 {
    standx <- match.arg(standx)
    standy <- match.arg(standy)
    mem <- match.arg(mem)
+   divisor <- match.arg(divisor)
+
+   divisors <- c(
+      "n1"=1L,
+      "none"=0L
+   )
+   div <- divisors[divisor]
 
    if(!is.numeric(Y)) {
       stop("Y must be a numeric matrix")
@@ -178,8 +189,7 @@ scca <- function(X, Y, lambda1=0, lambda2=0,
    standx_i <- std[standx]
    standy_i <- std[standy]
 
-
-	 # Spectra recommends to run with
+   # Spectra recommends to run with
    #   1 <= nev < n
    #   nev < ncv < n
    #   ncv >= 2 nev
@@ -189,12 +199,13 @@ scca <- function(X, Y, lambda1=0, lambda2=0,
    # see
    # http://yixuan.cos.name/spectra/doc/classSpectra_1_1SymEigsSolver.html
    if(ndim < 1) {
-     stop("ndim can't be less than 1")
+      stop("ndim can't be less than 1")
    }
-   max_dim <- ( (min(ncol(X),nrow(X),ncol(Y),nrow(Y))-1) / 2.0)
+   max_dim <- (min(ncol(X), nrow(X), ncol(Y), nrow(Y)) - 1) / 2.0
    if(ndim > max_dim) {
-     msg <- paste("You asked for ", ndim," dimensions, but only ", as.integer(max_dim), " allowed", sep="")
-     stop(msg)
+      msg <- paste("You asked for ", ndim," dimensions, but only ",
+	 as.integer(max_dim), " allowed", sep="")
+      stop(msg)
    }
 
    if(mem == "high") {
@@ -209,8 +220,7 @@ scca <- function(X, Y, lambda1=0, lambda2=0,
          stop("dimensions of V must be (ncol(Y) x (ndim))")
       }
       useV <- TRUE
-   } else 
-   {
+   } else {
       V <- matrix(0.)
       useV <- FALSE
    }
@@ -220,7 +230,7 @@ scca <- function(X, Y, lambda1=0, lambda2=0,
 	 lapply(lambda1, function(l1) {
 	    lapply(lambda2, function(l2) {
 	       x <- scca_plink_internal(X, Y, l1, l2, ndim,
-		  standx_i, standy_i, mem_i, seed, maxiter, tol,
+		  standx_i, standy_i, div, mem_i, seed, maxiter, tol,
 		  verbose, num_threads, block_size, useV, V)
 	    })
 	 })
@@ -228,7 +238,7 @@ scca <- function(X, Y, lambda1=0, lambda2=0,
 	 lapply(lambda1, function(l1) {
 	    lapply(lambda2, function(l2) {
 	       scca_internal(X, Y, l1, l2, ndim,
-		  standx_i, standy_i, mem_i, seed, maxiter, tol,
+		  standx_i, standy_i, div, mem_i, seed, maxiter, tol,
 		  verbose, num_threads, useV, V)
 	    })
 	 })

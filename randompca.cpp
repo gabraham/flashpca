@@ -393,6 +393,15 @@ void RandomPCA::scca(MatrixXd &X, MatrixXd &Y, double lambda1, double lambda2,
    X_meansd = standardise(X, stand_method_x);
    Y_meansd = standardise(Y, stand_method_y);
 
+   // Need to also divide by sqrt(n) to ensure penalties don't depend on
+   // sample size
+   // Alternatively, divide the singular values at the end?
+   if(divisor == DIVISOR_N1)
+   {
+      X = X / sqrt(X.rows() - 1);
+      Y = Y / sqrt(Y.rows() - 1);
+   }
+
    verbose && STDOUT << timestamp() << "dim(X): " << dim(X) << std::endl;
    verbose && STDOUT << timestamp() << "dim(Y): " << dim(Y) << std::endl;
    verbose && STDOUT << timestamp() << "lambda1: " << lambda1
@@ -432,6 +441,13 @@ void RandomPCA::scca(Data &dat, double lambda1, double lambda2,
 {
    Y_meansd = standardise(dat.Y, stand_method_y);
 
+   double invdiv = 1;
+   if(divisor == DIVISOR_N1)
+   {
+      dat.Y = dat.Y / sqrt(dat.Y.rows() - 1.0);
+      invdiv = 1.0 / sqrt(dat.Y.rows() - 1.0);
+   }
+
    verbose && STDOUT << timestamp() << "dim(Y): " << dim(dat.Y) << std::endl;
    verbose && STDOUT << timestamp() << "lambda1: " << lambda1
       << " lambda2: " << lambda2 << std::endl;
@@ -458,12 +474,13 @@ void RandomPCA::scca(Data &dat, double lambda1, double lambda2,
 	 // u = X.transpose() * (Y * v);
 	 MatrixXd Yvj = dat.Y * vj;
 	 uj = op.crossprod2(Yvj);
+	 uj = uj * invdiv;
 	 
 	 // deflate u
 	 if(j > 0)
 	 {
 	    uj -= U.leftCols(j) * d.head(j).asDiagonal()
-		  * V.leftCols(j).transpose() * vj;
+	       * V.leftCols(j).transpose() * vj;
 	 }
 
 	 uj = norm_thresh(uj, lambda1);
@@ -472,12 +489,13 @@ void RandomPCA::scca(Data &dat, double lambda1, double lambda2,
 	 // v = Y.transpose() * (X * u);
 	 VectorXd Xuj = op.prod3(uj);
 	 vj = dat.Y.transpose() * Xuj;
+	 vj = vj * invdiv;
 
 	 // deflate v
 	 if(j > 0)
 	 {
 	    vj -= V.leftCols(j) * d.head(j).asDiagonal()
-		  * U.leftCols(j).transpose() * uj;
+	       * U.leftCols(j).transpose() * uj;
 	 }
 
 	 vj = norm_thresh(vj, lambda2);
@@ -510,12 +528,14 @@ void RandomPCA::scca(Data &dat, double lambda1, double lambda2,
 	 << " non-zeros: " << nzv << std::endl;
 
       VectorXd Xuj = op.prod3(U.col(j));
+      Xuj = Xuj * invdiv;
       d[j] = Xuj.transpose() * (dat.Y * V.col(j));
       verbose && STDOUT << timestamp() << "d[" << j << "]: "
 	 << d[j] << std::endl;
    }
 
    Px = op.prod3(U);
+   Px = Px * invdiv;
    Py = dat.Y * V;
 }
 
