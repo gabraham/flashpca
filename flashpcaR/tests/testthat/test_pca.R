@@ -64,6 +64,30 @@ test_that("Testing PCA with stand='binom'", {
    compare_eigenvecs(
       f1$projection[, 1:ndim], f2$projection, f3$projection
    )
+
+   f1.pve <- f1$values / sum(f1$values)
+   expect_equal(f1.pve[1:ndim], f2$pve)
+   expect_equal(f1.pve[1:ndim], f3$pve)
+})
+
+test_that("Testing PCA with stand='binom2'", {
+   S <- scale2(hm3.chr1$bed, type="2")
+
+   f1 <- eigen(tcrossprod(S) / ncol(S), symmetric=TRUE)
+   f1$projection <- with(f1,
+      vectors[, 1:ndim] %*% diag(sqrt(values[1:ndim])))
+   f2 <- flashpca(S, ndim=ndim, stand="none")
+   f3 <- flashpca(bedf, ndim=ndim, stand="binom2")
+
+   compare_scales(S, f3)
+
+   compare_eigenvecs(
+      f1$projection[, 1:ndim], f2$projection, f3$projection
+   )
+
+   f1.pve <- f1$values / sum(f1$values)
+   expect_equal(f1.pve[1:ndim], f2$pve)
+   expect_equal(f1.pve[1:ndim], f3$pve)
 })
 
 test_that("Testing PCA with stand='binom2'", {
@@ -101,6 +125,9 @@ test_that("Testing PCA with stand='sd'", {
    compare_eigenvecs(
       f1$projection[, 1:ndim], f2$projection
    )
+
+   f1.pve <- f1$values / sum(f1$values)
+   expect_equal(f1.pve[1:ndim], f2$pve)
 })
 
 test_that("Testing PCA with stand='none'", {
@@ -113,6 +140,9 @@ test_that("Testing PCA with stand='none'", {
    compare_eigenvecs(
       f1$projection[, 1:ndim], f2$projection
    )
+
+   f1.pve <- f1$values / sum(f1$values)
+   expect_equal(f1.pve[1:ndim], f2$pve)
 })
 
 test_that("Testing PCA with stand='center'", {
@@ -130,5 +160,8 @@ test_that("Testing PCA with stand='center'", {
    compare_eigenvecs(
       f1$projection[, 1:ndim], f2$projection
    )
+
+   f1.pve <- f1$values / sum(f1$values)
+   expect_equal(f1.pve[1:ndim], f2$pve)
 })
 

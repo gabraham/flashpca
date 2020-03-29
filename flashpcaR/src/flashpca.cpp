@@ -43,6 +43,7 @@ List flashpca_internal(
 
       NumericVector X_mean(0);
       NumericVector X_sd(0);
+      NumericVector pve(wrap(rpca.pve));
 
       // STANDARDISE_NONE: 0
       if(return_scale && stand != 0)
@@ -63,7 +64,8 @@ List flashpca_internal(
             Rcpp::Named("projection")=P,
             Rcpp::Named("loadings")=V,
             Rcpp::Named("center")=X_mean,
-            Rcpp::Named("scale")=X_sd
+            Rcpp::Named("scale")=X_sd,
+	    Rcpp::Named("pve")=pve
          );
       }
       else
@@ -73,7 +75,8 @@ List flashpca_internal(
             Rcpp::Named("vectors")=U,
             Rcpp::Named("projection")=P,
             Rcpp::Named("center")=X_mean,
-            Rcpp::Named("scale")=X_sd
+            Rcpp::Named("scale")=X_sd,
+	    Rcpp::Named("pve")=pve
          );
       }
 
@@ -133,6 +136,7 @@ List flashpca_plink_internal(
       NumericMatrix U(wrap(rpca.U));
       NumericMatrix P(wrap(rpca.Px));
       NumericVector d(wrap(rpca.d));
+      NumericVector pve(wrap(rpca.pve));
 
       Rcpp::List res;
 
@@ -153,7 +157,8 @@ List flashpca_plink_internal(
             Rcpp::Named("projection")=P,
             Rcpp::Named("loadings")=V,
             Rcpp::Named("center")=X_mean,
-            Rcpp::Named("scale")=X_sd
+            Rcpp::Named("scale")=X_sd,
+	    Rcpp::Named("pve")=pve
          );
       }
       else
@@ -163,7 +168,8 @@ List flashpca_plink_internal(
             Rcpp::Named("vectors")=U,
             Rcpp::Named("projection")=P,
             Rcpp::Named("center")=X_mean,
-            Rcpp::Named("scale")=X_sd
+            Rcpp::Named("scale")=X_sd,
+	    Rcpp::Named("pve")=pve
          );
       }
 
