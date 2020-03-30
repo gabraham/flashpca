@@ -244,7 +244,7 @@ VectorXd norm_thresh(VectorXd& x, double lambda)
    return x;
 }
 
-void scca_lowmem(MatrixXd& X, MatrixXd &Y, MatrixXd& U, MatrixXd& V,
+bool scca_lowmem(MatrixXd& X, MatrixXd &Y, MatrixXd& U, MatrixXd& V,
    VectorXd& d, double lambda1, double lambda2,
    unsigned int maxiter, double tol, bool verbose)
 {
@@ -260,6 +260,8 @@ void scca_lowmem(MatrixXd& X, MatrixXd &Y, MatrixXd& U, MatrixXd& V,
 
    for(unsigned int j = 0 ; j < U.cols() ; j++)
    {
+      // Deflate by having 'fake' rows in the data that are essentially the
+      // previous singular vectors
       if(j > 0)
       {
 	 X2.row(X.rows() + j) = sqrt(d[j - 1]) * U.col(j - 1).transpose();
@@ -274,10 +276,22 @@ void scca_lowmem(MatrixXd& X, MatrixXd &Y, MatrixXd& U, MatrixXd& V,
 
 	 u = X2.transpose() * (Y2 * v);
 	 u = norm_thresh(u, lambda1);
+	 if(u.array().abs().maxCoeff() < tol)
+	 {
+	    verbose && STDOUT << timestamp() << "U[" << j << "] is all zero,"
+	       << iter << ", l1 penalty too large" << std::endl;
+	    return false;
+	 }
 	 U.col(j) = u;
 
 	 v = Y2.transpose() * (X2 * U.col(j));
 	 v = norm_thresh(v, lambda2);
+	 if(v.array().abs().maxCoeff() < tol)
+	 {
+	    verbose && STDOUT << timestamp() << "V[" << j << "] is all zero,"
+	       << iter << ", l2 penalty too large" << std::endl;
+	    return false;
+	 }
 	 V.col(j) = v;
 
 	 if(iter > 0
@@ -286,7 +300,6 @@ void scca_lowmem(MatrixXd& X, MatrixXd &Y, MatrixXd& U, MatrixXd& V,
 	 {
 	    verbose && STDOUT << timestamp() << "dim " << j << " finished in "
 	       << iter << " iterations" << std::endl;
-
 	    break;
 	 }
       }
@@ -296,6 +309,7 @@ void scca_lowmem(MatrixXd& X, MatrixXd &Y, MatrixXd& U, MatrixXd& V,
 	 verbose && STDOUT << timestamp()
 	    << " SCCA did not converge in " << maxiter << " iterations" <<
 	    std::endl;
+	 return false;
       }
 
       long long nzu = (U.col(j).array() != 0).count();
@@ -310,9 +324,10 @@ void scca_lowmem(MatrixXd& X, MatrixXd &Y, MatrixXd& U, MatrixXd& V,
       verbose && STDOUT << timestamp() << "d[" << j << "]: "
 	 << d[j] << std::endl;
    }
+   return true;
 }
 
-void scca_highmem(MatrixXd& X, MatrixXd &Y, MatrixXd& U, MatrixXd& V,
+bool scca_highmem(MatrixXd& X, MatrixXd &Y, MatrixXd& U, MatrixXd& V,
    VectorXd& d, double lambda1, double lambda2,
    unsigned int maxiter, double tol, bool verbose)
 {
@@ -365,6 +380,7 @@ void scca_highmem(MatrixXd& X, MatrixXd &Y, MatrixXd& U, MatrixXd& V,
 	 verbose && STDOUT << timestamp()
 	    << "SCCA did not converge in " << maxiter << " iterations" <<
 	    std::endl;
+	 return false;
       }
 
       long long nzu = (U.col(j).array() != 0).count();
@@ -376,6 +392,7 @@ void scca_highmem(MatrixXd& X, MatrixXd &Y, MatrixXd& U, MatrixXd& V,
 
       d[j] = U.col(j).transpose() * XYj * V.col(j);
    }
+   return true;
 }
 
 void RandomPCA::scca(MatrixXd &X, MatrixXd &Y, double lambda1, double lambda2,
@@ -416,9 +433,9 @@ void RandomPCA::scca(MatrixXd &X, MatrixXd &Y, double lambda1, double lambda2,
    d = VectorXd::Zero(ndim);
 
    if(mem == HIGHMEM)
-      scca_highmem(X, Y, U, V, d, lambda1, lambda2, maxiter, tol, verbose);
+      converged = scca_highmem(X, Y, U, V, d, lambda1, lambda2, maxiter, tol, verbose);
    else
-      scca_lowmem(X, Y, U, V, d, lambda1, lambda2, maxiter, tol, verbose);
+      converged = scca_lowmem(X, Y, U, V, d, lambda1, lambda2, maxiter, tol, verbose);
 
    Px = X * U;
    Py = Y * V;
@@ -456,6 +473,8 @@ void RandomPCA::scca(Data &dat, double lambda1, double lambda2,
 
    unsigned int p = dat.nsnps;
 
+   converged = false;
+
    this->V0 = V0;
    V = V0;
    U = MatrixXd::Zero(p, ndim);
@@ -484,6 +503,12 @@ void RandomPCA::scca(Data &dat, double lambda1, double lambda2,
 	 }
 
 	 uj = norm_thresh(uj, lambda1);
+	 if(uj.array().abs().maxCoeff() < tol)
+	 {
+	    verbose && STDOUT << timestamp() << "U[" << j << "] is all zero,"
+	       << iter << ", l1 penalty too large" << std::endl;
+	    return;
+	 }
 	 U.col(j) = uj;
 
 	 // v = Y.transpose() * (X * u);
@@ -499,6 +524,12 @@ void RandomPCA::scca(Data &dat, double lambda1, double lambda2,
 	 }
 
 	 vj = norm_thresh(vj, lambda2);
+	 if(vj.array().abs().maxCoeff() < tol)
+	 {
+	    verbose && STDOUT << timestamp() << "V[" << j << "] is all zero,"
+	       << iter << ", l2 penalty too large" << std::endl;
+	    return;
+	 }
 	 V.col(j) = vj;
 
 	 if(iter > 0
@@ -508,7 +539,6 @@ void RandomPCA::scca(Data &dat, double lambda1, double lambda2,
 	    verbose && STDOUT << timestamp() << "dim "
 	       << j << " finished in "
 	       << iter << " iterations" << std::endl;
-
 	    break;
 	 }
       }
@@ -518,6 +548,7 @@ void RandomPCA::scca(Data &dat, double lambda1, double lambda2,
 	 verbose && STDOUT << timestamp()
 	    << " SCCA did not converge in " << maxiter
 	    << " iterations" << std::endl;
+	 return;
       }
 
       long long nzu = (U.col(j).array() != 0).count();
@@ -533,6 +564,8 @@ void RandomPCA::scca(Data &dat, double lambda1, double lambda2,
       verbose && STDOUT << timestamp() << "d[" << j << "]: "
 	 << d[j] << std::endl;
    }
+
+   converged = true;
 
    Px = op.prod3(U);
    Px = Px * invdiv;

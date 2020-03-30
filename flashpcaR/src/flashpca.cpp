@@ -245,7 +245,8 @@ List scca_internal(
             Rcpp::Named("V")=V,
             Rcpp::Named("d")=d,
             Rcpp::Named("Px")=Px,
-            Rcpp::Named("Py")=Py
+            Rcpp::Named("Py")=Py,
+	    Rcpp::Named("converged")=rpca.converged
       );
 
       return res;
@@ -349,8 +350,6 @@ List scca_plink_internal(
       omp_set_num_threads(num_threads);
 #endif
 
-      //Eigen::MatrixXd Ym = Y;
-
       RandomPCA rpca;
       rpca.stand_method_x = stand_x;
       rpca.stand_method_y = stand_y;
@@ -397,7 +396,8 @@ List scca_plink_internal(
             Rcpp::Named("V")=V,
             Rcpp::Named("d")=d,
             Rcpp::Named("Px")=Px,
-            Rcpp::Named("Py")=Py
+            Rcpp::Named("Py")=Py,
+	    Rcpp::Named("converged")=rpca.converged
       );
 
       return res;
@@ -465,7 +465,6 @@ NumericMatrix standardise_impute(
    const Eigen::Map<Eigen::MatrixXd> XX,
    const int method)
 {
-
    MatrixXd X = XX;
    standardise(X, method, false);
    NumericMatrix Xm(wrap(X));
@@ -560,45 +559,6 @@ List check_plink_internal(
    }
    return NA_REAL;
 }
-
-//List project_internal(
-//   const Eigen::MatrixXd& X,
-//   const Eigen::MatrixXd& loadings,
-//   const std::string ref_allele,
-//   const VectorXd& orig_mean,
-//   const VectorXd& orig_sd,
-//   const unsigned int divisor,
-//   const bool verbose)
-//{
-//   try{
-//      MatrixXd X2(X);
-//      unsigned int n = X.rows(), p = X.cols();
-//      VectorXd xj(n);
-//      for(unsigned int j = 0 ; j < p ; j++)
-//      {
-//	 xj = X2.col(j);
-//	 X2.col(j) = (xj.array() - orig_mean(j)) / orig_sd(j);
-//	 for(unsigned int i = 0 ; i < n ; i++)
-//	 {
-//	    if(isnan(X2(i, j)))
-//	       X2(i, j) = 0;
-//	 }
-//      }
-//      MatrixXd Px = X2 * loadings / sqrt(divisor);
-//      Rcpp::List res = Rcpp::List::create(
-//         Rcpp::Named("projection")=Px);
-//      return res;
-//   }
-//   catch(std::exception &ex)
-//   {
-//      forward_exception_to_r(ex);
-//   }
-//   catch(...)
-//   {
-//      ::Rf_error("flashpca_plink_internal: unknown c++ exception");
-//   }
-//   return NA_REAL;
-//}
 
 // [[Rcpp::export]]
 List project_plink_internal(

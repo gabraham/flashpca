@@ -261,14 +261,30 @@ scca <- function(X, Y, lambda1=0, lambda2=0,
    }
 }
 
-#' Prints an SCCA object
+#' Prints an scca object
 #'
-#' @param x A flashpca object to be printed
+#' @param x An scca object to be printed
 #' @param ... Ignored
 #' @export 
 print.scca <- function(x, ...)
 {
    cat("scca object; ndim=", length(x$d), "\n")
+   if(!x$converged) {
+      cat("warning: model has not converged\n")
+   }
+   invisible(x)
+}
+
+#' Prints a cv.scca object
+#'
+#' @param x A cv.scca object to be printed
+#' @param ... Ignored
+#' @export 
+print.cv.scca <- function(x, ...)
+{
+   cat(paste0(
+      "cv.scca object; ndim=", x$ndim, "; ", x$nfolds,
+      "-fold cross-validation\n"))
    invisible(x)
 }
 
@@ -286,6 +302,9 @@ print.scca <- function(x, ...)
 #' @param ndim Integer. The number of dimensions to infer.
 #'
 #' @param nfolds Integer. The number of cross-validation folds.
+#'
+#' @param opt.dim Integer. Which dimension to select the optimal penalties
+#' for.
 #'
 #' @param parallel Logical. Whether to parallelise the cross-validation using
 #' the foreach package.
@@ -308,7 +327,7 @@ print.scca <- function(x, ...)
 #' @export
 cv.scca <- function(X, Y,
    lambda1=seq(1e-6, 1e-3, length=5), lambda2=seq(1e-6, 1e-3, length=5),
-   ndim=3, nfolds=10, parallel=FALSE, ...)
+   ndim=3, nfolds=10, opt.dim=1, parallel=FALSE, ...)
 {
    n <- nrow(Y)
    if(is.character(X)) {
@@ -316,11 +335,20 @@ cv.scca <- function(X, Y,
 	 "Cross-validation currently only supported when X is a numeric matrix")
    }
 
+   if(nfolds > nrow(Y)) {
+      stop("nfolds is too large for the number of samples")
+   }
+
+   if(opt.dim <=0 || opt.dim > ndim) {
+      stop("opt.dim must be between 1 and ndim")
+   }
+
    folds <- sample(1:nfolds, n, replace=TRUE)
    xpred <- array(0, c(n, ndim, length(lambda1), length(lambda2)))
    ypred <- array(0, c(n, ndim, length(lambda1), length(lambda2)))
    nzx <- array(0, c(ndim, length(lambda1), length(lambda2)))
    nzy <- array(0, c(ndim, length(lambda1), length(lambda2)))
+   converged <- array(FALSE, c(nfolds, length(lambda1), length(lambda2)))
 
    # https://cran.r-project.org/doc/manuals/r-release/R-exts.html#Suggested-packages
    if(parallel && requireNamespace("foreach", quietly=TRUE)) {
@@ -340,18 +368,30 @@ cv.scca <- function(X, Y,
    }
 
    # Collect all the folds into one result (same way as glmnet), instead
-   # of averaging over k folds
+   # of averaging over k folds.
+   #
+   # If the model has not converged for one dimension, then
+   # we consider the whole model to have not converged, since all dimensions
+   # are evaluated sequentially (depend on previous ones)
    for(fold in 1:nfolds) {
       for(i in seq(along=lambda1)) {
 	 for(j in seq(along=lambda2)) {
 	    x <- res[[fold]][[i]][[j]]
 	    w <- folds == fold
-	    xpred[w, ,i, j] <- X[w,] %*% x$U
-	    ypred[w, ,i, j] <- Y[w,] %*% x$V
+	    converged[fold, i, j] <- x$converged
+	    if(x$converged) {
+	       xpred[w, , i, j] <- X[w,] %*% x$U
+	       ypred[w, , i, j] <- Y[w,] %*% x$V
+	    } else {
+	       xpred[w, , i, j] <- NA
+	       ypred[w, , i, j] <- NA
+	    }
 	 }
       }
    }
 
+   # It's possible that for the same penalties, a model from one set of
+   # training folds will converge but another will not.
    for(i in seq(along=lambda1)) {
       for(j in seq(along=lambda2)) {
 	 mx <- sapply(res, function(x) colSums(x[[i]][[j]]$U != 0, na.rm=TRUE))
@@ -371,13 +411,22 @@ cv.scca <- function(X, Y,
    r <- abind(r, along=3)
    r <- aperm(r, c(3, 2, 1))
 
+   r.mx <- max(r[opt.dim,,], na.rm=TRUE)
+   w <- which(r[opt.dim,,] == r.mx, arr.ind=TRUE)
+
    res2 <- list(
       ndim=ndim,
       lambda1=lambda1,
       lambda2=lambda2,
+      opt.dim=opt.dim,
+      best.lambda1=lambda1[w[1]],
+      best.lambda2=lambda2[w[2]],
+      best.corr=r.mx,
       corr=r,
       nzero.x=nzx,
-      nzero.y=nzy
+      nzero.y=nzy,
+      nfolds=nfolds,
+      converged=converged
    )
    class(res2) <- "cv.scca"
    res2
@@ -425,24 +474,42 @@ cv.scca <- function(X, Y,
 #' @importFrom graphics legend
 #'
 #' @export
-plot.cv.scca <- function(x, dim=NULL, ...)
+plot.cv.scca <- function(x, dim=NULL, type=c("nzero", "penalty"), ...)
 {
    if(class(x) != "cv.scca") {
       stop("x is not of class 'cv.scca'")
    }
 
+   type <- match.arg(type)
+
    if(is.null(dim)) {
-      for(i in 1:x$ndim) {
-         matplot(x$nzero.x[1,,], x$corr[i,,],
-            type="b", xlab="# of variables in X with non-zero weight",
-               ylab="Pearson correlation", log="x",
-               main=paste0("Canonical dimension ", i))
+      if(type == "nzero") {
+	 for(i in 1:x$ndim) {
+      	    matplot(x$nzero.x[1,,], x$corr[i,,],
+      	       type="b", xlab="# of variables in X with non-zero weight",
+      	          ylab="Pearson correlation", log="x",
+      	          main=paste0("Canonical dimension ", i))
+      	 }
+      } else {
+	 for(i in 1:x$ndim) {
+      	    matplot(x$lambda1, x$corr[i,,],
+      	       type="b", xlab="lambda1",
+      	          ylab="Pearson correlation", log="x",
+      	          main=paste0("Canonical dimension ", i))
+	 }
       }
    } else if(is.numeric(dim) && dim > 0 && dim <= x$ndim) {
-      matplot(x$nzero.x[dim,,], x$corr[dim,,],
-	 type="b", xlab="# of variables in X with non-zero weight",
-	 ylab="Pearson correlation", log="x",
-	 main=paste0("Canonical dimension ", dim))
+      if(type == "nzero") {
+	 matplot(x$nzero.x[dim,,], x$corr[dim,,],
+	    type="b", xlab="# of variables in X with non-zero weight",
+	    ylab="Pearson correlation", log="x",
+	    main=paste0("Canonical dimension ", dim))
+      } else {
+	 matplot(x$lambda1, x$corr[dim,,],
+	    type="b", xlab="lambda1",
+	    ylab="Pearson correlation", log="x",
+	    main=paste0("Canonical dimension ", dim))
+      }
    } else {
       stop(paste("dim must be a positive integer, <=", x$ndim))
    }

@@ -68,6 +68,7 @@ class RandomPCA {
       bool verbose;
       bool debug;
       int divisor;
+      bool converged;
 
       void pca_fast(MatrixXd &X, unsigned int block_size,
 	    unsigned int ndim,

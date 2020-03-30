@@ -44,17 +44,11 @@ compare_eigenvecs <- function(...)
 
 test_that("Testing PCA with stand='binom'", {
    S <- scale2(hm3.chr1$bed, type="1")
-   #f1 <- prcomp(S, center=FALSE, scale.=FALSE)
    f1 <- eigen(tcrossprod(S) / ncol(S), symmetric=TRUE)
-	 #sometimes values too close to zero are annotated as negative values
-	 f1$values <- abs(f1$values)
-   f1$projection <- with(f1, vectors %*% diag(sqrt(values)))
+   f1$projection <- with(f1, vectors[,1:ndim] %*% diag(sqrt(values[1:ndim])))
    f2 <- flashpca(S, ndim=ndim, stand="none")
    f3 <- flashpca(bedf, ndim=ndim, stand="binom")
 
-   # Don't check prcomp scales because it returns the wrong scale (S is
-   # already standardised). Also don't compare f2 since we didn't standardise
-   # in that call.
    compare_scales(S, f3)
 
    compare_eigenvecs(
