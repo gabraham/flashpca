@@ -26,7 +26,7 @@ ifeq ($(UNAME), Darwin)
    CXXFLAGS += -msse2 -DEIGEN_DONT_PARALLELIZE -std=c++11
    BOOST = ${BOOST_LIB}/libboost_program_options.a
 else
-   CXXFLAGS += -march=native -fopenmp -std=c++0x
+   CXXFLAGS += -march=native -std=c++0x
    BOOST = -L${BOOST_LIB} -lboost_program_options
 endif
 
@@ -38,13 +38,15 @@ debug: $(OBJ)
 
 flashpca: LDFLAGS = $(BOOST)
 flashpca: CXXFLAGS += -O3 -DNDEBUG -DVERSION=\"$(VERSION)\" \
-   -funroll-loops -ftree-vectorize -ffast-math
+   -funroll-loops -ftree-vectorize -ffast-math -fopenmp
 flashpca: flashpca.o randompca.o data.o util.o svdwide.o svdtall.o
 	$(CXX) $(CXXFLAGS) -o flashpca $^ $(LDFLAGS)
 
+# Can't statically linked with OMP enabled
 flashpca_x86-64: LDFLAGS = $(BOOST) -Wl,--whole-archive -lpthread -Wl,--no-whole-archive
 flashpca_x86-64: CXXFLAGS += -O3 -DNDEBUG -DVERSION=\"$(VERSION)\" \
-   -funroll-loops -ftree-vectorize -ffast-math -static
+   -funroll-loops -ftree-vectorize -ffast-math -static \
+   -DEIGEN_DONT_PARALLELIZE
 flashpca_x86-64: $(OBJ)
 	$(CXX) $(CXXFLAGS) -o flashpca_x86-64 $^ $(LDFLAGS)
 
