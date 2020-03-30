@@ -709,20 +709,15 @@ int main(int argc, char * argv[])
 	 }
 	 std::cout << timestamp() << "PCA done" << std::endl;
       }
-      //else if(mode == MODE_CCA)
-      //{
-      //   std::cout << timestamp() << "CCA begin" << std::endl;
-      //   rpca.cca(data.X, data.Y, lambda1, lambda2, seed);
-      //   std::cout << timestamp() << "CCA done" << std::endl;
-      //}
       else if(mode == MODE_SCCA)
       {
          std::cout << timestamp() << "SCCA begin" << std::endl;
-         //rpca.scca(data.X, data.Y, lambda1, lambda2, seed, n_dim, mem,
-	 //   maxiter, tol);
          rpca.scca(data, lambda1, lambda2, seed, n_dim, mem,
 	    maxiter, tol, block_size);
          std::cout << timestamp() << "SCCA done" << std::endl;
+	 if(!rpca.converged) {
+	    std::cout << timestamp() << "SCCA did not converge" << std::endl;
+	 }
 	 if(save_vinit)
 	 {
 	    std::cout << timestamp() << "Saving initial V0 vector" << std::endl;
