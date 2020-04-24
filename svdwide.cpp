@@ -47,6 +47,9 @@ void SVDWideOnline::perform_op(const double *x_in, double* y_out)
    // If there's only one block, this loop doesn't run anyway
    for(unsigned int k = 1 ; k < nblocks ; k++)
    {
+#ifdef RENV
+	 Rcpp::checkUserInterrupt();
+#endif
       verbose && STDOUT << timestamp() << "Reading block " <<
 	 k << " (" << start[k] << ", " << stop[k] << ")"  << std::endl;
       actual_block_size = stop[k] - start[k] + 1;
@@ -93,6 +96,9 @@ MatrixXd SVDWideOnline::perform_op_mat(const MatrixXd x)
    // If there's only one block, this loop doesn't run anyway
    for(unsigned int k = 1 ; k < nblocks ; k++)
    {
+#ifdef RENV
+	 Rcpp::checkUserInterrupt();
+#endif
       verbose && STDOUT << timestamp() << "Reading block " <<
 	 k << " (" << start[k] << ", " << stop[k] << ")"  << std::endl;
       actual_block_size = stop[k] - start[k] + 1;
@@ -132,6 +138,9 @@ void SVDWideOnline::crossprod(double *x_in, double *y_out)
 
    for(unsigned int k = 1 ; k < nblocks ; k++)
    {
+#ifdef RENV
+	 Rcpp::checkUserInterrupt();
+#endif
       verbose && STDOUT << timestamp() << "Reading block " <<
 	 k << " (" << start[k] << ", " << stop[k] << ")"  << std::endl;
       actual_block_size = stop[k] - start[k] + 1;
@@ -163,6 +172,9 @@ MatrixXd SVDWideOnline::crossprod2(const MatrixXd& x)
 
    for(unsigned int k = 1 ; k < nblocks ; k++)
    {
+#ifdef RENV
+	 Rcpp::checkUserInterrupt();
+#endif
       verbose && STDOUT << timestamp() << "Reading block " <<
 	 k << " (" << start[k] << ", " << stop[k] << ")"  << std::endl;
       actual_block_size = stop[k] - start[k] + 1;
@@ -198,6 +210,9 @@ void SVDWideOnline::prod(double *x_in, double *y_out)
 
    for(unsigned int k = 1 ; k < nblocks ; k++)
    {
+#ifdef RENV
+	 Rcpp::checkUserInterrupt();
+#endif
       verbose && STDOUT << timestamp() << "Reading block " <<
 	 k << " (" << start[k] << ", " << stop[k] << ")"  << std::endl;
       actual_block_size = stop[k] - start[k] + 1;
@@ -238,6 +253,9 @@ MatrixXd SVDWideOnline::perform_op_multi(const MatrixXd& x)
    // If there's only one block, this loop doesn't run anyway
    for(unsigned int k = 1 ; k < nblocks ; k++)
    {
+#ifdef RENV
+	 Rcpp::checkUserInterrupt();
+#endif
       verbose && STDOUT << timestamp() << "Reading block " <<
 	 k << " (" << start[k] << ", " << stop[k] << ")"  << std::endl;
       actual_block_size = stop[k] - start[k] + 1;
@@ -275,6 +293,9 @@ MatrixXd SVDWideOnline::prod2(const MatrixXd& x)
 
    for(unsigned int k = 1 ; k < nblocks ; k++)
    {
+#ifdef RENV
+	 Rcpp::checkUserInterrupt();
+#endif
       verbose && STDOUT << timestamp() << "Reading block " <<
 	 k << " (" << start[k] << ", " << stop[k] << ")"  << std::endl;
       actual_block_size = stop[k] - start[k] + 1;
@@ -305,6 +326,9 @@ MatrixXd SVDWideOnline::prod3(const MatrixXd& x)
 
    for(unsigned int k = 1 ; k < nblocks ; k++)
    {
+#ifdef RENV
+	 Rcpp::checkUserInterrupt();
+#endif
       verbose && STDOUT << timestamp() << "Reading block " <<
 	 k << " (" << start[k] << ", " << stop[k] << ")"  << std::endl;
       actual_block_size = stop[k] - start[k] + 1;

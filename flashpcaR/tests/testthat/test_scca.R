@@ -246,3 +246,4 @@ test_that("Testing input checking", {
       standx="binom2", standy="none"))
 })
 
+

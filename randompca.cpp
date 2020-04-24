@@ -271,27 +271,19 @@ bool scca_lowmem(MatrixXd& X, MatrixXd &Y, MatrixXd& U, MatrixXd& V,
       unsigned int iter = 0;
       for( ; iter < maxiter ; iter++)
       {
+
+#ifdef RENV
+	 Rcpp::checkUserInterrupt();
+#endif
 	 u_old = u = U.col(j);
 	 v_old = v = V.col(j);
 
 	 u = X2.transpose() * (Y2 * v);
 	 u = norm_thresh(u, lambda1);
-	 if(u.array().abs().maxCoeff() < tol)
-	 {
-	    verbose && STDOUT << timestamp() << "U[" << j << "] is all zero,"
-	       << iter << ", l1 penalty too large" << std::endl;
-	    return false;
-	 }
 	 U.col(j) = u;
 
 	 v = Y2.transpose() * (X2 * U.col(j));
 	 v = norm_thresh(v, lambda2);
-	 if(v.array().abs().maxCoeff() < tol)
-	 {
-	    verbose && STDOUT << timestamp() << "V[" << j << "] is all zero,"
-	       << iter << ", l2 penalty too large" << std::endl;
-	    return false;
-	 }
 	 V.col(j) = v;
 
 	 if(iter > 0
@@ -354,6 +346,9 @@ bool scca_highmem(MatrixXd& X, MatrixXd &Y, MatrixXd& U, MatrixXd& V,
       unsigned int iter = 0;
       for(; iter < maxiter ; iter++)
       {
+#ifdef RENV
+	 Rcpp::checkUserInterrupt();
+#endif
 	 u_old = u = U.col(j);
 	 v_old = v = V.col(j);
 
@@ -592,6 +587,9 @@ void RandomPCA::ucca(MatrixXd &X, MatrixXd &Y)
 
    for(unsigned int j = 0 ; j < p ; j++)
    {
+#ifdef RENV
+	 Rcpp::checkUserInterrupt();
+#endif
       varx = var(X.col(j));
       covXY = cov(X.col(j), Y);
 
@@ -638,6 +636,9 @@ void RandomPCA::ucca(Data& data)
 
    for(unsigned int j = 0 ; j < p ; j++)
    {
+#ifdef RENV
+	 Rcpp::checkUserInterrupt();
+#endif
       // No need to explicitly standardise X, since read_snp_block will
       // already standardise it internally, assuming that
       // data.stand_method_x has been set previously

@@ -101,8 +101,10 @@ MatrixXd standardise(MatrixXd& X, int method, bool verbose)
 	 {
 	    if(std::isnan(X(i, j)))
 	       X(i, j) = 0;
-	    else
+	    else if(sd(j) > VAR_TOL)
 	       X(i, j) = (X(i, j) - mean(j)) / sd(j);
+	    else
+	       X(i, j) = mean(j);
 	 }
       }
    }
@@ -138,8 +140,10 @@ MatrixXd standardise(MatrixXd& X, int method, bool verbose)
 	 {
 	    if(std::isnan(X(i, j)))
 	       X(i, j) = 0;
-	    else
+	    else if(sd(j) > VAR_TOL)
 	       X(i, j) = (X(i, j) - mean(j)) / sd(j);
+	    else
+	       X(i, j) = mean(j);
 	 }
       }
    }
