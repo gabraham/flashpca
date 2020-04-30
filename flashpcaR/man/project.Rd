@@ -4,9 +4,18 @@
 \alias{project}
 \title{Project new data onto existing principal components}
 \usage{
-project(X, loadings, orig_mean = NULL, orig_sd = NULL, ref_alleles = NULL,
-  divisor = "p", block_size = 1000, verbose = FALSE, check_geno = TRUE,
-  check_bim = TRUE)
+project(
+  X,
+  loadings,
+  orig_mean = NULL,
+  orig_sd = NULL,
+  ref_alleles = NULL,
+  divisor = "p",
+  block_size = 1000,
+  verbose = FALSE,
+  check_geno = TRUE,
+  check_bim = TRUE
+)
 }
 \arguments{
 \item{X}{A numeric matrix to project onto the PCs, or a
@@ -61,4 +70,3 @@ must match the original data used to derive the PCs in terms of
   \item{}{Same divisor specified (although not strictly necessary}.
 }
 }
-

@@ -4,11 +4,27 @@
 \alias{scca}
 \title{Performs sparse canonical correlation analysis.}
 \usage{
-scca(X, Y, lambda1 = 0, lambda2 = 0, standx = c("binom2", "binom", "sd",
-  "center", "none"), standy = c("binom2", "binom", "sd", "center", "none"),
-  ndim = 10, maxiter = 1000, tol = 1e-04, seed = 1L, verbose = FALSE,
-  num_threads = 1, mem = c("low", "high"), check_geno = TRUE,
-  check_fam = TRUE, V = NULL, block_size = 500, simplify = TRUE)
+scca(
+  X,
+  Y,
+  lambda1 = 0,
+  lambda2 = 0,
+  standx = c("binom2", "binom", "sd", "center", "none"),
+  standy = c("binom2", "binom", "sd", "center", "none"),
+  ndim = 10,
+  divisor = c("n1", "none"),
+  maxiter = 1000,
+  tol = 1e-04,
+  seed = 1L,
+  verbose = FALSE,
+  num_threads = 1,
+  mem = c("low", "high"),
+  check_geno = TRUE,
+  check_fam = TRUE,
+  V = NULL,
+  block_size = 500,
+  simplify = TRUE
+)
 }
 \arguments{
 \item{X}{An n by p numeric matrix, or a character string pointing to a
@@ -33,6 +49,9 @@ or "binom".}
 \item{standy}{Character. Stanardisation of Y.}
 
 \item{ndim}{Integer. Positive number of canonical vectors to compute.}
+
+\item{divisor}{A character string indicating whether to divide the
+eigenvalues by number of rows of X minus 1 ("n1") or none ("none").}
 
 \item{maxiter}{Integer. Positive, maximum number of iterations to perform.}
 
@@ -100,4 +119,3 @@ s <- scca(X, Y, lambda1=1e-2, lambda2=1e-2, ndim=5,
 diag(cor(s$Px, s$Py))
 
 }
-

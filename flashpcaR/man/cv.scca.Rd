@@ -4,8 +4,17 @@
 \alias{cv.scca}
 \title{Cross-validated grid search over SCCA penalties}
 \usage{
-cv.scca(X, Y, lambda1 = seq(1e-06, 0.001, length = 5), lambda2 = seq(1e-06,
-  0.001, length = 5), ndim = 3, nfolds = 10, parallel = FALSE, ...)
+cv.scca(
+  X,
+  Y,
+  lambda1 = seq(1e-06, 0.001, length = 5),
+  lambda2 = seq(1e-06, 0.001, length = 5),
+  ndim = 3,
+  nfolds = 10,
+  opt.dim = 1,
+  parallel = FALSE,
+  ...
+)
 }
 \arguments{
 \item{X}{A numeric matrix. The use of PLINK datasets is currently not
@@ -20,6 +29,9 @@ supported.}
 \item{ndim}{Integer. The number of dimensions to infer.}
 
 \item{nfolds}{Integer. The number of cross-validation folds.}
+
+\item{opt.dim}{Integer. Which dimension to select the optimal penalties
+for.}
 
 \item{parallel}{Logical. Whether to parallelise the cross-validation using
 the foreach package.}
@@ -41,4 +53,24 @@ Note that the default penalties may not be appropriate for every dataset
 and for some values the algorithm may not converge (especially for small
 penalties).
 }
+\examples{
 
+#######################
+## HapMap3 chr1 example
+data(hm3.chr1)
+X <- scale2(hm3.chr1$bed)
+n <- nrow(X)
+m <- ncol(X)
+k <- 5
+B <- matrix(rnorm(m * k), m, k)
+Y <- X \%*\% B + rnorm(n * k)
+
+r <- cv.scca(X, Y, standx="sd", standy="sd", nfolds=3, ndim=2,
+   lambda1=seq(1e-3, 1e-1, length=10),
+   lambda2=seq(1e-4, 0.5, length=3))
+
+par(mfrow=c(1, 2))
+plot(r, dim=1)
+plot(r, dim=2)
+
+}

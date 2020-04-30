@@ -3,9 +3,10 @@ Depends: R(>= 3.0.2)
 Type: Package
 Title: R Interface to FlashPCA
 Version: 2.1
-Date: 2019-07-15
+Date: 2020-04-20
 Authors@R: c(
    person("Gad", "Abraham", , "gad.abraham@gmail.edu.au", c("aut", "cre")),
+   person("Rodrigo", "Canovas", "rodrigo.canovas@baker.edu.au", c("aut")),
    person("Yixuan", "Qiu", , "yixuan.qiu@cos.name", c("aut"))
    )
 Description: FlashPCA is an efficient implementation of principal
@@ -24,7 +25,6 @@ Imports:
     Rcpp (>= 0.11.1), methods, abind
 LinkingTo:
    Rcpp, RcppEigen (>= 0.3.2.5.1), BH, RSpectra
-RoxygenNote: 5.0.1
+RoxygenNote: 7.1.0
 Suggests: testthat, foreach, knitr, rmarkdown, qqman
 VignetteBuilder: knitr
-

@@ -4,9 +4,17 @@
 \alias{check}
 \title{Check the accuracy of Principal Component Analysis}
 \usage{
-check(X, evec, eval, stand = c("binom2", "binom", "sd", "center", "none"),
-  divisor = "p", block_size = 1000, verbose = FALSE, check_geno = TRUE,
-  check_fam = TRUE)
+check(
+  X,
+  evec,
+  eval,
+  stand = c("binom2", "binom", "sd", "center", "none"),
+  divisor = "p",
+  block_size = 1000,
+  verbose = FALSE,
+  check_geno = TRUE,
+  check_fam = TRUE
+)
 }
 \arguments{
 \item{X}{A numeric matrix to project onto the PCs, or a
@@ -61,4 +69,3 @@ therefore requires specifiying the same standardisation that was used in
 the original eigen-decomposition, and the same divisor of XX' (usually the
 number of SNPs, p).
 }
-

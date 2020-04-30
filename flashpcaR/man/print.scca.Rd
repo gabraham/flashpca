@@ -2,16 +2,15 @@
 % Please edit documentation in R/scca.R
 \name{print.scca}
 \alias{print.scca}
-\title{Prints an SCCA object}
+\title{Prints an scca object}
 \usage{
 \method{print}{scca}(x, ...)
 }
 \arguments{
-\item{x}{A flashpca object to be printed}
+\item{x}{An scca object to be printed}
 
 \item{...}{Ignored}
 }
 \description{
-Prints an SCCA object
+Prints an scca object
 }
-

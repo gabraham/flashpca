@@ -4,7 +4,7 @@
 \alias{plot.cv.scca}
 \title{Plot the results of SCCA cross-validation}
 \usage{
-\method{plot}{cv.scca}(x, dim = NULL, ...)
+\method{plot}{cv.scca}(x, dim = NULL, type = c("nzero", "penalty"), ...)
 }
 \arguments{
 \item{x}{An object of class "cv.scca"}
@@ -46,4 +46,3 @@ plot(r, dim=1)
 plot(r, dim=2)
 
 }
-

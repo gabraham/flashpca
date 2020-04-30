@@ -5,9 +5,15 @@
 \title{Performs univariate canonical correlation analysis, i.e., ANOVA of all
 phenotypes on each SNP.}
 \usage{
-ucca(X, Y, standx = c("binom2", "binom", "sd", "center", "none"),
-  standy = c("binom2", "binom", "sd", "center", "none"), check_geno = TRUE,
-  check_fam = TRUE, verbose = FALSE)
+ucca(
+  X,
+  Y,
+  standx = c("binom2", "binom", "sd", "center", "none"),
+  standy = c("binom2", "binom", "sd", "center", "none"),
+  check_geno = TRUE,
+  check_fam = TRUE,
+  verbose = FALSE
+)
 }
 \arguments{
 \item{X}{An n by p numeric matrix, or a character string pointing to a
@@ -92,4 +98,3 @@ mean((s1$result[, "Fstat"] - s2$result[, "Fstat"])^2)
 M. A. R. Ferreira and S. M. Purcell (2009) _A multivariate test
 of association_, Bioinformatics 25(1) 132-133
 }
-

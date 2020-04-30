@@ -31,4 +31,3 @@ type 2: (new Eigensoft way)
 Missing genotypes ('NA') are imputed to the mean (=0).
 }
 }
-

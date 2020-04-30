@@ -315,6 +315,30 @@ print.cv.scca <- function(x, ...)
 #'
 #' @importFrom stats cor
 #'
+#' @examples
+#'
+#' #######################
+#' ## HapMap3 chr1 example
+#' data(hm3.chr1)
+#' X <- scale2(hm3.chr1$bed)
+#' n <- nrow(X)
+#' m <- ncol(X)
+#' k <- 5
+#' B <- matrix(rnorm(m * k), m, k)
+#' Y <- X %*% B + rnorm(n * k)
+#'
+#' r <- cv.scca(X, Y, standx="sd", standy="sd", nfolds=3, ndim=2,
+#'    lambda1=seq(1e-3, 1e-1, length=10),
+#'    lambda2=seq(1e-4, 0.5, length=3))
+#'
+#' par(mfrow=c(1, 2))
+#' plot(r, dim=1)
+#' plot(r, dim=2)
+#' 
+#' @importFrom abind abind
+#' @importFrom graphics matplot
+#' @importFrom graphics legend
+#'
 #' @export
 cv.scca <- function(X, Y,
    lambda1=seq(1e-6, 1e-3, length=5), lambda2=seq(1e-6, 1e-3, length=5),

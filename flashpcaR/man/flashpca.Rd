@@ -4,10 +4,20 @@
 \alias{flashpca}
 \title{Principal Component Analysis using FlashPCA}
 \usage{
-flashpca(X, ndim = 10, stand = c("binom2", "binom", "sd", "center", "none"),
-  divisor = c("p", "n", "none"), maxiter = 100, tol = 1e-04, seed = 1,
-  block_size = 1000, verbose = FALSE, do_loadings = FALSE,
-  check_geno = TRUE, return_scale = TRUE)
+flashpca(
+  X,
+  ndim = 10,
+  stand = c("binom2", "binom", "sd", "center", "none"),
+  divisor = c("p", "n1", "none"),
+  maxiter = 100,
+  tol = 1e-04,
+  seed = 1,
+  block_size = 1000,
+  verbose = FALSE,
+  do_loadings = FALSE,
+  check_geno = TRUE,
+  return_scale = TRUE
+)
 }
 \arguments{
 \item{X}{A numeric matrix to perform PCA on, or a
@@ -110,4 +120,3 @@ mean((eval[,1] - eval[,2])^2)
 diag(cor(r$vectors[, 1:ndim], f2$vectors))
 
 }
-
