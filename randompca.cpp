@@ -280,10 +280,25 @@ bool scca_lowmem(MatrixXd& X, MatrixXd &Y, MatrixXd& U, MatrixXd& V,
 
 	 u = X2.transpose() * (Y2 * v);
 	 u = norm_thresh(u, lambda1);
+	 if(u.array().abs().maxCoeff() < tol)
+	 {
+	    verbose && STDOUT << timestamp() << "U[" << j << "] is all zero,"
+	       << iter << ", l1 penalty too large" << std::endl;
+	    // No point in continuing if the first component is all zero
+	    if(j == 0)
+	       return false;
+	 }
 	 U.col(j) = u;
 
 	 v = Y2.transpose() * (X2 * U.col(j));
 	 v = norm_thresh(v, lambda2);
+	 if(v.array().abs().maxCoeff() < tol)
+	 {
+	    verbose && STDOUT << timestamp() << "V[" << j << "] is all zero,"
+	       << iter << ", l2 penalty too large" << std::endl;
+	    if(j == 0)
+	       return false;
+	 }
 	 V.col(j) = v;
 
 	 if(iter > 0
@@ -356,28 +371,25 @@ void RandomPCA::scca(MatrixXd &X, MatrixXd &Y, double lambda1, double lambda2,
    U = MatrixXd::Zero(p, ndim);
    d = VectorXd::Zero(ndim);
 
-   if(mem == HIGHMEM)
-      converged = scca_highmem(X, Y, U, V, d, lambda1, lambda2, maxiter, tol, verbose);
-   else
-      converged = scca_lowmem(X, Y, U, V, d, lambda1, lambda2, maxiter, tol, verbose);
+   converged = scca_lowmem(X, Y, U, V, d, lambda1, lambda2, maxiter, tol, verbose);
 
    Px = X * U;
    Py = Y * V;
 }
 
 void RandomPCA::scca(Data &dat, double lambda1, double lambda2,
-   long seed, unsigned int ndim, int mem, unsigned int maxiter, double tol,
+   long seed, unsigned int ndim, unsigned int maxiter, double tol,
    unsigned int block_size)
 {
    unsigned int k = dat.Y.cols();
    MatrixXd M = make_gaussian(k, ndim, seed);
-   this->scca(dat, lambda1, lambda2, seed, ndim, mem, maxiter, tol, block_size, M);
+   this->scca(dat, lambda1, lambda2, seed, ndim, maxiter, tol, block_size, M);
 }
 
 // Block loading of X (genotypes)
 // Assumes that data.Y has been set
 void RandomPCA::scca(Data &dat, double lambda1, double lambda2,
-   long seed, unsigned int ndim, int mem, unsigned int maxiter, double tol,
+   long seed, unsigned int ndim, unsigned int maxiter, double tol,
    unsigned int block_size, MatrixXd &V0)
 {
    Y_meansd = standardise(dat.Y, stand_method_y);
