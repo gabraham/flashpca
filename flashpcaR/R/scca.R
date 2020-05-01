@@ -37,10 +37,6 @@
 #' @param num_threads Integer. Number of OpenMP threads to
 #' use (only supported under Linux and on Mac if compiled with GCC).
 #'
-#' @param mem Character. One of "low" or "high", where "low"
-#' doesn't explicitly compute X^T Y, and "high" does.
-#' This is useful for large X and Y.
-#'
 #' @param check_geno Logical. Whether to explicitly check if the matrices
 #' X and Y contain values other than {0, 1, 2}, when standx/standy="binom"/"binom2". This can
 #' be set to FALSE if you are sure your matrices only contain these values
@@ -96,12 +92,11 @@ scca <- function(X, Y, lambda1=0, lambda2=0,
    standy=c("binom2", "binom", "sd", "center", "none"),
    ndim=10, divisor=c("n1", "none"),
    maxiter=1e3, tol=1e-4, seed=1L, verbose=FALSE, num_threads=1,
-   mem=c("low", "high"), check_geno=TRUE, check_fam=TRUE,
+   check_geno=TRUE, check_fam=TRUE,
    V=NULL, block_size=500, simplify=TRUE)
 {
    standx <- match.arg(standx)
    standy <- match.arg(standy)
-   mem <- match.arg(mem)
    divisor <- match.arg(divisor)
 
    divisors <- c(
@@ -199,12 +194,6 @@ scca <- function(X, Y, lambda1=0, lambda2=0,
       stop(msg)
    }
 
-   if(mem == "high") {
-      mem_i <- 2L
-   } else {
-      mem_i <- 1L
-   }
-
    if(!is.null(V)) {
       V <- cbind(V)
       if(nrow(V) < ncol(Y) || ncol(V) != ndim) {
@@ -212,16 +201,35 @@ scca <- function(X, Y, lambda1=0, lambda2=0,
       }
       useV <- TRUE
    } else {
+      if(verbose) {
+	 cat("initialising V\n")
+      }
       V <- matrix(0.)
       useV <- FALSE
+      l1 <- 1e-9
+      l2 <- 1e-9
+      if(is.character(X)) {
+	 x0 <- try(scca_plink_internal(X, Y, l1, l2, ndim,
+	    standx_i, standy_i, div, seed, maxiter, tol,
+	     verbose, num_threads, block_size, useV, V))
+      } else {
+	 x0 <- try(scca_internal(X, Y, l1, l2, ndim,
+	    standx_i, standy_i, div, seed, maxiter, tol,
+	    verbose, num_threads, useV, V))
+      }
+      if(is(x0, "try-error")) {
+	 return(NULL)
+      }
+      V <- x0$V
    }
 
+   useV <- TRUE
    res <- try(
       if(is.character(X)) {
 	 lapply(lambda1, function(l1) {
 	    lapply(lambda2, function(l2) {
 	       x <- scca_plink_internal(X, Y, l1, l2, ndim,
-		  standx_i, standy_i, div, mem_i, seed, maxiter, tol,
+		  standx_i, standy_i, div, seed, maxiter, tol,
 		  verbose, num_threads, block_size, useV, V)
 	    })
 	 })
@@ -229,7 +237,7 @@ scca <- function(X, Y, lambda1=0, lambda2=0,
 	 lapply(lambda1, function(l1) {
 	    lapply(lambda2, function(l2) {
 	       scca_internal(X, Y, l1, l2, ndim,
-		  standx_i, standy_i, div, mem_i, seed, maxiter, tol,
+		  standx_i, standy_i, div, seed, maxiter, tol,
 		  verbose, num_threads, useV, V)
 	    })
 	 })

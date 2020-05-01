@@ -319,87 +319,16 @@ bool scca_lowmem(MatrixXd& X, MatrixXd &Y, MatrixXd& U, MatrixXd& V,
    return true;
 }
 
-bool scca_highmem(MatrixXd& X, MatrixXd &Y, MatrixXd& U, MatrixXd& V,
-   VectorXd& d, double lambda1, double lambda2,
-   unsigned int maxiter, double tol, bool verbose)
-{
-   verbose && STDOUT << timestamp() 
-      << "[scca_highmem] Begin computing X^T Y" << std::endl;
-
-   MatrixXd XY = X.transpose() * Y;
-
-   verbose && STDOUT << timestamp() 
-      << "[scaa_highmem] End computing X^T Y" << std::endl;
-
-   MatrixXd XYj;
-   VectorXd u, v, u_old, v_old;
-
-   for(unsigned int j = 0 ; j < U.cols() ; j++)
-   {
-      verbose && STDOUT << timestamp() << "dim " << j << std::endl;
-
-      if(j == 0)
-	 XYj = XY;
-      else
-	 XYj = XYj - d[j - 1] * U.col(j - 1) * V.col(j - 1).transpose();
-
-      unsigned int iter = 0;
-      for(; iter < maxiter ; iter++)
-      {
-#ifdef RENV
-	 Rcpp::checkUserInterrupt();
-#endif
-	 u_old = u = U.col(j);
-	 v_old = v = V.col(j);
-
-	 u = XYj * v;
-	 u = norm_thresh(u, lambda1);
-	 U.col(j) = u;
-
-	 v = XYj.transpose() * U.col(j);
-	 v = norm_thresh(v, lambda2);
-	 V.col(j) = v;
-
-	 if(iter > 0
-	    && (v_old.array() - v.array()).abs().maxCoeff() < tol
-	       && (u_old.array() - u.array()).abs().maxCoeff() < tol)
-	 {
-	    verbose && STDOUT << timestamp() << "dim " << j << " finished in "
-	       << iter << " iterations" << std::endl;
-	    break;
-	 }
-      }
-
-      if(iter >= maxiter)
-      {
-	 verbose && STDOUT << timestamp()
-	    << "SCCA did not converge in " << maxiter << " iterations" <<
-	    std::endl;
-	 return false;
-      }
-
-      long long nzu = (U.col(j).array() != 0).count();
-      long long nzv = (V.col(j).array() != 0).count();
-
-      verbose && STDOUT << timestamp() << "U_" << j
-	 << " non-zeros: " << nzu << ", V_" << j
-	 << " non-zeros: " << nzv << std::endl;
-
-      d[j] = U.col(j).transpose() * XYj * V.col(j);
-   }
-   return true;
-}
-
 void RandomPCA::scca(MatrixXd &X, MatrixXd &Y, double lambda1, double lambda2,
-   long seed, unsigned int ndim, int mem, unsigned int maxiter, double tol)
+   long seed, unsigned int ndim, unsigned int maxiter, double tol)
 {
    unsigned int k = Y.cols();
    MatrixXd M = make_gaussian(k, ndim, seed);
-   this->scca(X, Y, lambda1, lambda2, seed, ndim, mem, maxiter, tol, M);
+   this->scca(X, Y, lambda1, lambda2, seed, ndim, maxiter, tol, M);
 }
 
 void RandomPCA::scca(MatrixXd &X, MatrixXd &Y, double lambda1, double lambda2,
-   long seed, unsigned int ndim, int mem, unsigned int maxiter, double tol,
+   long seed, unsigned int ndim, unsigned int maxiter, double tol,
    MatrixXd &V0)
 {
    X_meansd = standardise(X, stand_method_x);

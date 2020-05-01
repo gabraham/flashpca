@@ -9,16 +9,16 @@ flashpca_plink_internal <- function(fn, stand, ndim, divisor, maxiter, block_siz
     .Call('_flashpcaR_flashpca_plink_internal', PACKAGE = 'flashpcaR', fn, stand, ndim, divisor, maxiter, block_size, tol, seed, verbose, do_loadings, return_scale)
 }
 
-scca_internal <- function(X, Y, lambda1, lambda2, ndim, stand_x, stand_y, divisor, mem, seed, maxiter, tol, verbose, num_threads, useV, Vinit) {
-    .Call('_flashpcaR_scca_internal', PACKAGE = 'flashpcaR', X, Y, lambda1, lambda2, ndim, stand_x, stand_y, divisor, mem, seed, maxiter, tol, verbose, num_threads, useV, Vinit)
+scca_internal <- function(X, Y, lambda1, lambda2, ndim, stand_x, stand_y, divisor, seed, maxiter, tol, verbose, num_threads, useV, Vinit) {
+    .Call('_flashpcaR_scca_internal', PACKAGE = 'flashpcaR', X, Y, lambda1, lambda2, ndim, stand_x, stand_y, divisor, seed, maxiter, tol, verbose, num_threads, useV, Vinit)
 }
 
 ucca_plink_internal <- function(fn, Y, stand_x, stand_y, verbose) {
     .Call('_flashpcaR_ucca_plink_internal', PACKAGE = 'flashpcaR', fn, Y, stand_x, stand_y, verbose)
 }
 
-scca_plink_internal <- function(fn, Y, lambda1, lambda2, ndim, stand_x, stand_y, divisor, mem, seed, maxiter, tol, verbose, num_threads, block_size, useV, Vinit) {
-    .Call('_flashpcaR_scca_plink_internal', PACKAGE = 'flashpcaR', fn, Y, lambda1, lambda2, ndim, stand_x, stand_y, divisor, mem, seed, maxiter, tol, verbose, num_threads, block_size, useV, Vinit)
+scca_plink_internal <- function(fn, Y, lambda1, lambda2, ndim, stand_x, stand_y, divisor, seed, maxiter, tol, verbose, num_threads, block_size, useV, Vinit) {
+    .Call('_flashpcaR_scca_plink_internal', PACKAGE = 'flashpcaR', fn, Y, lambda1, lambda2, ndim, stand_x, stand_y, divisor, seed, maxiter, tol, verbose, num_threads, block_size, useV, Vinit)
 }
 
 ucca_internal <- function(X, Y, stand_x, stand_y, verbose) {

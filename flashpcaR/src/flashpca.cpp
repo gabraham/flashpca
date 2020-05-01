@@ -196,7 +196,6 @@ List scca_internal(
    const int stand_x,
    const int stand_y,
    const int divisor,
-   const int mem,
    const long seed,
    const int maxiter,
    const double tol,
@@ -224,12 +223,12 @@ List scca_internal(
       {
          Eigen::MatrixXd Vm = Vinit;
          rpca.scca(Xm, Ym, lambda1, lambda2, seed,
-            ndim, mem, maxiter, tol, Vm);
+            ndim, maxiter, tol, Vm);
       }
       else
       {
          rpca.scca(Xm, Ym, lambda1, lambda2, seed,
-            ndim, mem, maxiter, tol);
+            ndim,  maxiter, tol);
       }
 
       NumericMatrix U(wrap(rpca.U));
@@ -334,7 +333,6 @@ List scca_plink_internal(
    const int stand_x,
    const int stand_y,
    const int divisor,
-   const int mem,
    const long seed,
    const int maxiter,
    const double tol,
@@ -375,12 +373,12 @@ List scca_plink_internal(
       {
          Eigen::MatrixXd Vm = Vinit;
          rpca.scca(data, lambda1, lambda2, seed,
-            ndim, mem, maxiter, tol, block_size, Vm);
+            ndim, maxiter, tol, block_size, Vm);
       }
       else
       {
          rpca.scca(data, lambda1, lambda2, seed,
-            ndim, mem, maxiter, tol, block_size);
+            ndim, maxiter, tol, block_size);
       }
 
       NumericMatrix U(wrap(rpca.U));

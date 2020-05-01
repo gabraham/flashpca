@@ -48,8 +48,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // scca_internal
-List scca_internal(const Eigen::Map<Eigen::MatrixXd> X, const Eigen::Map<Eigen::MatrixXd> Y, const double lambda1, const double lambda2, const unsigned int ndim, const int stand_x, const int stand_y, const int divisor, const int mem, const long seed, const int maxiter, const double tol, const bool verbose, const unsigned int num_threads, const bool useV, const Eigen::Map<Eigen::MatrixXd> Vinit);
-RcppExport SEXP _flashpcaR_scca_internal(SEXP XSEXP, SEXP YSEXP, SEXP lambda1SEXP, SEXP lambda2SEXP, SEXP ndimSEXP, SEXP stand_xSEXP, SEXP stand_ySEXP, SEXP divisorSEXP, SEXP memSEXP, SEXP seedSEXP, SEXP maxiterSEXP, SEXP tolSEXP, SEXP verboseSEXP, SEXP num_threadsSEXP, SEXP useVSEXP, SEXP VinitSEXP) {
+List scca_internal(const Eigen::Map<Eigen::MatrixXd> X, const Eigen::Map<Eigen::MatrixXd> Y, const double lambda1, const double lambda2, const unsigned int ndim, const int stand_x, const int stand_y, const int divisor, const long seed, const int maxiter, const double tol, const bool verbose, const unsigned int num_threads, const bool useV, const Eigen::Map<Eigen::MatrixXd> Vinit);
+RcppExport SEXP _flashpcaR_scca_internal(SEXP XSEXP, SEXP YSEXP, SEXP lambda1SEXP, SEXP lambda2SEXP, SEXP ndimSEXP, SEXP stand_xSEXP, SEXP stand_ySEXP, SEXP divisorSEXP, SEXP seedSEXP, SEXP maxiterSEXP, SEXP tolSEXP, SEXP verboseSEXP, SEXP num_threadsSEXP, SEXP useVSEXP, SEXP VinitSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -61,7 +61,6 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const int >::type stand_x(stand_xSEXP);
     Rcpp::traits::input_parameter< const int >::type stand_y(stand_ySEXP);
     Rcpp::traits::input_parameter< const int >::type divisor(divisorSEXP);
-    Rcpp::traits::input_parameter< const int >::type mem(memSEXP);
     Rcpp::traits::input_parameter< const long >::type seed(seedSEXP);
     Rcpp::traits::input_parameter< const int >::type maxiter(maxiterSEXP);
     Rcpp::traits::input_parameter< const double >::type tol(tolSEXP);
@@ -69,7 +68,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const unsigned int >::type num_threads(num_threadsSEXP);
     Rcpp::traits::input_parameter< const bool >::type useV(useVSEXP);
     Rcpp::traits::input_parameter< const Eigen::Map<Eigen::MatrixXd> >::type Vinit(VinitSEXP);
-    rcpp_result_gen = Rcpp::wrap(scca_internal(X, Y, lambda1, lambda2, ndim, stand_x, stand_y, divisor, mem, seed, maxiter, tol, verbose, num_threads, useV, Vinit));
+    rcpp_result_gen = Rcpp::wrap(scca_internal(X, Y, lambda1, lambda2, ndim, stand_x, stand_y, divisor, seed, maxiter, tol, verbose, num_threads, useV, Vinit));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -89,8 +88,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // scca_plink_internal
-List scca_plink_internal(const std::string fn, const Eigen::Map<Eigen::MatrixXd> Y, const double lambda1, const double lambda2, const unsigned int ndim, const int stand_x, const int stand_y, const int divisor, const int mem, const long seed, const int maxiter, const double tol, const bool verbose, const unsigned int num_threads, const unsigned int block_size, const bool useV, const Eigen::Map<Eigen::MatrixXd> Vinit);
-RcppExport SEXP _flashpcaR_scca_plink_internal(SEXP fnSEXP, SEXP YSEXP, SEXP lambda1SEXP, SEXP lambda2SEXP, SEXP ndimSEXP, SEXP stand_xSEXP, SEXP stand_ySEXP, SEXP divisorSEXP, SEXP memSEXP, SEXP seedSEXP, SEXP maxiterSEXP, SEXP tolSEXP, SEXP verboseSEXP, SEXP num_threadsSEXP, SEXP block_sizeSEXP, SEXP useVSEXP, SEXP VinitSEXP) {
+List scca_plink_internal(const std::string fn, const Eigen::Map<Eigen::MatrixXd> Y, const double lambda1, const double lambda2, const unsigned int ndim, const int stand_x, const int stand_y, const int divisor, const long seed, const int maxiter, const double tol, const bool verbose, const unsigned int num_threads, const unsigned int block_size, const bool useV, const Eigen::Map<Eigen::MatrixXd> Vinit);
+RcppExport SEXP _flashpcaR_scca_plink_internal(SEXP fnSEXP, SEXP YSEXP, SEXP lambda1SEXP, SEXP lambda2SEXP, SEXP ndimSEXP, SEXP stand_xSEXP, SEXP stand_ySEXP, SEXP divisorSEXP, SEXP seedSEXP, SEXP maxiterSEXP, SEXP tolSEXP, SEXP verboseSEXP, SEXP num_threadsSEXP, SEXP block_sizeSEXP, SEXP useVSEXP, SEXP VinitSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -102,7 +101,6 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const int >::type stand_x(stand_xSEXP);
     Rcpp::traits::input_parameter< const int >::type stand_y(stand_ySEXP);
     Rcpp::traits::input_parameter< const int >::type divisor(divisorSEXP);
-    Rcpp::traits::input_parameter< const int >::type mem(memSEXP);
     Rcpp::traits::input_parameter< const long >::type seed(seedSEXP);
     Rcpp::traits::input_parameter< const int >::type maxiter(maxiterSEXP);
     Rcpp::traits::input_parameter< const double >::type tol(tolSEXP);
@@ -111,7 +109,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const unsigned int >::type block_size(block_sizeSEXP);
     Rcpp::traits::input_parameter< const bool >::type useV(useVSEXP);
     Rcpp::traits::input_parameter< const Eigen::Map<Eigen::MatrixXd> >::type Vinit(VinitSEXP);
-    rcpp_result_gen = Rcpp::wrap(scca_plink_internal(fn, Y, lambda1, lambda2, ndim, stand_x, stand_y, divisor, mem, seed, maxiter, tol, verbose, num_threads, block_size, useV, Vinit));
+    rcpp_result_gen = Rcpp::wrap(scca_plink_internal(fn, Y, lambda1, lambda2, ndim, stand_x, stand_y, divisor, seed, maxiter, tol, verbose, num_threads, block_size, useV, Vinit));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -197,9 +195,9 @@ END_RCPP
 static const R_CallMethodDef CallEntries[] = {
     {"_flashpcaR_flashpca_internal", (DL_FUNC) &_flashpcaR_flashpca_internal, 10},
     {"_flashpcaR_flashpca_plink_internal", (DL_FUNC) &_flashpcaR_flashpca_plink_internal, 11},
-    {"_flashpcaR_scca_internal", (DL_FUNC) &_flashpcaR_scca_internal, 16},
+    {"_flashpcaR_scca_internal", (DL_FUNC) &_flashpcaR_scca_internal, 15},
     {"_flashpcaR_ucca_plink_internal", (DL_FUNC) &_flashpcaR_ucca_plink_internal, 5},
-    {"_flashpcaR_scca_plink_internal", (DL_FUNC) &_flashpcaR_scca_plink_internal, 17},
+    {"_flashpcaR_scca_plink_internal", (DL_FUNC) &_flashpcaR_scca_plink_internal, 16},
     {"_flashpcaR_ucca_internal", (DL_FUNC) &_flashpcaR_ucca_internal, 5},
     {"_flashpcaR_standardise_impute", (DL_FUNC) &_flashpcaR_standardise_impute, 2},
     {"_flashpcaR_check_internal", (DL_FUNC) &_flashpcaR_check_internal, 6},
