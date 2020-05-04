@@ -430,6 +430,10 @@ void RandomPCA::scca(Data &dat, double lambda1, double lambda2,
 	 MatrixXd Yvj = dat.Y * vj;
 	 uj = op.crossprod2(Yvj);
 	 uj = uj * invdiv;
+
+#ifdef RENV
+	 Rcpp::checkUserInterrupt();
+#endif
 	 
 	 // deflate u
 	 if(j > 0)
@@ -443,7 +447,8 @@ void RandomPCA::scca(Data &dat, double lambda1, double lambda2,
 	 {
 	    verbose && STDOUT << timestamp() << "U[" << j << "] is all zero,"
 	       << iter << ", l1 penalty too large" << std::endl;
-	    return;
+	    if(j == 0) // no point in continuing
+	       return;
 	 }
 	 U.col(j) = uj;
 
@@ -464,7 +469,8 @@ void RandomPCA::scca(Data &dat, double lambda1, double lambda2,
 	 {
 	    verbose && STDOUT << timestamp() << "V[" << j << "] is all zero,"
 	       << iter << ", l2 penalty too large" << std::endl;
-	    return;
+	    if(j == 0) // no point in continuing
+	       return;
 	 }
 	 V.col(j) = vj;
 

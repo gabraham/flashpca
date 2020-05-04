@@ -196,15 +196,17 @@ scca <- function(X, Y, lambda1=0, lambda2=0,
 
    if(!is.null(V)) {
       V <- cbind(V)
-      if(nrow(V) < ncol(Y) || ncol(V) != ndim) {
+      if(nrow(V) != ncol(Y) || ncol(V) != ndim) {
          stop("dimensions of V must be (ncol(Y) x (ndim))")
       }
       useV <- TRUE
    } else {
+      # Initialise the requested SCCA with a very mildly penalised SCCA, whih
+      # is equivalent to SVD of crossprod(X, Y)
       if(verbose) {
 	 cat("initialising V\n")
       }
-      V <- matrix(0.)
+      V <- matrix(0.) # initialised to Gaussian internally
       useV <- FALSE
       l1 <- 1e-9
       l2 <- 1e-9
@@ -307,6 +309,8 @@ print.cv.scca <- function(x, ...)
 #'
 #' @param parallel Logical. Whether to parallelise the cross-validation using
 #' the foreach package.
+#' 
+#' @param init Logical. Whether to initialise SCCA with the SVD of X'Y.
 #'
 #' @param ... Other arguments that will be passed to \code{scca}.
 #' 
@@ -350,7 +354,7 @@ print.cv.scca <- function(x, ...)
 #' @export
 cv.scca <- function(X, Y,
    lambda1=seq(1e-6, 1e-3, length=5), lambda2=seq(1e-6, 1e-3, length=5),
-   ndim=3, nfolds=10, opt.dim=1, parallel=FALSE, ...)
+   ndim=3, nfolds=10, folds=NULL, opt.dim=1, parallel=FALSE, init=TRUE, ...)
 {
    n <- nrow(Y)
    if(is.character(X)) {
@@ -366,7 +370,24 @@ cv.scca <- function(X, Y,
       stop("opt.dim must be between 1 and ndim")
    }
 
-   folds <- sample(1:nfolds, n, replace=TRUE)
+   if(!is.logical(init)) stop("init muct be TRUE or FALSE")
+
+   if(!is.null(folds)) {
+      folds <- as.integer(folds)
+      if(length(folds) != n) {
+	 stop(
+	    "'folds' must be of same number of rows as X and Y")
+      }
+      if(any(diff(sort(folds)) > 1)) {
+	 stop("'folds' must be a set of contiguous integers from 1 to nfolds")
+      }
+      warning("'folds' will override 'nfolds' parameter")
+      nfolds <- max(folds)
+   }
+   else {
+      folds <- sample(1:nfolds, n, replace=TRUE)
+   }
+
    xpred <- array(0, c(n, ndim, length(lambda1), length(lambda2)))
    ypred <- array(0, c(n, ndim, length(lambda1), length(lambda2)))
    nzx <- array(0, c(ndim, length(lambda1), length(lambda2)))
@@ -377,16 +398,31 @@ cv.scca <- function(X, Y,
    if(parallel && requireNamespace("foreach", quietly=TRUE)) {
       res <- foreach::`%dopar%`(foreach::foreach(fold=1:nfolds), {
          w <- folds != fold
+	 V0 <- NULL
+	 if(init) {
+	    V0 <- matrix(rnorm(ncol(Y) * ndim), ncol(Y), ndim)
+	    s0 <- scca(X[w,], Y[w,], ndim=ndim,
+	       lambda1=1e-9, lambda2=1e-9, simplify=FALSE, V=V0, ...)
+	    V0 <- s0$V
+	 }
          scca(X[w,], Y[w,], ndim=ndim,
-	    lambda1=lambda1, lambda2=lambda2,
-	    simplify=FALSE, ...)
+	    lambda1=lambda1, lambda2=lambda2, simplify=TRUE, V=V0, ...)
       })
    } else {
       res <- lapply(1:nfolds, function(fold) {
          w <- folds != fold
+	 V0 <- NULL
+	 cat("-> fold: ", fold, "\n")
+	 if(init) {
+	    cat("start init\n")
+	    V0 <- matrix(rnorm(ncol(Y) * ndim), ncol(Y), ndim)
+	    s0 <- scca(X[w,], Y[w,], ndim=ndim,
+	       lambda1=1e-12, lambda2=1e-12, simplify=TRUE, V=V0, ...)
+	    V0 <- s0$V 
+	    cat("end init\n")
+	 }
 	 scca(X[w,], Y[w,], ndim=ndim,
-	    lambda1=lambda1, lambda2=lambda2,
-	    simplify=FALSE, ...)
+	    lambda1=lambda1, lambda2=lambda2, simplify=FALSE, V=V0, ...)
       })
    }
 
@@ -425,12 +461,14 @@ cv.scca <- function(X, Y,
    }
 
    r <- lapply(1:ndim, function(k) {
-      sapply(seq(along=lambda1), function(i) {
+      r <- sapply(seq(along=lambda1), function(i) {
 	 sapply(seq(along=lambda2), function(j) {
-	    cor(xpred[,k,i,j], ypred[,k,i,j])
+	    cbind(cor(xpred[,k,i,j], ypred[,k,i,j]))
 	 })
       })
+      cbind(r) # otherwise abind breaks for 1-length penalties
    })
+
    r <- abind(r, along=3)
    r <- aperm(r, c(3, 2, 1))
 
