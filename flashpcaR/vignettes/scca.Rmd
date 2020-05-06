@@ -1,10 +1,12 @@
 ---
 title: "Sparse Canonical Correlation Analysis (SCCA) with the package flashpcaR"
 author: "Gad Abraham, Rodrigo Canovas"
-output: html_document
 date: "`r format(Sys.time(), '%d %B, %Y')`"
-bibliography: bibliography.bib
+output:
+  pdf_document: default
+  html_document: default
 csl: biomed-central.csl
+bibliography: bibliography.bib
 ---
 
 ```{r setup, include=FALSE}
@@ -57,12 +59,15 @@ This example is modified from the OmicsPLS package (https://github.com/selbouhad
 (n=512 individuals) [@inouye2010immune;@inouye2010metabonomic]. The original gene expression data are at http://www.ebi.ac.uk/arrayexpress/files/E-TABM-1036
 and the metabolite data are at https://www.embopress.org/action/downloadSupplement?doi=10.1038%2Fmsb.2010.93&file=msb201093-sup-0002.zip.
 Pre-processing has been performed in the script `rna_metab_data.R` available 
-at https://github.com/gabraham/flashpca/data/DILGOM/rna_metab_data.R.
+at https://github.com/gabraham/flashpca/blob/master/data/DILGOM.
 
 The preprocessed datasets can be downloaded via:
 ```{r load_data}
-rna <- fread("https://github.com/gabraham/flashpca/data/DILGOM/rna.txt.gz")
-metab <- fread("https://github.com/gabraham/flashpca/data/DILGOM/metab.txt.gz")
+library(data.table, quietly=TRUE)
+rna <- fread("https://github.com/gabraham/flashpca/raw/master/data/DILGOM/rna.txt.gz")
+metab <- fread("https://github.com/gabraham/flashpca/raw/master/data/DILGOM/metab.txt.gz")
+rna <- as.matrix(rna)
+metab <- as.matrix(metab)
 dim(rna)
 dim(metab)
 ```
@@ -72,7 +77,6 @@ also use parallel computing with two cores to speed up the computation,
 although this is not strictly necessary.
 ```{r libraries}
 library(flashpcaR, quietly=TRUE)
-library(data.table, quietly=TRUE)
 library(ggplot2, quietly=TRUE)
 library(viridis, quietly=TRUE)
 library(ggVennDiagram, quietly=TRUE)
@@ -90,16 +94,17 @@ grid search, the number of dimensions, and the number of cross-validation folds.
 We use parallelisation to make it a faster.
 
 To save time, we will download a precomputed results from github:
-```{r run_cv_scca, cache=TRUE}
+```{r run_cv_scca,cache=TRUE}
 
 # Cross-validation to select optimal penalties
 set.seed(2329)
 lambda1 <- seq(1e-2, 0.05, length=30)
-lambda2 <- seq(1e-5, 0.15, length=25)
+lambda2 <- seq(1e-5, 0.15, length=20)
 
-tmp <- tempdir()
-download.file("https://github.com/gabraham/flashpca/data/DILGOM/scca_cv.rda", tmpdir)
-load(paste0(tmpdir, "/scca_cv.rda"))
+tmpdir <- tempdir()
+f <- paste0(tmpdir, "/scca_cv.rda")
+download.file("https://github.com/gabraham/flashpca/raw/master/data/DILGOM/scca_cv.rda", f)
+load(f)
 if(!exists("s1")) {
    s1 <- cv.scca(X=rna, Y=metab, ndim=2,
       standx="sd", standy="sd", nfolds=10,
@@ -113,8 +118,8 @@ Now plot the cross-validated correlations for the 2D penalty grid
 rd <- data.table(r=as.numeric(s1$corr[1,,]),
    nz.x=as.numeric(s1$nzero.x[1,,]),
    nz.y=as.numeric(s1$nzero.y[1,,]),
-   lambda1=rep(lambda1, length(lambda2)),
-   lambda2=rep(lambda2, each=length(lambda1)))
+   lambda1=rep(s1$lambda1, length(s1$lambda2)),
+   lambda2=rep(s1$lambda2, each=length(s1$lambda1)))
 g1 <- ggplot(rd, aes(x=lambda1, y=lambda2, fill=r))
 g1 <- g1 + geom_raster()
 g1 <- g1 + geom_contour(aes(z=r), bins=50, colour="white") + theme_bw()
@@ -198,6 +203,6 @@ print(du1)
 
 ```
 
-We see that SCCA has identified about 60 genes (probes) associated with metabolite levels, and that the top genes identified indeed correspond to the genes described in the LL module.
+We see that SCCA has identified a set of genes (probes) associated with metabolite levels, and that the top genes identified indeed correspond to the genes described in the LL module.
 
 ## References
