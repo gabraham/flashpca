@@ -87,8 +87,8 @@ boxplot(rna[, filter_rna(rna, 0.95)])
 # Look at distributions of metabolites
 boxplot(metab)
 
-fwrite(rna, file="rna.txt.gz", sep="\t")
-fwrite(metab, file="metab.txt.gz", sep="\t")
+fwrite(round(rna, 6), file="rna.txt.gz", sep="\t")
+fwrite(round(metab, 6), file="metab.txt.gz", sep="\t")
 
 
 
