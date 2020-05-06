@@ -7,3 +7,5 @@
 *.bim
 *.fam
 *.log
+.DS_Store
+

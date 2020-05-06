@@ -1,0 +1,203 @@
+---
+title: "Sparse Canonical Correlation Analysis (SCCA) with the package flashpcaR"
+author: "Gad Abraham, Rodrigo Canovas"
+output: html_document
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+bibliography: bibliography.bib
+csl: biomed-central.csl
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+## Background
+
+The package flashpcaR implements sparse canonical correlation analysis (SCCA)
+[@Parkhomenko2009;@Witten2009;@Witten2009b;@Witten2009c].
+
+Assume we have two datasets $\mathbf{X}$ ($n \times m$ matrix) and $\mathbf{Y}$ ($n \times k$ matrix),
+where the two matrices have been standardised such that each column has zero-mean and unit-variance.
+Sparse canonical correlation analysis is essentially a low-rank ($D$-dimension) decomposition of the covariance of
+$$\mathbf{\Sigma}_{XY}=\frac{1}{n-1}\mathbf{X}^T \mathbf{Y} \approx \mathbf{U}\mathbf{D}\mathbf{V}^T,$$
+subject to constraints $\Vert \mathbf{U} \Vert_2 = 1, \Vert \mathbf{U}_j \Vert_1<s_1$ for $j=1,\ldots,d$
+and $\Vert \mathbf{V}_2 \Vert = 1, \Vert \mathbf{V}_j \Vert_1<s_2$ for $j=1,\ldots,d$,
+where $\Vert \cdot \Vert_2$ and $\Vert \cdot \Vert_1$ are
+the $\ell_2$-norm and $\ell_1$-norm of the vector, respectively
+(i.e., root of sum of square values and sum of absolute values, resp.).
+
+In other words, we seek to find the canonical vectors $\mathbf{U}$ and $\mathbf{V}$ that maximise the correlation
+$$\mbox{cor}(\mathbf{X} \mathbf{U}_d, \mathbf{Y} \mathbf{V}_d)$$
+for dimensions $d=1,...,D$ (subject to the above constraints).
+
+In practice, instead of the constraint formulation, we use a penalised formulation, where we penalise 
+the canonical vectors by penalties $\lambda_1 \geq 0$ and $\lambda_2 \geq 0$ [@Parkhomenko2009],
+which is achieved by soft-thresholding 
+$$S(u_j, \lambda_1) = \mbox{sgn}(u_j) \max(0, \left| u_j \right| - \lambda_1)$$
+and then subsequent renormalisation $\mathbf{u}^*=\frac{\mathbf{u}}{\Vert \mathbf{u} \Vert_2}$.
+The penalties are tuned via cross-validation, such that we maximise the cross-validated 
+correlation above.
+
+## Outline of the analysis
+
+The standard SCCA pipeline is:
+
+1. Prepare the two datasets, including any quality control needed
+2. Perform SCCA in cross-validation over a sensible grid of penalties
+3. Inspect the results; if needed repeat step 2 with different penalties.
+4. One satisfied with cross-validation results, use the optimal penalties to train 
+one model over the entire data.
+5. Inspect the results for the final model.
+
+## Example
+
+This example is modified from the OmicsPLS package (https://github.com/selbouhaddani/OmicsPLS)
+[@el2018integrating], using the DILGOM gene expression and metabolite level data
+(n=512 individuals) [@inouye2010immune;@inouye2010metabonomic]. The original gene expression data are at http://www.ebi.ac.uk/arrayexpress/files/E-TABM-1036
+and the metabolite data are at https://www.embopress.org/action/downloadSupplement?doi=10.1038%2Fmsb.2010.93&file=msb201093-sup-0002.zip.
+Pre-processing has been performed in the script `rna_metab_data.R` available 
+at https://github.com/gabraham/flashpca/data/DILGOM/rna_metab_data.R.
+
+The preprocessed datasets can be downloaded via:
+```{r load_data}
+rna <- fread("https://github.com/gabraham/flashpca/data/DILGOM/rna.txt.gz")
+metab <- fread("https://github.com/gabraham/flashpca/data/DILGOM/metab.txt.gz")
+dim(rna)
+dim(metab)
+```
+
+We load the flashpcaR package as well as supporting packages for plotting. We
+also use parallel computing with two cores to speed up the computation,
+although this is not strictly necessary.
+```{r libraries}
+library(flashpcaR, quietly=TRUE)
+library(data.table, quietly=TRUE)
+library(ggplot2, quietly=TRUE)
+library(viridis, quietly=TRUE)
+library(ggVennDiagram, quietly=TRUE)
+```
+
+We can enable parallel computing to speed up the cross-validation.
+```{r parallel,eval=FALSE}
+library(doMC, quietly=TRUE)
+registerDoMC(cores=2)
+```
+
+Now we are ready to run SCCA in cross-validation on the data. This can take
+some time depending on the size of the data, how many penalties we use in the
+grid search, the number of dimensions, and the number of cross-validation folds.
+We use parallelisation to make it a faster.
+
+To save time, we will download a precomputed results from github:
+```{r run_cv_scca, cache=TRUE}
+
+# Cross-validation to select optimal penalties
+set.seed(2329)
+lambda1 <- seq(1e-2, 0.05, length=30)
+lambda2 <- seq(1e-5, 0.15, length=25)
+
+tmp <- tempdir()
+download.file("https://github.com/gabraham/flashpca/data/DILGOM/scca_cv.rda", tmpdir)
+load(paste0(tmpdir, "/scca_cv.rda"))
+if(!exists("s1")) {
+   s1 <- cv.scca(X=rna, Y=metab, ndim=2,
+      standx="sd", standy="sd", nfolds=10,
+      lambda1=lambda1, lambda2=lambda2, parallel=TRUE)
+}
+print(s1)
+```
+
+Now plot the cross-validated correlations for the 2D penalty grid
+```{r plot_scca}
+rd <- data.table(r=as.numeric(s1$corr[1,,]),
+   nz.x=as.numeric(s1$nzero.x[1,,]),
+   nz.y=as.numeric(s1$nzero.y[1,,]),
+   lambda1=rep(lambda1, length(lambda2)),
+   lambda2=rep(lambda2, each=length(lambda1)))
+g1 <- ggplot(rd, aes(x=lambda1, y=lambda2, fill=r))
+g1 <- g1 + geom_raster()
+g1 <- g1 + geom_contour(aes(z=r), bins=50, colour="white") + theme_bw()
+g1 <- g1 + scale_fill_viridis("Correlation")
+g1 <- g1 + scale_x_continuous(expression(lambda[1]))
+g1 <- g1 + scale_y_continuous(expression(lambda[2]))
+g1 <- g1 + geom_point(aes(x=s1.best.lambda1, y=s1.best.lambda2),
+   data=data.frame(s1$best.lambda1, s1$best.lambda2),
+   shape="+", size=8, fill="black")
+print(g1)
+```
+
+Run SCCA on the entire dataset using the optimal penalties obtained earlier
+```{r run_scca}
+
+# Use the optimal penalties to run SCCA on all the data again
+s2 <- scca(X=rna, Y=metab, stand="sd", standy="sd", ndim=2,
+   lambda1=s1$best.lambda1, lambda2=s1$best.lambda2, verbose=TRUE)
+
+# Extract the 1st canonical vectors
+u1 <- s2$U[,1]
+names(u1) <- colnames(rna)
+v1 <- s2$V[,1]
+names(v1) <- colnames(metab)
+u1n0 <- u1[u1 != 0]
+v1n0 <- v1[v1 != 0]
+
+# Get the top variables with non-zero effect size
+u1n0s <- sort(abs(u1n0), decreasing=TRUE)
+v1n0s <- sort(abs(v1n0), decreasing=TRUE)
+```
+
+The selected gene expression probes (sorted by descending absolute weight)
+```{r results_rna}
+print(u1n0s)
+```
+
+The selected metabolites (sorted by descending absolute weight)
+```{r results_metab}
+print(v1n0s)
+```
+
+
+Now, we can map the Illumina gene expression probes to gene symbols, using Illumina's mapping information 
+for the Human-HT12 gene expression chip
+```{r map_genes, cache=TRUE}
+
+# Map the gene expression probe IDs to gene symbols 
+du1 <- data.table(Probe_Id=names(u1n0s), weight=u1n0s,
+   rank=1:length(u1n0s))
+url <- "https://sapac.support.illumina.com/content/dam/illumina-support/documents/downloads/productfiles/humanht-12/v3/humanht-12_v3_0_r3_11283641_a_txt.zip"
+tmpdir <- tempdir()
+f <- paste0(tmpdir, basename(url))
+if(!file.exists(f)) {
+   download.file(url, f)
+}
+annot <- fread(unzip(f, "HumanHT-12_V3_0_R3_11283641_A.txt"),
+   skip=8, fill=TRUE)
+du1[annot, on="Probe_Id", Symbol := i.Symbol]
+```
+
+Finally, we can see whether the genes we have found map to the LL-module described earlier in [@inouye2010immune]:
+```{r ll_module}
+# The LL module in terms of Illumina probe IDs and gene symbols
+LL.mod <- data.table(
+   Symbol=c("CPA3", "ENPP3", "FCER1A", "GATA2", 
+      "HDC", "HS.132563", "MS4A2", "MS4A3", "MS4A3", "SLC45A3", "SPRYD5"),
+   Probe_Id=c("ILMN_1766551", "ILMN_1749131", "ILMN_1688423", 
+   "ILMN_2102670", "ILMN_1792323", "ILMN_1899034", "ILMN_1806721", 
+   "ILMN_1695530", "ILMN_1751625", "ILMN_1726114", "ILMN_1753648"))
+
+LL.mod[, in.data := Probe_Id %in% colnames(rna)]
+
+# Find whether the genes we find were in the LL module
+# Note: possily not all LL modules genes will be represented 
+# in our result with non-zero weight
+du1[, in.LL.module := FALSE]
+du1[LL.mod, on="Probe_Id", in.LL.module := TRUE]
+
+print(du1)
+
+```
+
+We see that SCCA has identified about 60 genes (probes) associated with metabolite levels, and that the top genes identified indeed correspond to the genes described in the LL module.
+
+## References

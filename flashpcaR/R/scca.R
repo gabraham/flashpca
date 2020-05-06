@@ -412,14 +412,20 @@ cv.scca <- function(X, Y,
       res <- lapply(1:nfolds, function(fold) {
          w <- folds != fold
 	 V0 <- NULL
-	 cat("-> fold: ", fold, "\n")
+	 if(verbose) {
+	    cat("-> fold: ", fold, "\n")
+	 }
 	 if(init) {
-	    cat("start init\n")
+	    if(verbose) {
+	       cat("start init\n")
+	    }
 	    V0 <- matrix(rnorm(ncol(Y) * ndim), ncol(Y), ndim)
 	    s0 <- scca(X[w,], Y[w,], ndim=ndim,
 	       lambda1=1e-12, lambda2=1e-12, simplify=TRUE, V=V0, ...)
 	    V0 <- s0$V 
-	    cat("end init\n")
+	    if(verbose) {
+	       cat("end init\n")
+	    }
 	 }
 	 scca(X[w,], Y[w,], ndim=ndim,
 	    lambda1=lambda1, lambda2=lambda2, simplify=FALSE, V=V0, ...)
@@ -463,7 +469,8 @@ cv.scca <- function(X, Y,
    r <- lapply(1:ndim, function(k) {
       r <- sapply(seq(along=lambda1), function(i) {
 	 sapply(seq(along=lambda2), function(j) {
-	    cbind(cor(xpred[,k,i,j], ypred[,k,i,j]))
+	    m <- suppressWarnings(cor(xpred[,k,i,j], ypred[,k,i,j]))
+	    cbind(m)
 	 })
       })
       cbind(r) # otherwise abind breaks for 1-length penalties
