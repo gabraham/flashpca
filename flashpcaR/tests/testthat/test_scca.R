@@ -20,6 +20,7 @@ X <- scale2(hm3.chr1$bed)
 n <- nrow(X)
 By <- matrix(rnorm(m * k), m, k)
 Y <- scale(X %*% By + rnorm(n * k))
+colnames(Y) <- paste0("marker", 1:k)
 
 # very small penalties, to ensure the SCCA of X with X converges to the
 # eigen-decomposition
