@@ -15,6 +15,7 @@ cv.scca(
   opt.dim = 1,
   parallel = FALSE,
   init = TRUE,
+  verbose = FALSE,
   ...
 )
 }
@@ -39,6 +40,8 @@ for.}
 the foreach package.}
 
 \item{init}{Logical. Whether to initialise SCCA with the SVD of X'Y.}
+
+\item{verbose}{Logical. Whether to print more information.}
 
 \item{...}{Other arguments that will be passed to \code{scca}.}
 }

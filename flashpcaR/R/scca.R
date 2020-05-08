@@ -365,6 +365,8 @@ print.cv.scca <- function(x, ...)
 #' 
 #' @param init Logical. Whether to initialise SCCA with the SVD of X'Y.
 #'
+#' @param verbose Logical. Whether to print more information.
+#'
 #' @param ... Other arguments that will be passed to \code{scca}.
 #' 
 #' @details 
@@ -407,7 +409,8 @@ print.cv.scca <- function(x, ...)
 #' @export
 cv.scca <- function(X, Y,
    lambda1=seq(1e-6, 1e-3, length=5), lambda2=seq(1e-6, 1e-3, length=5),
-   ndim=3, nfolds=10, folds=NULL, opt.dim=1, parallel=FALSE, init=TRUE, ...)
+   ndim=3, nfolds=10, folds=NULL, opt.dim=1, parallel=FALSE, init=TRUE,
+   verbose=FALSE, ...)
 {
    n <- nrow(Y)
    if(is.character(X)) {
@@ -454,11 +457,11 @@ cv.scca <- function(X, Y,
 	 V0 <- NULL
 	 if(init) {
 	    V0 <- matrix(rnorm(ncol(Y) * ndim), ncol(Y), ndim)
-	    s0 <- scca(X[w,], Y[w,], ndim=ndim,
+	    s0 <- scca(X[w,], Y[w,], ndim=ndim, verbose=verbose,
 	       lambda1=1e-9, lambda2=1e-9, simplify=FALSE, V=V0, ...)
 	    V0 <- s0$V
 	 }
-         scca(X[w,], Y[w,], ndim=ndim,
+         scca(X[w,], Y[w,], ndim=ndim, verbose=verbose,
 	    lambda1=lambda1, lambda2=lambda2, simplify=TRUE, V=V0, ...)
       })
    } else {
@@ -473,14 +476,14 @@ cv.scca <- function(X, Y,
 	       cat("start init\n")
 	    }
 	    V0 <- matrix(rnorm(ncol(Y) * ndim), ncol(Y), ndim)
-	    s0 <- scca(X[w,], Y[w,], ndim=ndim,
+	    s0 <- scca(X[w,], Y[w,], ndim=ndim, verbose=verbose,
 	       lambda1=1e-12, lambda2=1e-12, simplify=TRUE, V=V0, ...)
 	    V0 <- s0$V 
 	    if(verbose) {
 	       cat("end init\n")
 	    }
 	 }
-	 scca(X[w,], Y[w,], ndim=ndim,
+	 scca(X[w,], Y[w,], ndim=ndim, verbose=verbose,
 	    lambda1=lambda1, lambda2=lambda2, simplify=FALSE, V=V0, ...)
       })
    }

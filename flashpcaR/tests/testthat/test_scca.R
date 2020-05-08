@@ -197,4 +197,20 @@ test_that("Testing input checking", {
       standx="binom2", standy="none"))
 })
 
+test_that("Testing cv.scca", {
+   lambda1 <- seq(1e-6, 1e-2, length=10)   
+   lambda2 <- seq(1e-6, 1e-2, length=10)   
+   s1 <- cv.scca(X, Y, lambda1=lambda1, lambda2=lambda2,
+      ndim=ndim, standx="none", standy="none", nfolds=3)
+   expect_true(all(s1$converged))
+   expect_true(all(s1$corr >= 0.0))
+   expect_true(all(s1$corr <= 1.0))
+   expect_equal(s1$ndim, ndim)
+   expect_true(s1$best.lambda1 > 0)
+   expect_true(s1$best.lambda2 > 0)
+   
+   expect_error(
+      cv.scca(bedf, Y, lambda1=lambda1, lambda2=lambda2,
+       ndim=ndim, standx="none", standy="none", nfolds=3))
+})
 
