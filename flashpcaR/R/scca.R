@@ -45,6 +45,9 @@
 #' @param check_fam Logical. Whether to check that the number of rows in 
 #' the PLINK fam file (if X is a character string) matches the number of
 #' rows in the eigenvectors.
+#"
+#' @param check_bim Logical. Whether to use the PLINK bim file
+#' (if X is a character string) information to name the vectors.
 #' 
 #' @param V Numeric. A vector to initialise "v" in SCCA iterations. By
 #' default, it will be a vector of normally distributed variates.
@@ -78,11 +81,16 @@
 #' B <- matrix(rnorm(m * k), m, k)
 #' Y <- X %*% B + rnorm(n * k)
 #'
-#' s <- scca(X, Y, lambda1=1e-2, lambda2=1e-2, ndim=5,
+#' s1 <- scca(X, Y, lambda1=1e-2, lambda2=1e-2, ndim=5,
 #'   standx="none", standy="sd")
 #'
 #' ## The canonical correlations
-#' diag(cor(s$Px, s$Py))
+#' diag(cor(s1$Px, s1$Py))
+#'
+#" ## Example with PLINK-format SNP genotype data
+#' f <- system.file("extdata", "data_chr1.bed", package="flashpcaR")
+#' s2 <- scca(gsub("\\.bed", "", f), Y, lambda1=1e-2, lambda2=1e-2,
+#'    ndim=3, standx="binom2", standy="sd")
 #'
 #' @importFrom utils read.table
 #'
@@ -92,7 +100,7 @@ scca <- function(X, Y, lambda1=0, lambda2=0,
    standy=c("binom2", "binom", "sd", "center", "none"),
    ndim=10, divisor=c("n1", "none"),
    maxiter=1e3, tol=1e-4, seed=1L, verbose=FALSE, num_threads=1,
-   check_geno=TRUE, check_fam=TRUE,
+   check_geno=TRUE, check_fam=TRUE, check_bim=TRUE,
    V=NULL, block_size=500, simplify=TRUE)
 {
    standx <- match.arg(standx)
@@ -128,6 +136,10 @@ scca <- function(X, Y, lambda1=0, lambda2=0,
 	 stop("X must have at least two rows")
       }
 
+      if(nrow(Y) != nrow(X)) {
+         stop("The number of rows in X and Y don't match")
+      }
+
       if(standx %in% c("binom", "binom2") && check_geno) {
 	 wx <- X %in% c(0:2, NA)
       	 if(sum(wx) != length(X)) {
@@ -147,24 +159,32 @@ scca <- function(X, Y, lambda1=0, lambda2=0,
 	    stop(paste0("The number of rows in ", X,
 		  ".fam and Y don't match"))
 	 }
-	 rm(fam)
+      }
+      if(check_bim) {
+	 bim <- read.table(paste0(X, ".bim"), header=FALSE, sep="",
+	    stringsAsFactors=FALSE)
+	 #if(nrow(Y) != nrow(fam)) {
+	 #   stop(paste0("The number of rows in ", X,
+	 #	  ".fam and Y don't match"))
+	 #}
+	 #rm(fam)
       }
    } else {
       stop("X must be a numeric matrix or a string naming a PLINK fileset")
    }
 
-   if(is.character(X)) {
-      fam <- read.table(paste0(X, ".fam"), header=FALSE, sep="",
-         stringsAsFactors=FALSE)
-      if(nrow(Y) != nrow(fam)) {
-	 stop("The number of rows in X and Y don't match")
-      }
-      rm(fam)
-   } else {
-      if(nrow(Y) != nrow(X)) {
-	 stop("The number of rows in X and Y don't match")
-      }
-   }
+   #if(is.character(X)) {
+   #   fam <- read.table(paste0(X, ".fam"), header=FALSE, sep="",
+   #      stringsAsFactors=FALSE)
+   #   if(nrow(Y) != nrow(fam)) {
+   #      stop("The number of rows in X and Y don't match")
+   #   }
+   #   rm(fam)
+   #} else {
+   #   if(nrow(Y) != nrow(X)) {
+   #      stop("The number of rows in X and Y don't match")
+   #   }
+   #}
 
    if(any(lambda1 < 0)) {
       stop("lambda1 must be non-negative")
@@ -226,24 +246,57 @@ scca <- function(X, Y, lambda1=0, lambda2=0,
    }
 
    useV <- TRUE
-   res <- try(
-      if(is.character(X)) {
-	 lapply(lambda1, function(l1) {
-	    lapply(lambda2, function(l2) {
-	       x <- scca_plink_internal(X, Y, l1, l2, ndim,
-		  standx_i, standy_i, div, seed, maxiter, tol,
-		  verbose, num_threads, block_size, useV, V)
-	    })
-	 })
-      } else {
-	 lapply(lambda1, function(l1) {
-	    lapply(lambda2, function(l2) {
-	       scca_internal(X, Y, l1, l2, ndim,
-		  standx_i, standy_i, div, seed, maxiter, tol,
-		  verbose, num_threads, useV, V)
-	    })
-	 })
+
+   # Convenience function to set correct dimnames
+   scca_plink_internal2 <- function(X, Y, l1, l2, ndim, standx_i, standy_i,
+      div, seed, maxiter, tol, verbose, num_threads, useV, V) {
+      s <- scca_plink_internal(X, Y, l1, l2, ndim,
+	 standx_i, standy_i, div, seed, maxiter, tol,
+	 verbose, num_threads, block_size, useV, V)
+      if(check_bim) {
+	 rownames(s$U) <- bim$V2
       }
+      if(check_fam) {
+	 rownames(s$Px) <- paste0(fam$V1, ":", fam$V2)
+      }
+      if(!is.null(colnames(Y))) {
+	 rownames(s$V) <- colnames(Y)
+      }
+      if(!is.null(rownames(Y))) {
+	 rownames(s$Py) <- rownames(Y)
+      }
+      s
+   }
+
+   # Convenience function to set correct dimnames
+   scca_internal2 <- function(...) {
+      s <- scca_internal(...)
+      if(!is.null(colnames(X))) {
+	 rownames(s$U) <- colnames(X)
+      }
+      if(!is.null(colnames(Y))) {
+	 rownames(s$V) <- colnames(Y)
+      }
+      if(!is.null(rownames(X))) {
+	 rownames(s$Px) <- rownames(X)
+      }
+      if(!is.null(rownames(Y))) {
+	 rownames(s$Py) <- rownames(Y)
+      }
+      s
+   }
+
+   func <- ifelse(is.character(X), scca_plink_internal2, scca_internal2)
+
+   res <- try(
+      lapply(lambda1, function(l1) {
+         lapply(lambda2, function(l2) {
+            s <- func(X, Y, l1, l2, ndim,
+               standx_i, standy_i, div, seed, maxiter, tol,
+               verbose, num_threads, useV, V)
+	    s
+         })
+      })
    )
    if(is(res, "try-error")) {
       NULL

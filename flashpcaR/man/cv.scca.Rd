@@ -11,8 +11,10 @@ cv.scca(
   lambda2 = seq(1e-06, 0.001, length = 5),
   ndim = 3,
   nfolds = 10,
+  folds = NULL,
   opt.dim = 1,
   parallel = FALSE,
+  init = TRUE,
   ...
 )
 }
@@ -35,6 +37,8 @@ for.}
 
 \item{parallel}{Logical. Whether to parallelise the cross-validation using
 the foreach package.}
+
+\item{init}{Logical. Whether to initialise SCCA with the SVD of X'Y.}
 
 \item{...}{Other arguments that will be passed to \code{scca}.}
 }

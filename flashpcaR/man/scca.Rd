@@ -18,9 +18,9 @@ scca(
   seed = 1L,
   verbose = FALSE,
   num_threads = 1,
-  mem = c("low", "high"),
   check_geno = TRUE,
   check_fam = TRUE,
+  check_bim = TRUE,
   V = NULL,
   block_size = 500,
   simplify = TRUE
@@ -64,10 +64,6 @@ eigenvalues by number of rows of X minus 1 ("n1") or none ("none").}
 \item{num_threads}{Integer. Number of OpenMP threads to
 use (only supported under Linux and on Mac if compiled with GCC).}
 
-\item{mem}{Character. One of "low" or "high", where "low"
-doesn't explicitly compute X^T Y, and "high" does.
-This is useful for large X and Y.}
-
 \item{check_geno}{Logical. Whether to explicitly check if the matrices
 X and Y contain values other than {0, 1, 2}, when standx/standy="binom"/"binom2". This can
 be set to FALSE if you are sure your matrices only contain these values
@@ -76,6 +72,9 @@ be set to FALSE if you are sure your matrices only contain these values
 \item{check_fam}{Logical. Whether to check that the number of rows in 
 the PLINK fam file (if X is a character string) matches the number of
 rows in the eigenvectors.}
+
+\item{check_bim}{Logical. Whether to use the PLINK bim file
+(if X is a character string) information to name the vectors.}
 
 \item{V}{Numeric. A vector to initialise "v" in SCCA iterations. By
 default, it will be a vector of normally distributed variates.}
@@ -112,10 +111,14 @@ k <- 10
 B <- matrix(rnorm(m * k), m, k)
 Y <- X \%*\% B + rnorm(n * k)
 
-s <- scca(X, Y, lambda1=1e-2, lambda2=1e-2, ndim=5,
+s1 <- scca(X, Y, lambda1=1e-2, lambda2=1e-2, ndim=5,
   standx="none", standy="sd")
 
 ## The canonical correlations
-diag(cor(s$Px, s$Py))
+diag(cor(s1$Px, s1$Py))
+
+f <- system.file("extdata", "data_chr1.bed", package="flashpcaR")
+s2 <- scca(gsub("\\\\.bed", "", f), Y, lambda1=1e-2, lambda2=1e-2,
+   ndim=3, standx="binom2", standy="sd")
 
 }

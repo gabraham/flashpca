@@ -5,9 +5,9 @@ Title: R Interface to FlashPCA
 Version: 2.1
 Date: 2020-04-20
 Authors@R: c(
-   person("Gad", "Abraham", , "gad.abraham@gmail.edu.au", c("aut", "cre")),
-   person("Rodrigo", "Canovas", "rodrigo.canovas@baker.edu.au", c("aut")),
-   person("Yixuan", "Qiu", , "yixuan.qiu@cos.name", c("aut"))
+   person("Gad", "Abraham", email="gad.abraham@gmail.edu.au", role=c("aut", "cre")),
+   person("Rodrigo", "Canovas", email="rodrigo.canovas@baker.edu.au", role=c("aut")),
+   person("Yixuan", "Qiu", email="yixuan.qiu@cos.name", role=c("aut"))
    )
 Description: FlashPCA is an efficient implementation of principal
    component analysis (PCA), useful for rapidly estimating the top principal

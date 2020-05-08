@@ -34,18 +34,14 @@ test_that(paste0("Testing self-self SCCA (X with X), l1=", l1, ", l2=", l2), {
    
    # Essentially power method for eigen-decomposition of XX' / n
    s1 <- scca(X, X, lambda1=l1, lambda2=l2, ndim=ndim,	 
-      standx="none", standy="none", mem="high")
-   s2 <- scca(X, X, lambda1=l1, lambda2=l2, ndim=ndim,	 
-      standx="none", standy="none", mem="low")
-   s3 <- scca(bedf, X, lambda1=l1, lambda2=l2, ndim=ndim,	 
+      standx="none", standy="none")
+   s2 <- scca(bedf, X, lambda1=l1, lambda2=l2, ndim=ndim,	 
       standx="binom2", standy="none")
    r1 <- diag(cor(s1$Px, s1$Py))
    r2 <- diag(cor(s2$Px, s2$Py))
-   r3 <- diag(cor(s3$Px, s3$Py))
 
    expect_equal(s1$d, eval, tol=test.tol)
    expect_equal(s1$d, s2$d, tol=test.tol)
-   expect_equal(s1$d, s3$d, tol=test.tol)
 
    expect_equal(rep(1, length(r1)), r1, tol=test.tol)
    expect_equal(rep(1, length(r2)), r2, tol=test.tol)
@@ -58,18 +54,14 @@ test_that(paste0("Testing self-self SCCA (X with X), l1=", l1, ", l2=", l2,
    
    # Essentially power method for eigen-decomposition of XX' / n
    s1 <- scca(X, X, lambda1=l1, lambda2=l2, ndim=ndim,	 
-      standx="none", standy="none", mem="high", divisor="none")
-   s2 <- scca(X, X, lambda1=l1, lambda2=l2, ndim=ndim,	 
-      standx="none", standy="none", mem="low", divisor="none")
-   s3 <- scca(bedf, X, lambda1=l1, lambda2=l2, ndim=ndim,	 
+      standx="none", standy="none", divisor="none")
+   s2 <- scca(bedf, X, lambda1=l1, lambda2=l2, ndim=ndim,	 
       standx="binom2", standy="none", divisor="none")
    r1 <- diag(cor(s1$Px, s1$Py))
    r2 <- diag(cor(s2$Px, s2$Py))
-   r3 <- diag(cor(s3$Px, s3$Py))
 
    expect_equal(s1$d, eval, tol=test.tol)
    expect_equal(s1$d, s2$d, tol=test.tol)
-   expect_equal(s1$d, s3$d, tol=test.tol)
 
    expect_equal(rep(1, length(r1)), r1, tol=test.tol)
    expect_equal(rep(1, length(r2)), r2, tol=test.tol)
@@ -82,18 +74,14 @@ test_that("Testing self-self SCCA (X with X), initialising V0", {
    
    # Essentially power method for eigen-decomposition of XX'/n
    s1 <- scca(X, X, lambda1=l1, lambda2=l2, ndim=ndim,	 
-      standx="none", standy="none", mem="high", V=Vx)
-   s2 <- scca(X, X, lambda1=l1, lambda2=l2, ndim=ndim,	 
-      standx="none", standy="none", mem="low", V=Vx)
-   s3 <- scca(bedf, X, lambda1=l1, lambda2=l2, ndim=ndim,	 
+      standx="none", standy="none", V=Vx)
+   s2 <- scca(bedf, X, lambda1=l1, lambda2=l2, ndim=ndim,	 
       standx="binom2", standy="none", V=Vx)
    r1 <- diag(cor(s1$Px, s1$Py))
    r2 <- diag(cor(s2$Px, s2$Py))
-   r3 <- diag(cor(s3$Px, s3$Py))
 
    expect_equal(s1$d, eval, tol=test.tol)
    expect_equal(s1$d, s2$d, tol=test.tol)
-   expect_equal(s1$d, s3$d, tol=test.tol)
 
    expect_equal(rep(1, length(r1)), r1, tol=test.tol)
    expect_equal(rep(1, length(r2)), r2, tol=test.tol)
@@ -106,32 +94,20 @@ test_that("Testing SCCA (X with Y)", {
    l2 <- runif(1, 1e-6, 1e-3)
 
    s1 <- scca(X, Y, lambda1=l1, lambda2=l2, ndim=ndim,	 
-      standx="none", standy="none", mem="high")
-   s2 <- scca(X, Y, lambda1=l1, lambda2=l2, ndim=ndim,	 
-      standx="none", standy="none", mem="low")
-   s3 <- scca(bedf, Y, lambda1=l1, lambda2=l2, ndim=ndim,	 
+      standx="none", standy="none")
+   s2 <- scca(bedf, Y, lambda1=l1, lambda2=l2, ndim=ndim,	 
       standx="binom2", standy="none")
    r1 <- diag(cor(s1$Px, s1$Py))
    r2 <- diag(cor(s2$Px, s2$Py))
-   r3 <- diag(cor(s3$Px, s3$Py))
 
    expect_equal(s1$d, s2$d, tol=test.tol)
-   expect_equal(s1$d, s3$d, tol=test.tol)
 
    expect_equal(s1$V[,1], s2$V[,1], tol=test.tol)
-   expect_equal(s1$V[,1], s3$V[,1], tol=test.tol)
-
    expect_equal(s1$V[,2], s2$V[,2], tol=test.tol)
-   expect_equal(s1$V[,2], s3$V[,2], tol=test.tol)
-
    expect_equal(s1$U[,1], s2$U[,1], tol=test.tol)
-   expect_equal(s1$U[,1], s3$U[,1], tol=test.tol)
-
    expect_equal(s1$U[,2], s2$U[,2], tol=test.tol)
-   expect_equal(s1$U[,2], s3$U[,2], tol=test.tol)
 
    expect_equal(r1, r2, tol=test.tol)
-   expect_equal(r1, r3, tol=test.tol)
 })
 
 test_that("Testing SCCA (X with Y, no divide by n)", {
@@ -141,52 +117,40 @@ test_that("Testing SCCA (X with Y, no divide by n)", {
    l2 <- runif(1, 1e-6, 1e-3)
 
    s1 <- scca(X, Y, lambda1=l1, lambda2=l2, ndim=ndim,	 
-      standx="none", standy="none", mem="high")
-   s2 <- scca(X, Y, lambda1=l1, lambda2=l2, ndim=ndim,	 
-      standx="none", standy="none", mem="low")
-   s3 <- scca(bedf, Y, lambda1=l1, lambda2=l2, ndim=ndim,	 
+      standx="none", standy="none")
+   s2 <- scca(bedf, Y, lambda1=l1, lambda2=l2, ndim=ndim,	 
       standx="binom2", standy="none")
 
-   s4 <- scca(X, Y, lambda1=l1, lambda2=l2, ndim=ndim,	 
-      standx="none", standy="none", mem="high", divisor="none")
-   s5 <- scca(X, Y, lambda1=l1, lambda2=l2, ndim=ndim,	 
-      standx="none", standy="none", mem="low", divisor="none")
-   s6 <- scca(bedf, Y, lambda1=l1, lambda2=l2, ndim=ndim,	 
+   s3 <- scca(X, Y, lambda1=l1, lambda2=l2, ndim=ndim,	 
+      standx="none", standy="none", divisor="none")
+   s4 <- scca(bedf, Y, lambda1=l1, lambda2=l2, ndim=ndim,	 
       standx="binom2", standy="none", divisor="none")
 
    r1 <- diag(cor(s1$Px, s1$Py))
    r2 <- diag(cor(s2$Px, s2$Py))
-   r3 <- diag(cor(s3$Px, s3$Py))
 
+   r3 <- diag(cor(s3$Px, s3$Py))
    r4 <- diag(cor(s4$Px, s4$Py))
-   r5 <- diag(cor(s5$Px, s5$Py))
-   r6 <- diag(cor(s6$Px, s6$Py))
 
    n <- nrow(X)
 
-   expect_equal(s1$d, s4$d / (n - 1), tol=test.tol)
-   expect_equal(s2$d, s5$d / (n - 1), tol=test.tol)
-   expect_equal(s3$d, s6$d / (n - 1), tol=test.tol)
+   expect_equal(s1$d, s3$d / (n - 1), tol=test.tol)
+   expect_equal(s2$d, s4$d / (n - 1), tol=test.tol)
 
-   expect_equal(s1$V[,1], s4$V[,1], tol=test.tol)
-   expect_equal(s2$V[,1], s5$V[,1], tol=test.tol)
-   expect_equal(s3$V[,1], s6$V[,1], tol=test.tol)
+   expect_equal(s1$V[,1], s3$V[,1], tol=test.tol)
+   expect_equal(s2$V[,1], s4$V[,1], tol=test.tol)
 
-   expect_equal(s1$V[,2], s4$V[,2], tol=test.tol)
-   expect_equal(s2$V[,2], s5$V[,2], tol=test.tol)
-   expect_equal(s3$V[,2], s6$V[,2], tol=test.tol)
+   expect_equal(s1$V[,2], s3$V[,2], tol=test.tol)
+   expect_equal(s2$V[,2], s4$V[,2], tol=test.tol)
 
-   expect_equal(s1$U[,1], s4$U[,1], tol=test.tol)
-   expect_equal(s2$U[,1], s5$U[,1], tol=test.tol)
-   expect_equal(s3$U[,1], s6$U[,1], tol=test.tol)
+   expect_equal(s1$U[,1], s3$U[,1], tol=test.tol)
+   expect_equal(s2$U[,1], s4$U[,1], tol=test.tol)
 
-   expect_equal(s1$U[,2], s4$U[,2], tol=test.tol)
-   expect_equal(s2$U[,2], s5$U[,2], tol=test.tol)
-   expect_equal(s3$U[,2], s6$U[,2], tol=test.tol)
+   expect_equal(s1$U[,2], s3$U[,2], tol=test.tol)
+   expect_equal(s2$U[,2], s4$U[,2], tol=test.tol)
 
-   expect_equal(r1, r4, tol=test.tol)
-   expect_equal(r2, r5, tol=test.tol)
-   expect_equal(r3, r6, tol=test.tol)
+   expect_equal(r1, r3, tol=test.tol)
+   expect_equal(r2, r4, tol=test.tol)
 })
 
 test_that("Testing SCCA (X with Y), initialising V0", {
@@ -198,32 +162,20 @@ test_that("Testing SCCA (X with Y), initialising V0", {
    V0 <- matrix(rnorm(k * ndim), k, ndim)
 
    s1 <- scca(X, Y, lambda1=l1, lambda2=l2, ndim=ndim,	 
-      standx="none", standy="none", mem="high", V=V0)
-   s2 <- scca(X, Y, lambda1=l1, lambda2=l2, ndim=ndim,	 
-      standx="none", standy="none", mem="low", V=V0)
-   s3 <- scca(bedf, Y, lambda1=l1, lambda2=l2, ndim=ndim,	 
+      standx="none", standy="none", V=V0)
+   s2 <- scca(bedf, Y, lambda1=l1, lambda2=l2, ndim=ndim,	 
       standx="binom2", standy="none", V=V0)
    r1 <- diag(cor(s1$Px, s1$Py))
    r2 <- diag(cor(s2$Px, s2$Py))
-   r3 <- diag(cor(s3$Px, s3$Py))
 
    expect_equal(s1$d, s2$d, tol=test.tol)
-   expect_equal(s1$d, s3$d, tol=test.tol)
 
    expect_equal(s1$V[,1], s2$V[,1], tol=test.tol)
-   expect_equal(s1$V[,1], s3$V[,1], tol=test.tol)
-
    expect_equal(s1$V[,2], s2$V[,2], tol=test.tol)
-   expect_equal(s1$V[,2], s3$V[,2], tol=test.tol)
-
    expect_equal(s1$U[,1], s2$U[,1], tol=test.tol)
-   expect_equal(s1$U[,1], s3$U[,1], tol=test.tol)
-
    expect_equal(s1$U[,2], s2$U[,2], tol=test.tol)
-   expect_equal(s1$U[,2], s3$U[,2], tol=test.tol)
 
    expect_equal(r1, r2, tol=test.tol)
-   expect_equal(r1, r3, tol=test.tol)
 })
 
 test_that("Testing input checking", {
@@ -231,17 +183,15 @@ test_that("Testing input checking", {
    # Test incompatible number of rows
    Z <- matrix(rnorm((nrow(X) + 3) * 100), nrow(X) + 3, 100)
    expect_error(scca(X, Z, lambda1=l1, lambda2=l2, ndim=ndim,	 
-      standx="none", standy="none", mem="high"))
-   expect_error(scca(X, Z, lambda1=l1, lambda2=l2, ndim=ndim,	 
-      standx="none", standy="none", mem="low"))
+      standx="none", standy="none"))
    expect_error(scca(bedf, Z, lambda1=l1, lambda2=l2, ndim=ndim,	 
       standx="binom2", standy="none"))
 
    # Test negative penalties
    expect_error(scca(X, Z, lambda1=l1, lambda2=-1, ndim=ndim,	 
-      standx="none", standy="none", mem="high"))
+      standx="none", standy="none"))
    expect_error(scca(X, Z, lambda1=-1, lambda2=l2, ndim=ndim,	 
-      standx="none", standy="none", mem="low"))
+      standx="none", standy="none"))
    expect_error(scca(bedf, Z, lambda1=-1, lambda2=-1, ndim=ndim,	 
       standx="binom2", standy="none"))
 })
