@@ -712,8 +712,7 @@ int main(int argc, char * argv[])
       else if(mode == MODE_SCCA)
       {
          std::cout << timestamp() << "SCCA begin" << std::endl;
-         rpca.scca(data, lambda1, lambda2, seed, n_dim, mem,
-	    maxiter, tol, block_size);
+         rpca.scca(data, lambda1, lambda2, seed, n_dim, maxiter, tol, block_size);
          std::cout << timestamp() << "SCCA done" << std::endl;
 	 if(!rpca.converged) {
 	    std::cout << timestamp() << "SCCA did not converge" << std::endl;

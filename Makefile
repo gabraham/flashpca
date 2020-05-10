@@ -23,11 +23,11 @@ CXXFLAGS += -I${SPECTRA_INC} -I${BOOST_INC} -I${EIGEN_INC}
 
 UNAME := $(shell uname)
 ifeq ($(UNAME), Darwin)
-   CXXFLAGS += -msse2 -DEIGEN_DONT_PARALLELIZE -std=c++11
-   BOOST = ${BOOST_LIB}/libboost_program_options.a
+	CXXFLAGS += -msse2 -DEIGEN_DONT_PARALLELIZE -std=c++11
+	BOOST = ${BOOST_LIB}/libboost_program_options.a
 else
-   CXXFLAGS += -march=native -std=c++0x
-   BOOST = -L${BOOST_LIB} -lboost_program_options
+	CXXFLAGS += -march=native -std=c++0x
+	BOOST = -L${BOOST_LIB} -lboost_program_options
 endif
 
 
@@ -38,7 +38,7 @@ debug: $(OBJ)
 
 flashpca: LDFLAGS = $(BOOST)
 flashpca: CXXFLAGS += -O3 -DNDEBUG -DVERSION=\"$(VERSION)\" \
-   -funroll-loops -ftree-vectorize -ffast-math -fopenmp
+   -funroll-loops -ftree-vectorize -ffast-math
 flashpca: flashpca.o randompca.o data.o util.o svdwide.o svdtall.o
 	$(CXX) $(CXXFLAGS) -o flashpca $^ $(LDFLAGS)
 
