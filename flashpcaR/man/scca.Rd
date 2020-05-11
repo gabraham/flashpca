@@ -117,6 +117,7 @@ s1 <- scca(X, Y, lambda1=1e-2, lambda2=1e-2, ndim=5,
 ## The canonical correlations
 diag(cor(s1$Px, s1$Py))
 
+## Example with PLINK-format SNP genotype data
 f <- system.file("extdata", "data_chr1.bed", package="flashpcaR")
 s2 <- scca(gsub("\\\\.bed", "", f), Y, lambda1=1e-2, lambda2=1e-2,
    ndim=3, standx="binom2", standy="sd")

@@ -74,7 +74,7 @@ Y <- X \%*\% B + rnorm(n * k)
 
 r <- cv.scca(X, Y, standx="sd", standy="sd", nfolds=3, ndim=2,
    lambda1=seq(1e-3, 1e-1, length=10),
-   lambda2=seq(1e-4, 0.5, length=3))
+   lambda2=seq(1e-4, 0.5, length=8))
 
 par(mfrow=c(1, 2))
 plot(r, dim=1)

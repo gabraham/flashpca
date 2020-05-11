@@ -8,7 +8,7 @@
 #' @param lambda1 Numeric. Non-negative L1 penalty on canonical vectors of X.
 #'
 #' @param lambda2 Numeric. Non-negative L1 penalty on canonical vectors of Y.
-#"
+#'
 #' @param standx Character. One of "binom" (zero mean, unit variance
 #' where variance is p * (1 - p), for SNP data), "binom2" (zero mean, unit
 #' variance where variance is 2 * p * (1 - p),
@@ -45,7 +45,7 @@
 #' @param check_fam Logical. Whether to check that the number of rows in 
 #' the PLINK fam file (if X is a character string) matches the number of
 #' rows in the eigenvectors.
-#"
+#'
 #' @param check_bim Logical. Whether to use the PLINK bim file
 #' (if X is a character string) information to name the vectors.
 #' 
@@ -87,7 +87,7 @@
 #' ## The canonical correlations
 #' diag(cor(s1$Px, s1$Py))
 #'
-#" ## Example with PLINK-format SNP genotype data
+#' ## Example with PLINK-format SNP genotype data
 #' f <- system.file("extdata", "data_chr1.bed", package="flashpcaR")
 #' s2 <- scca(gsub("\\.bed", "", f), Y, lambda1=1e-2, lambda2=1e-2,
 #'    ndim=3, standx="binom2", standy="sd")
@@ -396,7 +396,7 @@ print.cv.scca <- function(x, ...)
 #'
 #' r <- cv.scca(X, Y, standx="sd", standy="sd", nfolds=3, ndim=2,
 #'    lambda1=seq(1e-3, 1e-1, length=10),
-#'    lambda2=seq(1e-4, 0.5, length=3))
+#'    lambda2=seq(1e-4, 0.5, length=8))
 #'
 #' par(mfrow=c(1, 2))
 #' plot(r, dim=1)
@@ -587,7 +587,7 @@ cv.scca <- function(X, Y,
 #'
 #' r <- cv.scca(X, Y, standx="sd", standy="sd", nfolds=3, ndim=2,
 #'    lambda1=seq(1e-3, 1e-1, length=10),
-#'    lambda2=seq(1e-4, 0.5, length=3))
+#'    lambda2=seq(1e-4, 0.5, length=8))
 #'
 #' par(mfrow=c(1, 2))
 #' plot(r, dim=1)
@@ -641,5 +641,80 @@ plot.cv.scca <- function(x, dim=NULL, type=c("nzero", "penalty"), ...)
       title="lambda2", lwd=2, lty=1:length(x$lambda2),
       col=1:length(x$lambda2))
    invisible(x)
+}
+
+#' @export plot2d
+plot2d <- function(x, ...)
+{
+   UseMethod("plot2d")
+}
+
+#'
+#' Plot the results of SCCA cross-validation (Pearson correlation) as a 2D
+#' surface. The optimal position is shown as a cross ('+').
+#'
+#' @param x An object of class "cv.scca"
+#'
+#' @param dim Integer. Which dimension to plot (all will be plotted by
+#' default).
+#' 
+#' @param plot Logical. Whether to plot (print) the ggplot2 object or just
+#' return it.
+#' 
+#' @details
+#'    Plots the cross-validated Pearson correlation, as a 2D surface with the
+#'    lambda1 and lambda2 penalties on the axes.
+#'
+#' @return the ggplot2 object
+#'
+#' @examples
+#'
+#' #######################
+#' ## HapMap3 chr1 example
+#' data(hm3.chr1)
+#' X <- scale2(hm3.chr1$bed)
+#' n <- nrow(X)
+#' m <- ncol(X)
+#' k <- 5
+#' B <- matrix(rnorm(m * k), m, k)
+#' Y <- X %*% B + rnorm(n * k)
+#'
+#' r <- cv.scca(X, Y, standx="sd", standy="sd", nfolds=3, ndim=2,
+#'    lambda1=seq(1e-3, 1e-1, length=10),
+#'    lambda2=seq(1e-4, 0.5, length=8))
+#'
+#' g <- plot2d(r, dim=1, plot=FALSE)
+#' print(g)
+#' 
+#' @importFrom abind abind
+#' @importFrom ggplot2 ggplot aes geom_raster geom_contour scale_fill_viridis_c scale_x_continuous scale_y_continuous geom_point theme_bw
+#'
+#' @S3method plot2d cv.scca
+#'
+#' @export
+plot2d.cv.scca <- function(x, dim=1, plot=FALSE)
+{
+   dim <- as.integer(dim)
+   if(!is.integer(dim) || dim < 1 || dim > x$ndim) {
+      stop(paste("dim must be positive integer, <=", x$ndim)) 
+   }
+   rd <- data.frame(r=as.numeric(x$corr[dim,,]),
+      nz.x=as.numeric(x$nzero.x[dim,,]),
+      nz.y=as.numeric(x$nzero.y[dim,,]),
+      lambda1=rep(x$lambda1, length(x$lambda2)),
+      lambda2=rep(x$lambda2, each=length(x$lambda1)))
+   g1 <- ggplot(rd, aes(x=lambda1, y=lambda2, fill=r))
+   g1 <- g1 + geom_raster()
+   g1 <- g1 + geom_contour(aes(z=r), bins=50, colour="white") + theme_bw()
+   g1 <- g1 + scale_fill_viridis_c("Correlation")
+   g1 <- g1 + scale_x_continuous(expression(lambda[1]))
+   g1 <- g1 + scale_y_continuous(expression(lambda[2]))
+   g1 <- g1 + geom_point(aes(x=x.best.lambda1, y=x.best.lambda2),
+      data=data.frame(x$best.lambda1, x$best.lambda2),
+      shape="+", size=8, fill="black")
+   if(plot) {
+      print(g1)
+   }
+   invisible(g1)
 }
 

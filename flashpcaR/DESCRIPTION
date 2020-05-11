@@ -22,7 +22,7 @@ License:
    GPL (>= 3)
 NeedsCompilation: yes
 Imports: 
-    Rcpp (>= 0.11.1), methods, abind
+    Rcpp (>= 0.11.1), methods, abind, ggplot2
 LinkingTo:
    Rcpp, RcppEigen (>= 0.3.2.5.1), BH, RSpectra
 RoxygenNote: 7.1.0

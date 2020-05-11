@@ -78,7 +78,6 @@ although this is not strictly necessary.
 ```{r libraries}
 library(flashpcaR, quietly=TRUE)
 library(ggplot2, quietly=TRUE)
-library(viridis, quietly=TRUE)
 library(ggVennDiagram, quietly=TRUE)
 ```
 
@@ -115,21 +114,7 @@ print(s1)
 
 Now plot the cross-validated correlations for the 2D penalty grid
 ```{r plot_scca}
-rd <- data.table(r=as.numeric(s1$corr[1,,]),
-   nz.x=as.numeric(s1$nzero.x[1,,]),
-   nz.y=as.numeric(s1$nzero.y[1,,]),
-   lambda1=rep(s1$lambda1, length(s1$lambda2)),
-   lambda2=rep(s1$lambda2, each=length(s1$lambda1)))
-g1 <- ggplot(rd, aes(x=lambda1, y=lambda2, fill=r))
-g1 <- g1 + geom_raster()
-g1 <- g1 + geom_contour(aes(z=r), bins=50, colour="white") + theme_bw()
-g1 <- g1 + scale_fill_viridis("Correlation")
-g1 <- g1 + scale_x_continuous(expression(lambda[1]))
-g1 <- g1 + scale_y_continuous(expression(lambda[2]))
-g1 <- g1 + geom_point(aes(x=s1.best.lambda1, y=s1.best.lambda2),
-   data=data.frame(s1$best.lambda1, s1$best.lambda2),
-   shape="+", size=8, fill="black")
-print(g1)
+plot2d(s1, plot=TRUE)
 ```
 
 Run SCCA on the entire dataset using the optimal penalties obtained earlier
