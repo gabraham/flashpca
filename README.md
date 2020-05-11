@@ -110,6 +110,10 @@ headers and Boost headers and libraries on your system. The default values for t
       BOOST_LIB=/opt/boost-1.59.0/lib \
       SPECTRA_INC=/opt/spectra
    ```
+
+### Docker example
+
+Example of how to run flashpca in a [Docker container](docker.md)
  
 ## Quick start
 

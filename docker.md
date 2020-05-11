@@ -7,7 +7,7 @@
 mkdir flashpca-build
 ```
 
-Put this in `flashpca-build/Dockerfile`
+Put this in `flashpca-build/Dockerfile`:
 ```
 FROM ubuntu:bionic
 RUN apt-get update && \
@@ -43,7 +43,7 @@ RUN cd flashpca && \
    SPECTRA_INC=$HOME/spectra-0.8.1/include
 ```
 
-Build the container
+Build the container:
 ```bash
 docker build flashpca-build -t 'flashpca'
 ```
