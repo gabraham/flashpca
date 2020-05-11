@@ -151,6 +151,7 @@ project <- function(X, loadings, orig_mean=NULL, orig_sd=NULL,
 	 project_plink_internal(X, loadings, ref_alleles,
 	    orig_mean, orig_sd, block_size, div, verbose)
       } else {
+	 # projection will automatically inherit rownames(X) 
 	 list(projection=X %*% loadings / sqrt(div_val))
       }
    )

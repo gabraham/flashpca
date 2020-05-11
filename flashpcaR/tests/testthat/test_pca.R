@@ -107,6 +107,7 @@ test_that("Testing PCA with stand='binom2'", {
 
 test_that("Testing PCA with stand='sd'", {
    X <- matrix(rnorm(n * p), n, p)
+   rownames(X) <- paste0("ID", 1:n)
    S <- scale(X, center=TRUE, scale=TRUE)
 
    f1 <- eigen(tcrossprod(S) / ncol(S), symmetric=TRUE)
@@ -122,6 +123,8 @@ test_that("Testing PCA with stand='sd'", {
 
    f1.pve <- f1$values / sum(f1$values)
    expect_equal(f1.pve[1:ndim], f2$pve)
+   expect_equal(rownames(f2$vectors), rownames(X))
+   expect_equal(rownames(f2$projection), rownames(X))
 })
 
 test_that("Testing PCA with stand='none'", {

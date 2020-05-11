@@ -568,7 +568,6 @@ NamedMatrixWrapper read_text(const char *filename,
       errno = 0;
       for(unsigned int j = 0 ; j < numfields ; j++)
       {
-	 //y(j) = std::atof(tokens[j + firstcol - 1].c_str());
 	 double m = std::strtod(tokens[j + firstcol - 1].c_str(), &err);
 	 if(*err != '\0' || errno != 0)
 	 {

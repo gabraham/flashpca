@@ -22,6 +22,7 @@ test_that("Testing projection", {
    # First project the same data used for PCA, onto the PCs   
    pr1 <- project(bedf, loadings=f$loadings, ref_allele=refallele,
       orig_mean=attr(X1, "scaled:center"), orig_sd=attr(X1, "scaled:scale"))
+   #expect_equal(f$projection, pr1$projection, tol=tol)
    expect_equal(f$projection, pr1$projection, tol=tol)
 
    expect_warning(pr2 <- project(hm3.chr1$bed, loadings=f$loadings, ref_allele=refallele,
@@ -40,9 +41,8 @@ test_that("Testing projection", {
       center=attr(X2, "scaled:center"),
       scale=attr(X2, "scaled:scale"))
    X1s[is.na(X1s)] <- 0
+   rownames(X1s) <- paste0(hm3.chr1$fam[,1], ":", hm3.chr1$fam[,2])
    P2 <- X1s %*% f2$loadings / sqrt(ncol(X2))
-   rownames(P2) <- NULL
-   dimnames(P2) <- NULL
    expect_equal(P2, pr2$projection, tol=tol)
 })
 

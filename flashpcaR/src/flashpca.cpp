@@ -34,8 +34,7 @@ List flashpca_internal(
       rpca.divisor = divisor;
       rpca.verbose = verbose;
 
-      rpca.pca_fast(Xm, 0, ndim, maxiter,
-         tol, seed, do_loadings);
+      rpca.pca_fast(Xm, 0, ndim, maxiter, tol, seed, do_loadings);
       
       NumericMatrix U(wrap(rpca.U));
       NumericMatrix P(wrap(rpca.Px));
@@ -125,6 +124,7 @@ List flashpca_plink_internal(
       data.verbose = verbose;
       data.stand_method_x = stand; 
       data.read_pheno(fam_file.c_str(), 6);
+      data.read_plink_fam(fam_file.c_str());
       data.read_plink_bim(bim_file.c_str());
       data.geno_filename = geno_file.c_str();
       data.get_size();
@@ -137,6 +137,16 @@ List flashpca_plink_internal(
       NumericMatrix P(wrap(rpca.Px));
       NumericVector d(wrap(rpca.d));
       NumericVector pve(wrap(rpca.pve));
+
+      std::vector<std::string> rownames(data.fam_ids.size());
+      for(int i = 0; i < data.fam_ids.size(); i++)
+      {
+	 rownames[i] = data.fam_ids[i] + ":" + data.indiv_ids[i];
+      }
+
+      CharacterVector rownames_v(wrap(rownames));
+      Rcpp::rownames(U) = rownames_v;
+      Rcpp::rownames(P) = rownames_v;
 
       Rcpp::List res;
 
@@ -583,6 +593,7 @@ List project_plink_internal(
       Data data;
       data.verbose = verbose;
       data.read_pheno(fam_file.c_str(), 6);
+      data.read_plink_fam(fam_file.c_str());
       data.read_plink_bim(bim_file.c_str());
       data.geno_filename = geno_file.c_str();
       data.get_size();
@@ -593,10 +604,20 @@ List project_plink_internal(
       data.X_meansd.col(0) = orig_mean;
       data.X_meansd.col(1) = orig_sd;
 
+      std::vector<std::string> rownames(data.fam_ids.size());
+      for(int i = 0; i < data.fam_ids.size(); i++)
+      {
+	 rownames[i] = data.fam_ids[i] + ":" + data.indiv_ids[i];
+      }
+
+      CharacterVector rownames_v(wrap(rownames));
+
       rpca.project(data, block_size);
+      NumericMatrix P(wrap(rpca.Px));
       
-      Rcpp::List res = Rcpp::List::create(
-         Rcpp::Named("projection")=rpca.Px);
+      Rcpp::rownames(P) = rownames_v;
+
+      Rcpp::List res = Rcpp::List::create(Rcpp::Named("projection")=P);
       return res;
    }
    catch(std::exception &ex)

@@ -186,8 +186,13 @@ flashpca <- function(X, ndim=10,
 	    maxiter, block_size, tol, seed,
 	    verbose, do_loadings, return_scale)
       } else {
-	 flashpca_internal(X, stand_i, ndim, div, maxiter,
+	 s <- flashpca_internal(X, stand_i, ndim, div, maxiter,
 	    tol, seed, verbose, do_loadings, return_scale)
+	 if(!is.null(rownames(X))) {
+	    rownames(s$vectors) <- rownames(X)
+	    rownames(s$projection) <- rownames(X)
+	 }
+	 s
       }
    )
    class(res) <- "flashpca"
