@@ -3,7 +3,7 @@
 
 (Assuming docker is installed correctly)
 
-```
+```bash
 mkdir flashpca-build
 ```
 
@@ -44,18 +44,18 @@ RUN cd flashpca && \
 ```
 
 Build the container
-```
+```bash
 docker build flashpca-build -t 'flashpca'
 ```
 
 Run the container and bind a local directory that contains your data, e.g.,
 `~/Data/HapMap3`:
-```
+```bash
 docker run -it -v ~/HapMap3:/home/flashpca-user/data flashpca
 ```
 
 Run flashpca in the container:
-```
+```bash
 flashpca-user@6dd9f366b298:~$ cd data
 flashpca-user@6dd9f366b298:~/data$ ~/flashpca/flashpca --bfile chr22
 [Mon May 11 11:13:30 2020] arguments: flashpca /home/flashpca-user/flashpca/flashpca --bfile chr22
