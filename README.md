@@ -277,6 +277,7 @@ Depends on packages:
    * [BH](https://cran.r-project.org/package=BH)
    * [RSpectra](https://cran.r-project.org/package=RSpectra)
    * [abind](https://cran.r-project.org/package=abind)
+   * [ggplot2](https://cran.r-project.org/package=ggplot2)
 
 Suggests:
    
