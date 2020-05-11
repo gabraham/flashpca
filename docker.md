@@ -4,7 +4,7 @@
 (Assuming docker is installed correctly)
 
 ```bash
-mkdir flashpca-build
+$ mkdir flashpca-build
 ```
 
 Put this in `flashpca-build/Dockerfile`:
@@ -45,13 +45,13 @@ RUN cd flashpca && \
 
 Build the container:
 ```bash
-docker build flashpca-build -t 'flashpca'
+$ docker build flashpca-build -t 'flashpca'
 ```
 
 Run the container and bind a local directory that contains your data, e.g.,
 `~/Data/HapMap3`:
 ```bash
-docker run -it -v ~/HapMap3:/home/flashpca-user/data flashpca
+$ docker run -it -v ~/HapMap3:/home/flashpca-user/data flashpca
 ```
 
 Run flashpca in the container:
