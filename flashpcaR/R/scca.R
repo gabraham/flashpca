@@ -48,7 +48,7 @@
 #'
 #' @param check_bim Logical. Whether to use the PLINK bim file
 #' (if X is a character string) information to name the vectors.
-#' 
+#'
 #' @param V Numeric. A vector to initialise "v" in SCCA iterations. By
 #' default, it will be a vector of normally distributed variates.
 #'
@@ -186,10 +186,10 @@ scca <- function(X, Y, lambda1=0, lambda2=0,
    #   }
    #}
 
-   if(any(lambda1 < 0)) {
+   if(is.null(lambda1) || any(lambda1 < 0)) {
       stop("lambda1 must be non-negative")
    }
-   if(any(lambda2 < 0)) {
+   if(is.null(lambda2) || any(lambda2 < 0)) {
       stop("lambda2 must be non-negative")
    }
 

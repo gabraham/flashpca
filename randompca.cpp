@@ -251,23 +251,10 @@ bool scca_lowmem(MatrixXd& X, MatrixXd &Y, MatrixXd& U, MatrixXd& V,
    verbose && STDOUT << timestamp() 
       << "[scca_lowmem] " << std::endl;
 
-   // TODO: X2 and Y2 take up lots of memory
-   MatrixXd X2 = MatrixXd::Zero(X.rows() + U.cols(), X.cols());
-   MatrixXd Y2 = MatrixXd::Zero(Y.rows() + U.cols(), Y.cols());
-   X2.block(0, 0, X.rows(), X.cols()) = X;
-   Y2.block(0, 0, Y.rows(), Y.cols()) = Y;
-   VectorXd u, v, u_old, v_old;
+   VectorXd uj, vj, uj_old, vj_old;
 
    for(unsigned int j = 0 ; j < U.cols() ; j++)
    {
-      // Deflate by having 'fake' rows in the data that are essentially the
-      // previous singular vectors
-      if(j > 0)
-      {
-	 X2.row(X.rows() + j) = sqrt(d[j - 1]) * U.col(j - 1).transpose();
-	 Y2.row(Y.rows() + j) = -sqrt(d[j - 1]) * V.col(j - 1).transpose();
-      }
-
       unsigned int iter = 0;
       for( ; iter < maxiter ; iter++)
       {
@@ -275,12 +262,22 @@ bool scca_lowmem(MatrixXd& X, MatrixXd &Y, MatrixXd& U, MatrixXd& V,
 #ifdef RENV
 	 Rcpp::checkUserInterrupt();
 #endif
-	 u_old = u = U.col(j);
-	 v_old = v = V.col(j);
+	 uj_old = uj = U.col(j);
+	 vj_old = vj = V.col(j);
 
-	 u = X2.transpose() * (Y2 * v);
-	 u = norm_thresh(u, lambda1);
-	 if(u.array().abs().maxCoeff() < tol)
+	 uj = X.transpose() * (Y * vj);
+
+	 // orthogonalise (Gram-Schmidt)
+	 if(j > 0)
+	 {
+	    for(unsigned int k = 0; k < j; k++)
+	    {
+	       uj = uj - (uj.transpose() * U.col(k)) * U.col(k) /
+		  U.col(k).squaredNorm() ;
+	    }
+	 }
+	 uj = norm_thresh(uj, lambda1);
+	 if(uj.array().abs().maxCoeff() < tol)
 	 {
 	    verbose && STDOUT << timestamp() << "U[" << j << "] is all zero,"
 	       << iter << ", l1 penalty too large" << std::endl;
@@ -288,22 +285,33 @@ bool scca_lowmem(MatrixXd& X, MatrixXd &Y, MatrixXd& U, MatrixXd& V,
 	    if(j == 0)
 	       return false;
 	 }
-	 U.col(j) = u;
+	 U.col(j) = uj;
 
-	 v = Y2.transpose() * (X2 * U.col(j));
-	 v = norm_thresh(v, lambda2);
-	 if(v.array().abs().maxCoeff() < tol)
+	 vj = Y.transpose() * (X * U.col(j));
+
+	 // orthogonalise (Gram-Schmidt)
+	 if(j > 0)
+	 {
+	    for(unsigned int k = 0; k < j; k++)
+	    {
+	       vj = vj - (vj.transpose() * V.col(k)) * V.col(k) /
+		  V.col(k).squaredNorm() ;
+	    }
+	 }
+
+	 vj = norm_thresh(vj, lambda2);
+	 if(vj.array().abs().maxCoeff() < tol)
 	 {
 	    verbose && STDOUT << timestamp() << "V[" << j << "] is all zero,"
 	       << iter << ", l2 penalty too large" << std::endl;
 	    if(j == 0)
 	       return false;
 	 }
-	 V.col(j) = v;
+	 V.col(j) = vj;
 
 	 if(iter > 0
-	    && (v_old.array() - v.array()).abs().maxCoeff() < tol
-	       && (u_old.array() - u.array()).abs().maxCoeff() < tol)
+	    && (vj_old.array() - vj.array()).abs().maxCoeff() < tol
+	       && (uj_old.array() - uj.array()).abs().maxCoeff() < tol)
 	 {
 	    verbose && STDOUT << timestamp() << "dim " << j << " finished in "
 	       << iter << " iterations" << std::endl;
@@ -326,7 +334,6 @@ bool scca_lowmem(MatrixXd& X, MatrixXd &Y, MatrixXd& U, MatrixXd& V,
 	 << " non-zeros: " << nzu << ", V_" << j
 	 << " non-zeros: " << nzv << std::endl;
 
-      // Use X and Y, not X2 and Y2
       d[j] = (X * U.col(j)).transpose() * (Y * V.col(j));
       verbose && STDOUT << timestamp() << "d[" << j << "]: "
 	 << d[j] << std::endl;
@@ -435,11 +442,14 @@ void RandomPCA::scca(Data &dat, double lambda1, double lambda2,
 	 Rcpp::checkUserInterrupt();
 #endif
 	 
-	 // deflate u
+	 // orthogonalise (Gram-Schmidt)
 	 if(j > 0)
 	 {
-	    uj -= U.leftCols(j) * d.head(j).asDiagonal()
-	       * V.leftCols(j).transpose() * vj;
+	    for(unsigned int k = 0; k < j; k++)
+	    {
+	       uj = uj - (uj.transpose() * U.col(k)) * U.col(k) /
+		  U.col(k).squaredNorm() ;
+	    }
 	 }
 
 	 uj = norm_thresh(uj, lambda1);
@@ -457,11 +467,14 @@ void RandomPCA::scca(Data &dat, double lambda1, double lambda2,
 	 vj = dat.Y.transpose() * Xuj;
 	 vj = vj * invdiv;
 
-	 // deflate v
+	 // orthogonalise
 	 if(j > 0)
 	 {
-	    vj -= V.leftCols(j) * d.head(j).asDiagonal()
-	       * U.leftCols(j).transpose() * uj;
+	    for(unsigned int k = 0; k < j; k++)
+	    {
+	       vj = vj - (vj.transpose() * V.col(k)) * V.col(k) /
+		  V.col(k).squaredNorm() ;
+	    }
 	 }
 
 	 vj = norm_thresh(vj, lambda2);
