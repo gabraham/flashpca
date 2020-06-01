@@ -93,6 +93,8 @@
 #'    ndim=3, standx="binom2", standy="sd")
 #'
 #' @importFrom utils read.table
+#' 
+#' @seeAlso \code{\link{cv.scca}}
 #'
 #' @export
 scca <- function(X, Y, lambda1=0, lambda2=0,
@@ -406,6 +408,8 @@ print.cv.scca <- function(x, ...)
 #' @importFrom graphics matplot
 #' @importFrom graphics legend
 #'
+#' @seeAlso \code{\link{scca}}
+#'
 #' @export
 cv.scca <- function(X, Y,
    lambda1=seq(1e-6, 1e-3, length=5), lambda2=seq(1e-6, 1e-3, length=5),
@@ -597,6 +601,8 @@ cv.scca <- function(X, Y,
 #' @importFrom graphics matplot
 #' @importFrom graphics legend
 #'
+#' @seeAlso \code{\link{cv.scca}}
+#'
 #' @export
 plot.cv.scca <- function(x, dim=NULL, type=c("nzero", "penalty"), ...)
 {
@@ -649,7 +655,6 @@ plot2d <- function(x, ...)
    UseMethod("plot2d")
 }
 
-#'
 #' Plot the results of SCCA cross-validation (Pearson correlation) as a 2D
 #' surface. The optimal position is shown as a cross ('+').
 #'
@@ -691,6 +696,8 @@ plot2d <- function(x, ...)
 #'
 #' @S3method plot2d cv.scca
 #'
+#' @seeAlso \code{\link{cv.scca}}
+#'
 #' @export
 plot2d.cv.scca <- function(x, dim=1, plot=FALSE)
 {
@@ -716,5 +723,115 @@ plot2d.cv.scca <- function(x, dim=1, plot=FALSE)
       print(g1)
    }
    invisible(g1)
+}
+
+#' Performs a low-rank whitening of a matrix X.
+#' 
+#' @param X numeric matrix.
+#'
+#' @param ndim Integer. How many dimensions to use in the whitening.
+#'
+#' @param keep.svd Logical. Whether to keep the singular value decomposition
+#' results.
+#' 
+#' @param stand character. Which standardisation to use on columns of X.
+#'
+#' @details A k-rank singular value decomposition of X is done
+#' \deqn{X = U_{1:k} D_{1:k} V_{1:k}^T} 
+#' The 
+#'
+#' @examples
+#'
+#' data(hm3.chr1)
+#' X <- scale2(hm3.chr1$bed)
+#' Xw <- whiten(X, ndim=10)
+#'
+#' names(attr(Xw, "svd"))
+#'
+#' @seeAlso \code{\link{validate.rank}}
+#'
+#' @export
+#'
+whiten <- function(X, ndim=20, keep.svd=TRUE, stand="none")
+{
+   f <- flashpca(X, ndim=ndim, do_loadings=TRUE, stand=stand, divisor="n1")
+   u <- f$vectors
+   v <- f$loadings
+   d <- sqrt(f$values)
+   
+   R <- tcrossprod(u, v)
+   colnames(R) <- colnames(X)
+   rownames(R) <- rownames(X)
+   if(keep.svd) {
+      attr(R, "svd") <- list(u=u, d=d, v=v)
+   }
+   R
+}
+
+#' Estimates the effective number of dimensions of a matrix X, based on
+#' reconstruction error from singular value decomposition.
+#' 
+#' @param X numeric matrix.
+#'
+#' @param maxdim Integer. How many dimensions to try.
+#'
+#' @param test.prop numeric. What proportion of the data to reserve for
+#' evaluating the reconstruction error on.
+#'
+#' @param const numeric. What value to set the test observations to.
+#'
+#' @details A certain proportion of the entries of X is set to a constant
+#' value. We then run singular value decomposition (SVD) on the matrix
+#' and for each rank k compute the reconstruction mean squared error between
+#' the predicted values \eqn{U_{1:k} D_{1:k} V_{1:k}^T} and the true values at
+#' at these missing positions. The rank k with the lowest mean squared error
+#' is chosen as the effective rank for whitening.
+#'
+#' This is basically one step in the imputation method from
+#' http://alexhwilliams.info/itsneuronalblog/2018/02/26/crossval
+#' 
+#' @return a data.frame with number of dimensions and reconstruction error
+#' (mse).
+#'
+#' @seeAlso \code{\link{whiten}}
+#'
+#' @examples
+#'
+#' #######################
+#' ## HapMap3 chr1 example
+#' data(hm3.chr1)
+#' X <- scale2(hm3.chr1$bed)
+#'
+#' r <- validate.rank(X, maxdim=50)
+#' plot(mse ~ dim, data=r)
+#'
+#' @export
+#'
+validate.rank <- function(X, maxdim=20, test.prop=0.1, const=0)
+{
+   X0 <- X1 <- X
+   
+   mx <- sample(length(X), size=test.prop * length(X))
+   
+   # training observations
+   X0[mx] <- const
+   
+   # testing observations
+   # not strictly necessary to set NAs here, just being pedantic
+   X1[-mx] <- NA
+   
+   n <- nrow(X)
+   
+   f <- flashpca(X0, ndim=maxdim, do_loadings=TRUE, stand="none", divisor="n1")
+   u <- f$vectors
+   v <- f$loadings
+   d <- sqrt(f$values)
+   
+   err <- sapply(1:maxdim, function(k) {
+      R <- tcrossprod(u[,1:k] %*% diag(d[1:k], k, k), v[,1:k])
+      mean((X1[mx] - R[mx])^2)
+   })
+   
+   data.frame(dim=cbind(1:maxdim), mse=err)
 }
 
