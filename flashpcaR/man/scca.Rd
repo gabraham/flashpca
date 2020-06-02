@@ -123,3 +123,6 @@ s2 <- scca(gsub("\\\\.bed", "", f), Y, lambda1=1e-2, lambda2=1e-2,
    ndim=3, standx="binom2", standy="sd")
 
 }
+\seealso{
+\code{\link{cv.scca}}
+}

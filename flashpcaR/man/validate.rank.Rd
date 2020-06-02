@@ -47,3 +47,6 @@ r <- validate.rank(X, maxdim=50)
 plot(mse ~ dim, data=r)
 
 }
+\seealso{
+\code{\link{whiten}}
+}

@@ -5,7 +5,7 @@
 \alias{rna}
 \title{Gene expression data}
 \format{
-
+A matrix
 }
 \source{
 \url{http://www.ebi.ac.uk/arrayexpress/files/E-TABM-1036/E-TABM-1036.processed.1.zip}

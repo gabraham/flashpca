@@ -5,7 +5,7 @@
 \alias{metab}
 \title{Metabolite levels}
 \format{
-
+A matrix
 }
 \source{
 

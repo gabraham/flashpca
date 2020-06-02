@@ -46,3 +46,6 @@ plot(r, dim=1)
 plot(r, dim=2)
 
 }
+\seealso{
+\code{\link{cv.scca}}
+}

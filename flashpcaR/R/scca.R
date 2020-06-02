@@ -94,7 +94,7 @@
 #'
 #' @importFrom utils read.table
 #' 
-#' @seeAlso \code{\link{cv.scca}}
+#' @seealso \code{\link{cv.scca}}
 #'
 #' @export
 scca <- function(X, Y, lambda1=0, lambda2=0,
@@ -408,12 +408,12 @@ print.cv.scca <- function(x, ...)
 #' @importFrom graphics matplot
 #' @importFrom graphics legend
 #'
-#' @seeAlso \code{\link{scca}}
+#' @seealso \code{\link{scca}}
 #'
 #' @export
 cv.scca <- function(X, Y,
    lambda1=seq(1e-6, 1e-3, length=5), lambda2=seq(1e-6, 1e-3, length=5),
-   ndim=3, nfolds=10, folds=NULL, opt.dim=1, parallel=FALSE, init=TRUE,
+   ndim=1, nfolds=10, folds=NULL, opt.dim=1, parallel=FALSE, init=TRUE,
    verbose=FALSE, ...)
 {
    n <- nrow(Y)
@@ -601,7 +601,7 @@ cv.scca <- function(X, Y,
 #' @importFrom graphics matplot
 #' @importFrom graphics legend
 #'
-#' @seeAlso \code{\link{cv.scca}}
+#' @seealso \code{\link{cv.scca}}
 #'
 #' @export
 plot.cv.scca <- function(x, dim=NULL, type=c("nzero", "penalty"), ...)
@@ -694,9 +694,9 @@ plot2d <- function(x, ...)
 #' @importFrom abind abind
 #' @importFrom ggplot2 ggplot aes geom_raster geom_contour scale_fill_viridis_c scale_x_continuous scale_y_continuous geom_point theme_bw
 #'
-#' @S3method plot2d cv.scca
+#' @method plot2d cv.scca
 #'
-#' @seeAlso \code{\link{cv.scca}}
+#' @seealso \code{\link{cv.scca}}
 #'
 #' @export
 plot2d.cv.scca <- function(x, dim=1, plot=FALSE)
@@ -748,7 +748,7 @@ plot2d.cv.scca <- function(x, dim=1, plot=FALSE)
 #'
 #' names(attr(Xw, "svd"))
 #'
-#' @seeAlso \code{\link{validate.rank}}
+#' @seealso \code{\link{validate.rank}}
 #'
 #' @export
 #'
@@ -793,7 +793,7 @@ whiten <- function(X, ndim=20, keep.svd=TRUE, stand="none")
 #' @return a data.frame with number of dimensions and reconstruction error
 #' (mse).
 #'
-#' @seeAlso \code{\link{whiten}}
+#' @seealso \code{\link{whiten}}
 #'
 #' @examples
 #'

@@ -47,3 +47,6 @@ g <- plot2d(r, dim=1, plot=FALSE)
 print(g)
 
 }
+\seealso{
+\code{\link{cv.scca}}
+}

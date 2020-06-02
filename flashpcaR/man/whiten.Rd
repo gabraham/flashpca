@@ -33,3 +33,6 @@ Xw <- whiten(X, ndim=10)
 names(attr(Xw, "svd"))
 
 }
+\seealso{
+\code{\link{validate.rank}}
+}

@@ -9,7 +9,7 @@ cv.scca(
   Y,
   lambda1 = seq(1e-06, 0.001, length = 5),
   lambda2 = seq(1e-06, 0.001, length = 5),
-  ndim = 3,
+  ndim = 1,
   nfolds = 10,
   folds = NULL,
   opt.dim = 1,
@@ -80,4 +80,7 @@ par(mfrow=c(1, 2))
 plot(r, dim=1)
 plot(r, dim=2)
 
+}
+\seealso{
+\code{\link{scca}}
 }
