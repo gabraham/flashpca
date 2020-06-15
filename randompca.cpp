@@ -253,8 +253,32 @@ bool scca_lowmem(MatrixXd& X, MatrixXd &Y, MatrixXd& U, MatrixXd& V,
 
    VectorXd uj, vj, uj_old, vj_old;
 
+   std::vector<bool> converged(U.cols(), false);
+   std::vector<bool> all_zero(U.cols(), false);
+
    for(unsigned int j = 0 ; j < U.cols() ; j++)
    {
+      // No point doing dimension j if dimension j-1 didn't converge, or
+      // converged to zero weights.
+      if(j > 0)
+      {
+	 // If the previous dim didn't converge, neither will this one (by
+	 // definition)
+	 if(!converged[j-1])
+	    break;
+
+	 // If previous dim converged but is all zero, then this dim and all
+	 // next dim are all zero and converged, by definition
+	 if(all_zero[j-1])
+	 {
+	    std::fill(converged.begin() + 1, converged.end(), true);
+	    std::fill(all_zero.begin() + 1, all_zero.end(), true);
+	    verbose && STDOUT << timestamp() << "terminating early"
+	       << std::endl;
+	    break;
+	 }
+      }
+
       unsigned int iter = 0;
       for( ; iter < maxiter ; iter++)
       {
@@ -279,11 +303,21 @@ bool scca_lowmem(MatrixXd& X, MatrixXd &Y, MatrixXd& U, MatrixXd& V,
 	 uj = norm_thresh(uj, lambda1);
 	 if(uj.array().abs().maxCoeff() < tol)
 	 {
-	    verbose && STDOUT << timestamp() << "U[" << j << "] is all zero,"
+	    verbose && STDOUT << timestamp() << "U[" << j
+	       << "] is all zero at iter " 
 	       << iter << ", l1 penalty too large" << std::endl;
 	    // No point in continuing if the first component is all zero
+	    converged[j] = true;
+	    all_zero[j] = true;
+	    U.col(j).setZero();
+	    V.col(j).setZero();
 	    if(j == 0)
-	       return false;
+	    {
+	       verbose && STDOUT << timestamp() << "terminating early"
+		  << std::endl;
+	       return true;
+	    }
+	    break;
 	 }
 	 U.col(j) = uj;
 
@@ -302,10 +336,20 @@ bool scca_lowmem(MatrixXd& X, MatrixXd &Y, MatrixXd& U, MatrixXd& V,
 	 vj = norm_thresh(vj, lambda2);
 	 if(vj.array().abs().maxCoeff() < tol)
 	 {
-	    verbose && STDOUT << timestamp() << "V[" << j << "] is all zero,"
-	       << iter << ", l2 penalty too large" << std::endl;
+	    verbose && STDOUT << timestamp() << "V[" << j
+	       << "] is all zero at iter " << iter
+	       << ", l2 penalty too large" << std::endl;
+	    converged[j] = true;
+	    all_zero[j] = true;
+	    U.col(j).setZero();
+	    V.col(j).setZero();
 	    if(j == 0)
-	       return false;
+	    {
+	       verbose && STDOUT << timestamp() << "terminating early"
+		  << std::endl;
+	       return true;
+	    }
+	    break;
 	 }
 	 V.col(j) = vj;
 
@@ -315,14 +359,18 @@ bool scca_lowmem(MatrixXd& X, MatrixXd &Y, MatrixXd& U, MatrixXd& V,
 	 {
 	    verbose && STDOUT << timestamp() << "dim " << j << " finished in "
 	       << iter << " iterations" << std::endl;
+	    converged[j] = true;
+	    all_zero[j] = false;
 	    break;
 	 }
       }
 
-      if(iter >= maxiter)
+      // Any dimension did not converge?
+      if(!converged[j])
       {
 	 verbose && STDOUT << timestamp()
-	    << " SCCA did not converge in " << maxiter << " iterations" <<
+	    << " SCCA, dim " << j << 
+	    " did not converge in " << maxiter << " iterations" <<
 	    std::endl;
 	 return false;
       }
@@ -416,7 +464,8 @@ void RandomPCA::scca(Data &dat, double lambda1, double lambda2,
 
    unsigned int p = dat.nsnps;
 
-   converged = false;
+   std::vector<bool> converged(ndim, false);
+   std::vector<bool> all_zero(ndim, false);
 
    this->V0 = V0;
    V = V0;
@@ -427,6 +476,28 @@ void RandomPCA::scca(Data &dat, double lambda1, double lambda2,
 
    for(unsigned int j = 0 ; j < U.cols() ; j++)
    {
+      
+      // No point doing dimension j if dimension j-1 didn't converge, or
+      // converged to zero weights.
+      if(j > 0)
+      {
+	 // If the previous dim didn't converge, neither will this one (by
+	 // definition)
+	 if(!converged[j-1])
+	    break;
+
+	 // If previous dim converged but is all zero, then this dim and all
+	 // next dim are all zero and converged, by definition
+	 if(all_zero[j-1])
+	 {
+	    std::fill(converged.begin() + 1, converged.end(), true);
+	    std::fill(all_zero.begin() + 1, all_zero.end(), true);
+	    verbose && STDOUT << timestamp() << "terminating early"
+	       << std::endl;
+	    break;
+	 }
+      }
+      
       unsigned int iter = 0;
       for( ; iter < maxiter ; iter++)
       {
@@ -457,8 +528,17 @@ void RandomPCA::scca(Data &dat, double lambda1, double lambda2,
 	 {
 	    verbose && STDOUT << timestamp() << "U[" << j << "] is all zero,"
 	       << iter << ", l1 penalty too large" << std::endl;
+	    converged[j] = true;
+	    all_zero[j] = true;
+	    U.col(j).setZero();
+	    V.col(j).setZero();
 	    if(j == 0) // no point in continuing
+	    {
+	       verbose && STDOUT << timestamp() << "terminating early"
+		  << std::endl;
 	       return;
+	    }
+	    break;
 	 }
 	 U.col(j) = uj;
 
@@ -482,8 +562,17 @@ void RandomPCA::scca(Data &dat, double lambda1, double lambda2,
 	 {
 	    verbose && STDOUT << timestamp() << "V[" << j << "] is all zero,"
 	       << iter << ", l2 penalty too large" << std::endl;
+	    converged[j] = true; // technically correct
+	    all_zero[j] = true;
+	    U.col(j).setZero();
+	    V.col(j).setZero();
 	    if(j == 0) // no point in continuing
+	    {
+	       verbose && STDOUT << timestamp() << "terminating early"
+		  << std::endl;
 	       return;
+	    }
+	    break;
 	 }
 	 V.col(j) = vj;
 
@@ -494,11 +583,13 @@ void RandomPCA::scca(Data &dat, double lambda1, double lambda2,
 	    verbose && STDOUT << timestamp() << "dim "
 	       << j << " finished in "
 	       << iter << " iterations" << std::endl;
+	    converged[j] = true;
+	    all_zero[j] = false;
 	    break;
 	 }
       }
 
-      if(iter >= maxiter)
+      if(!converged[j])
       {
 	 verbose && STDOUT << timestamp()
 	    << " SCCA did not converge in " << maxiter
@@ -520,7 +611,7 @@ void RandomPCA::scca(Data &dat, double lambda1, double lambda2,
 	 << d[j] << std::endl;
    }
 
-   converged = true;
+   this->converged = true;
 
    Px = op.prod3(U);
    Px = Px * invdiv;
