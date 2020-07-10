@@ -839,7 +839,7 @@ validate.rank <- function(X, maxdim=20, test.prop=0.1, const=0)
 
 #' @export
 cv.scca.ridge <- function(X, Y, lambda1, lambda2,
-   gamma1=0, gamma2=0, nfolds=10, svd.tol=1e-12, ...)
+   gamma1=0, gamma2=0, nfolds=10, svd.tol=1e-12, verbose=FALSE)
 {
    if(!is.numeric(X) && !is.null(dim(x))) {
       stop("X must be a numeric matrix")
@@ -866,46 +866,54 @@ cv.scca.ridge <- function(X, Y, lambda1, lambda2,
 
       d <- lapply(gamma1, function(g1) {
 	 d <- lapply(gamma2, function(g2) {
-	    cat("gamma1:", g1, "gamma2: ", g2, "\n")
+	    if(verbose) {
+	       cat("gamma1:", g1, "gamma2: ", g2, "\n")
+	    }
 
 	    # Whitened training data
-	    Xwtrn <- sqrt(n - 1) * with(s1,
-	       tcrossprod(u[,mx] %*% diag(d[mx] / sqrt(d[mx]^2 + (n - 1) * g1)),
+	    Xwtrn <- with(s1,
+	       tcrossprod(u[,mx] %*% diag(d[mx] * sqrt(n - 1) / sqrt(d[mx]^2 + (n - 1) * g1)),
 	          v[,mx]))
-	    Ywtrn <- sqrt(n - 1) * with(s2,
-	       tcrossprod(u[,my] %*% diag(d[my] / sqrt(d[my]^2 + (n - 1) * g2)),
+	    Ywtrn <- with(s2,
+	       tcrossprod(u[,my] %*% diag(d[my] * sqrt(n - 1) / sqrt(d[my]^2 + (n - 1) * g2)),
 	          v[,my]))
 
-	    cat("start scca\n")
-	    print(system.time({
+	    if(verbose) {
+	       cat("start scca\n")
+	    }
+	    st <- system.time({
 	       res <- scca(Xwtrn, Ywtrn, standx="none", standy="none",
-	          lambda1=lambda1, lambda2=lambda2, ndim=1)
-	    }))
-	    cat("end scca\n")
+	          lambda1=lambda1, lambda2=lambda2, ndim=1, verbose=verbose,
+		  simplify=FALSE, divisor="n1")
+	    })
+	    if(verbose) {
+	       cat("end scca\n")
+	    }
 
-	    cat("foo\n")
 	    # (X'X / (n-1))^{-1/2}
 	    sx.invsqrt <- with(s1,
-	       sqrt(n - 1) * tcrossprod(
-	          v[,mx] %*% diag(1 / sqrt(d[mx]^2 + (n - 1) * g1)), v[,mx]))
+	       tcrossprod(
+	          v[,mx] %*% diag(sqrt(n - 1) / sqrt(d[mx]^2 + (n - 1) * g1)), v[,mx]))
 
-	    cat("bar\n")
 	    # (Y'Y / (n-1))^{-1/2}
 	    sy.invsqrt <- with(s2,
-	       sqrt(n - 1) * tcrossprod(
-	          v[,my] %*% diag(1 / sqrt(d[my]^2 + (n - 1) * g2)), v[,my]))
+	       tcrossprod(
+	          v[,my] %*% diag(sqrt(n - 1) / sqrt(d[my]^2 + (n - 1) * g2)), v[,my]))
 
 	    d <- lapply(seq(along=lambda1), function(i) {
 	       d <- lapply(seq(along=lambda2), function(j) {
-	          cat(fold, i, j, "\n")
 	          a <- sx.invsqrt %*% res[[i]][[j]]$U
 	          b <- sy.invsqrt %*% res[[i]][[j]]$V
-	          Px <- X[folds == fold,] %*% a
-	          Py <- Y[folds == fold,] %*% b
-	          r <- suppressWarnings(diag(cor(Px, Py)))
-	          data.frame(gamma1=g1, gamma2=g2,
-		     lambda1=lambda1[i], lambda2=lambda2[j], r=r,
-		     n=nrow(Px))
+	          Px.trn <- X[folds != fold,] %*% a
+	          Py.trn <- Y[folds != fold,] %*% b
+	          Px.tst <- X[folds == fold,] %*% a
+	          Py.tst <- Y[folds == fold,] %*% b
+	          r.trn <- suppressWarnings(diag(cor(Px.trn, Py.trn)))
+	          r.tst <- suppressWarnings(diag(cor(Px.tst, Py.tst)))
+	          data.frame(fold=fold, gamma1=g1, gamma2=g2,
+		     lambda1=lambda1[i], lambda2=lambda2[j],
+		     r.trn=r.trn, r.tst=r.tst,
+		     n.trn=nrow(Px.trn), n.tst=nrow(Px.tst))
 	       })
 	       do.call(rbind, d)
 	    })
@@ -916,6 +924,8 @@ cv.scca.ridge <- function(X, Y, lambda1, lambda2,
       do.call(rbind, d)
    }
    res <- do.call(rbind, d)
+
+   # results are for all folds, need to average over them
    res
 }
 
