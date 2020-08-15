@@ -847,6 +847,9 @@ cv.scca.ridge <- function(X, Y, lambda1, lambda2,
    if(!is.numeric(Y) && !is.null(dim(Y))) {
       stop("Y must be a numeric matrix")
    }
+   if(nrow(X) != nrow(Y)) {
+      stop("X and Y must have the same number of rows")
+   }
    
    n <- nrow(X)
    folds <- sample(1:nfolds, n, replace=TRUE)
@@ -872,11 +875,11 @@ cv.scca.ridge <- function(X, Y, lambda1, lambda2,
 
 	    # Whitened training data
 	    Xwtrn <- with(s1,
-	       tcrossprod(u[,mx] %*% diag(d[mx] * sqrt(n - 1) / sqrt(d[mx]^2 + (n - 1) * g1)),
+	       tcrossprod(u[,mx] %*% diag(d[mx] / sqrt(d[mx]^2 + (n - 1) * g1)),
 	          v[,mx]))
 	    Ywtrn <- with(s2,
-	       tcrossprod(u[,my] %*% diag(d[my] * sqrt(n - 1) / sqrt(d[my]^2 + (n - 1) * g2)),
-	          v[,my]))
+	       tcrossprod(u[,my] %*% diag(d[my] / sqrt(d[my]^2 + (n - 1) * g2)),
+		  v[,my]))
 
 	    if(verbose) {
 	       cat("start scca\n")
@@ -884,7 +887,7 @@ cv.scca.ridge <- function(X, Y, lambda1, lambda2,
 	    st <- system.time({
 	       res <- scca(Xwtrn, Ywtrn, standx="none", standy="none",
 	          lambda1=lambda1, lambda2=lambda2, ndim=1, verbose=verbose,
-		  simplify=FALSE, divisor="n1")
+		  simplify=FALSE, divisor="none")
 	    })
 	    if(verbose) {
 	       cat("end scca\n")
@@ -900,16 +903,32 @@ cv.scca.ridge <- function(X, Y, lambda1, lambda2,
 	       tcrossprod(
 	          v[,my] %*% diag(sqrt(n - 1) / sqrt(d[my]^2 + (n - 1) * g2)), v[,my]))
 
+	    if(verbose) {
+	       cat("computing correlations\n")
+	    }
+	    Xtrn <- X[folds != fold,]
+	    Xtst <- X[folds == fold,]
+	    Ytrn <- Y[folds != fold,]
+	    Ytst <- Y[folds == fold,]
+	    Xtrn1 <- Xtrn %*% sx.invsqrt
+	    Xtst1 <- Xtst %*% sx.invsqrt
+	    Ytrn1 <- Ytrn %*% sy.invsqrt
+	    Ytst1 <- Ytst %*% sy.invsqrt
+
 	    d <- lapply(seq(along=lambda1), function(i) {
 	       d <- lapply(seq(along=lambda2), function(j) {
-	          a <- sx.invsqrt %*% res[[i]][[j]]$U
-	          b <- sy.invsqrt %*% res[[i]][[j]]$V
-	          Px.trn <- X[folds != fold,] %*% a
-	          Py.trn <- Y[folds != fold,] %*% b
-	          Px.tst <- X[folds == fold,] %*% a
-	          Py.tst <- Y[folds == fold,] %*% b
+		  if(verbose) {
+		     cat("start")
+		  }
+		  Px.trn <- Xtrn1 %*% res[[i]][[j]]$U
+		  Py.trn <- Ytrn1 %*% res[[i]][[j]]$V
+		  Px.tst <- Xtst1 %*% res[[i]][[j]]$U
+		  Py.tst <- Ytst1 %*% res[[i]][[j]]$V
 	          r.trn <- suppressWarnings(diag(cor(Px.trn, Py.trn)))
 	          r.tst <- suppressWarnings(diag(cor(Px.tst, Py.tst)))
+		  if(verbose) {
+		     cat("-end-\n")
+		  }
 	          data.frame(fold=fold, gamma1=g1, gamma2=g2,
 		     lambda1=lambda1[i], lambda2=lambda2[j],
 		     r.trn=r.trn, r.tst=r.tst,
@@ -938,26 +957,28 @@ scca.ridge <- function(X, Y, gamma1, gamma2, svd.tol=1e-12, ...)
    mx <- s1$d > svd.tol
    my <- s2$d > svd.tol
 
-   Xw <- sqrt(n - 1) * with(s1,
+   Xw <- with(s1,
       tcrossprod(u[,mx] %*% diag(d[mx] / sqrt(d[mx]^2 + (n - 1) * gamma1)),
 	 v[,mx]))
-   Yw <- sqrt(n - 1) * with(s2,
+   Yw <-  with(s2,
       tcrossprod(u[,my] %*% diag(d[my] / sqrt(d[my]^2 + (n - 1) * gamma2)),
 	 v[,my]))
 
    # (X'X / (n-1))^{-1/2}
    sx.invsqrt <- with(s1,
-      sqrt(n - 1) * tcrossprod(
-         v[,mx] %*% diag(1 / sqrt(d[mx]^2 + (n - 1) * gamma1)), v[,mx]))
+      tcrossprod(
+         v[,mx] %*% diag(sqrt(n - 1) / sqrt(d[mx]^2 + (n - 1) * gamma1)), v[,mx]))
 
    # (Y'Y / (n-1))^{-1/2}
    sy.invsqrt <- with(s2,
-      sqrt(n - 1) * tcrossprod(
-         v[,my] %*% diag(1 / sqrt(d[my]^2 + (n - 1) * gamma2)), v[,my]))
+      tcrossprod(
+         v[,my] %*% diag(sqrt(n - 1) / sqrt(d[my]^2 + (n - 1) * gamma2)), v[,my]))
 
-   r <- scca(Xw, Yw, standx="none", standy="none", ...)
+   r <- scca(Xw, Yw, standx="none", standy="none", divisor="none", ...)
    a <- sx.invsqrt %*% r$U
    b <- sy.invsqrt %*% r$V
+   rownames(a) <- colnames(X)
+   rownames(b) <- colnames(Y)
    Px <- X %*% a
    Py <- Y %*% b
    colnames(Px) <- paste0("Px", 1:ncol(Px))
