@@ -838,8 +838,8 @@ validate.rank <- function(X, maxdim=20, test.prop=0.1, const=0)
 }
 
 #' @export
-cv.scca.ridge <- function(X, Y, lambda1, lambda2,
-   gamma1=0, gamma2=0, nfolds=10, svd.tol=1e-12, verbose=FALSE)
+cv.scca.ridge <- function(X, Y, lambda1, lambda2, gamma1=0, gamma2=0, ndim=1,
+   nfolds=10, folds=NULL, svd.tol=1e-12, verbose=FALSE)
 {
    if(!is.numeric(X) && !is.null(dim(x))) {
       stop("X must be a numeric matrix")
@@ -850,9 +850,26 @@ cv.scca.ridge <- function(X, Y, lambda1, lambda2,
    if(nrow(X) != nrow(Y)) {
       stop("X and Y must have the same number of rows")
    }
+   if(!is.numeric(svd.tol) || svd.tol <= .Machine$double.eps
+      || length(svd.tol) > 1) {
+      stop("svd.tol must be a single number >0")
+   }
    
    n <- nrow(X)
-   folds <- sample(1:nfolds, n, replace=TRUE)
+   if(is.null(folds)) {
+      folds <- sample(1:nfolds, n, replace=TRUE)
+   } else {
+      if(length(folds) > n) {
+	 stop("Length of 'folds' must match number of rows in X and Y")
+      }
+      if(any(folds < 1)) {
+	 stop("'folds' must be consecutive integers >0")
+      }
+      if(max(folds) > nfolds) {
+	 warning("'folds' will take precedence over 'nfolds' parameter")
+      }
+      nfolds <- length(unique(folds))
+   }
 
    X <- scale(X)
    Y <- scale(Y)
@@ -886,7 +903,7 @@ cv.scca.ridge <- function(X, Y, lambda1, lambda2,
 	    }
 	    st <- system.time({
 	       res <- scca(Xwtrn, Ywtrn, standx="none", standy="none",
-	          lambda1=lambda1, lambda2=lambda2, ndim=1, verbose=verbose,
+	          lambda1=lambda1, lambda2=lambda2, ndim=ndim, verbose=verbose,
 		  simplify=FALSE, divisor="none")
 	    })
 	    if(verbose) {
@@ -929,7 +946,7 @@ cv.scca.ridge <- function(X, Y, lambda1, lambda2,
 		  if(verbose) {
 		     cat("-end-\n")
 		  }
-	          data.frame(fold=fold, gamma1=g1, gamma2=g2,
+	          data.frame(fold=fold, dim=1:ndim, gamma1=g1, gamma2=g2,
 		     lambda1=lambda1[i], lambda2=lambda2[j],
 		     r.trn=r.trn, r.tst=r.tst,
 		     n.trn=nrow(Px.trn), n.tst=nrow(Px.tst))
@@ -944,13 +961,49 @@ cv.scca.ridge <- function(X, Y, lambda1, lambda2,
    }
    res <- do.call(rbind, d)
 
+   if(!is(try(library("data.table"), silent=TRUE), "try-error")) {
+      setDT(res)
+   }
+
    # results are for all folds, need to average over them
-   res
+   obj <- list(lambda1=lambda1, lambda2=lambda2, gamma1=gamma1, gamma2=gamma2,
+      nfolds=nfolds, folds=folds, result=res)
+   class(obj) <- "cv.scca.ridge"
+   obj
 }
 
 #' @export
-scca.ridge <- function(X, Y, gamma1, gamma2, svd.tol=1e-12, ...)
+scca.ridge <- function(X, Y, ndim=1, lambda1, lambda2, gamma1, gamma2, svd.tol=1e-12, ...)
 {
+   if(mode(X) != "numeric" || any(dim(X) == 0)) {
+      stop("X must be a numeric matrix")
+   }
+   if(mode(Y) != "numeric" || any(dim(Y) == 0)) {
+      stop("Y must be a numeric matrix")
+   }
+   if(nrow(X) != nrow(Y)) {
+      stop("X and Y must have the same number of rows")
+   }
+   if(!is.numeric(svd.tol) || svd.tol <= .Machine$double.eps
+      || length(svd.tol) > 1) {
+      stop("svd.tol must be a single number >0")
+   }
+   if(!is.numeric(lambda1) || length(lambda1) > 1 || lambda1 < 0) {
+      stop("lambda1 must be a single number >= 0")
+   }
+   if(!is.numeric(lambda2) || length(lambda1) > 2 || lambda1 < 0) {
+      stop("lambda2 must be a single number >= 0")
+   }
+   if(!is.numeric(gamma1) || length(gamma1) > 1 || gamma1 < 0) {
+      stop("gamma1 must be a single number >= 0")
+   }
+   if(!is.numeric(gamma2) || length(gamma1) > 2 || gamma1 < 0) {
+      stop("gamma2 must be a single number >= 0")
+   }
+   if(!is.numeric(ndim) || length(ndim) > 1 || ndim <= 0) {
+      stop("ndim must be a single number > 0")
+   }
+
    n <- nrow(X)
    s1 <- svd(X)
    s2 <- svd(Y)
@@ -974,7 +1027,8 @@ scca.ridge <- function(X, Y, gamma1, gamma2, svd.tol=1e-12, ...)
       tcrossprod(
          v[,my] %*% diag(sqrt(n - 1) / sqrt(d[my]^2 + (n - 1) * gamma2)), v[,my]))
 
-   r <- scca(Xw, Yw, standx="none", standy="none", divisor="none", ...)
+   r <- scca(Xw, Yw, ndim=ndim, lambda1=lambda1, lambda2=lambda2,
+      standx="none", standy="none", divisor="none")
    a <- sx.invsqrt %*% r$U
    b <- sy.invsqrt %*% r$V
    rownames(a) <- colnames(X)
@@ -985,8 +1039,37 @@ scca.ridge <- function(X, Y, gamma1, gamma2, svd.tol=1e-12, ...)
    colnames(Py) <- paste0("Py", 1:ncol(Py))
    rp <- diag(cor(Px, Py))
 
-   res <- list(U=r$U, V=r$V, a=a, b=b, Px=Px, Py=Py, r=rp)
+   res <- list(ndim=r$ndim, U=r$U, V=r$V, d=r$d,
+      a=a, b=b, Px=Px, Py=Py, r=rp,
+      converged=r$converged)
    class(res) <- "scca.ridge"
    res
+}
+
+#' Prints a cv.scca.ridge object
+#'
+#' @param x A cv.scca.ridge object to be printed
+#' @param ... Ignored
+#' @export 
+print.cv.scca.ridge <- function(x, ...)
+{
+   cat(paste0(
+      "cv.scca.ridge object; ", x$nfolds,
+      "-fold cross-validation\n"))
+   invisible(x)
+}
+
+#' Prints an scca.ridge object
+#'
+#' @param x An scca.ridge object to be printed
+#' @param ... Ignored
+#' @export 
+print.scca.ridge <- function(x, ...)
+{
+   cat("scca.ridge object; ndim=", length(x$d), "\n")
+   if(!x$converged) {
+      cat("warning: model has not converged\n")
+   }
+   invisible(x)
 }
 
