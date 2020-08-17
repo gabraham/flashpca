@@ -837,6 +837,7 @@ validate.rank <- function(X, maxdim=20, test.prop=0.1, const=0)
    data.frame(dim=cbind(1:maxdim), mse=err)
 }
 
+#' @importFrom data.table setDT 
 #' @export
 cv.scca.ridge <- function(X, Y, lambda1, lambda2, gamma1=0, gamma2=0, ndim=1,
    nfolds=10, folds=NULL, svd.tol=1e-12, verbose=FALSE)
@@ -946,7 +947,7 @@ cv.scca.ridge <- function(X, Y, lambda1, lambda2, gamma1=0, gamma2=0, ndim=1,
 		  if(verbose) {
 		     cat("-end-\n")
 		  }
-	          data.frame(fold=fold, dim=1:ndim, gamma1=g1, gamma2=g2,
+	          data.table(fold=fold, dim=1:ndim, gamma1=g1, gamma2=g2,
 		     lambda1=lambda1[i], lambda2=lambda2[j],
 		     r.trn=r.trn, r.tst=r.tst,
 		     n.trn=nrow(Px.trn), n.tst=nrow(Px.tst))
@@ -961,13 +962,27 @@ cv.scca.ridge <- function(X, Y, lambda1, lambda2, gamma1=0, gamma2=0, ndim=1,
    }
    res <- do.call(rbind, d)
 
-   if(!is(try(library("data.table"), silent=TRUE), "try-error")) {
+   #if(!is(try(library("data.table"), silent=TRUE), "try-error")) {
       setDT(res)
-   }
+   #}
 
+   # Averagee and stderr of correlation, across the dimensions, for all grid
+   # points
+   res.agg <- res[, list(r.trn.mean=mean(r.trn), r.trn.se=sqrt(var(r.trn) / .N),
+      r.tst.mean=mean(r.tst), r.tst.se=sqrt(var(r.tst) / .N)),
+       by=.(dim, gamma1, gamma2, lambda1, lambda2)]
+
+   # Sum of squared correlations across the dimensions, for each model
+   # # on the penalty grid. I.e., the best overall model taking all
+   # dimensions into account.
+   res.agg.avg <- res.agg[, list(avg.sq.cor=mean(r.tst.mean^2, na.rm=TRUE)),
+       by=.(gamma1, gamma2, lambda1, lambda2)]
+   res.agg.avg.best <- res.agg.avg[which.max(avg.sq.cor), ]
+   
    # results are for all folds, need to average over them
    obj <- list(lambda1=lambda1, lambda2=lambda2, gamma1=gamma1, gamma2=gamma2,
-      nfolds=nfolds, folds=folds, result=res)
+      nfolds=nfolds, folds=folds, result.raw=res, result=res.agg.avg,
+      result.best=res.agg.avg.best)
    class(obj) <- "cv.scca.ridge"
    obj
 }

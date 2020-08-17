@@ -16,6 +16,8 @@ cv.scca(
   parallel = FALSE,
   init = TRUE,
   verbose = FALSE,
+  return.models = FALSE,
+  return.folds = FALSE,
   ...
 )
 }
