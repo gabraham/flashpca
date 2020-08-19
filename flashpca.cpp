@@ -621,7 +621,7 @@ int main(int argc, char * argv[])
       // see
       // http://yixuan.cos.name/spectra/doc/classSpectra_1_1SymEigsSolver.html
       unsigned int max_dim = (fminl(data.N, data.nsnps) - 1) / 2.0;
-      if(n_dim > max_dim)
+      if(mode != MODE_PREDICT_PCA && n_dim > max_dim)
       {
 				std::cerr << "Error: You asked for " << n_dim << " dimensions, but only " << max_dim << "allowed" << std::endl;
 				return EXIT_FAILURE;
