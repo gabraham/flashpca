@@ -988,7 +988,8 @@ cv.scca.ridge <- function(X, Y, lambda1, lambda2, gamma1=0, gamma2=0, ndim=1,
 }
 
 #' @export
-scca.ridge <- function(X, Y, ndim=1, lambda1, lambda2, gamma1, gamma2, svd.tol=1e-12, ...)
+scca.ridge <- function(X, Y, ndim=1, lambda1, lambda2, gamma1, gamma2,
+   V=NULL, verbose=FALSE, svd.tol=1e-12)
 {
    if(mode(X) != "numeric" || any(dim(X) == 0)) {
       stop("X must be a numeric matrix")
@@ -1042,8 +1043,13 @@ scca.ridge <- function(X, Y, ndim=1, lambda1, lambda2, gamma1, gamma2, svd.tol=1
       tcrossprod(
          v[,my] %*% diag(sqrt(n - 1) / sqrt(d[my]^2 + (n - 1) * gamma2)), v[,my]))
 
-   r <- scca(Xw, Yw, ndim=ndim, lambda1=lambda1, lambda2=lambda2,
-      standx="none", standy="none", divisor="none")
+   if(is.null(V)) {
+      r <- scca(Xw, Yw, ndim=ndim, lambda1=lambda1, lambda2=lambda2,
+	 standx="none", standy="none", divisor="none", verbose=verbose)
+   } else {
+      r <- scca(Xw, Yw, ndim=ndim, lambda1=lambda1, lambda2=lambda2,
+	 standx="none", standy="none", divisor="none", V=V, verbose=verbose)
+   }
    a <- sx.invsqrt %*% r$U
    b <- sy.invsqrt %*% r$V
    rownames(a) <- colnames(X)
