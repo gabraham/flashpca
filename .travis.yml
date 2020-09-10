@@ -1,0 +1,22 @@
+## .travis.yml file for use with native R support in Travis CI
+## See https://docs.travis-ci.com/user/languages/r/ for details.
+
+language: r
+r: 
+   - oldrel
+   - release
+   - devel
+cache: packages
+
+sudo: false
+
+notifications:
+  email:
+    on_success: change
+    on_failure: change
+
+r_github_packages:
+  - jimhester/covr
+
+after_success:
+  - Rscript -e 'covr::codecov()'
