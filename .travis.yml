@@ -8,6 +8,9 @@ r:
    - devel
 cache: packages
 
+before_install:
+   - cd flashpcaR
+
 sudo: false
 
 notifications:
