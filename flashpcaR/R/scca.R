@@ -931,11 +931,14 @@ cv.scca.ridge <- function(X, Y, lambda1, lambda2, gamma1=0, gamma2=0, ndim=1,
 	    #Xwtst <- Xtst %*% sx.invsqrt
 	    #Ywtrn <- Ytrn %*% sy.invsqrt
 	    #Ywtst <- Ytst %*% sy.invsqrt
-	    Xwtrn <- 
-
-	    # FIXME: don't compute sx.invsqrt and sy.invsqrt
-	    # there faster ways
-	    stop("FIXME")
+	    Xwtst <- with(s1,
+	       tcrossprod(
+		  Xtst %*% v[,mx] %*% diag(sqrt((n - 1) / (d[mx]^2 + (n - 1) * g1)),
+		  v[,mx])))
+	    Ywtst <- with(s2,
+	       tcrossprod(
+		  Ytst %*% v[,my] %*% diag(sqrt((n - 1) / (d[my]^2 + (n - 1) * g2)),
+		  v[,my])))
 
 	    if(verbose) {
 	       cat("computing correlations\n")
@@ -946,13 +949,21 @@ cv.scca.ridge <- function(X, Y, lambda1, lambda2, gamma1=0, gamma2=0, ndim=1,
 		     cat("start")
 		  }
 
-		  a <- sx.invsqrt %*% res[[i]][[j]]$U
-		  b <- sy.invsqrt %*% res[[i]][[j]]$V
+		  #a <- sx.invsqrt %*% res[[i]][[j]]$U
+		  #b <- sy.invsqrt %*% res[[i]][[j]]$V
+		  Za <- crossprod(s1$v[, mx], res[[i]][[j]]$U)
+		  Zb <- crossprod(s2$v[, my], res[[i]][[j]]$V)
+		  a <- with(s1,
+		     v[,mx] %*% diag(sqrt((n - 1) / (d[mx]^2 + (n - 1) * g1)))
+		     %*% Za)
+		  b <- with(s2,
+		     v[,my] %*% diag(sqrt((n - 1) / (d[my]^2 + (n - 1) * g2)))
+		     %*% Zb)
 
-		  Px.trn <- X[folds != fold,] %*% a
-		  Py.trn <- Y[folds != fold,] %*% b
-		  Px.tst <- X[folds == fold,] %*% a
-		  Py.tst <- Y[folds == fold,] %*% b
+		  Px.trn <- Xtrn %*% a
+		  Py.trn <- Ytrn %*% b
+		  Px.tst <- Xtst %*% a
+		  Py.tst <- Ytst %*% b
 
 		  r.trn <- suppressWarnings(diag(cor(Px.trn, Py.trn)))
 		  r.tst <- suppressWarnings(diag(cor(Px.tst, Py.tst)))
@@ -1079,9 +1090,9 @@ scca.ridge <- function(X, Y, ndim=1, lambda1, lambda2, gamma1, gamma2,
    Za <- crossprod(s1$v[, mx], r$U)
    Zb <- crossprod(s2$v[, my], r$V)
    a <- with(s1,
-      v[,mx] %*% diag(sqrt(n - 1) / sqrt(d[mx]^2 + (n - 1) * gamma1)) %*% Za)
+      v[,mx] %*% diag(sqrt((n - 1) / (d[mx]^2 + (n - 1) * gamma1))) %*% Za)
    b <- with(s2,
-      v[,my] %*% diag(sqrt(n - 1) / sqrt(d[my]^2 + (n - 1) * gamma2)) %*% Zb)
+      v[,my] %*% diag(sqrt((n - 1) / (d[my]^2 + (n - 1) * gamma2))) %*% Zb)
       
    rownames(a) <- colnames(X)
    rownames(b) <- colnames(Y)
