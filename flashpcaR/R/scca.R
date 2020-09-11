@@ -93,6 +93,7 @@
 #'    ndim=3, standx="binom2", standy="sd")
 #'
 #' @importFrom utils read.table
+#' @importFrom stats rnorm
 #' 
 #' @seealso \code{\link{cv.scca}}
 #'
@@ -407,6 +408,7 @@ print.cv.scca <- function(x, ...)
 #' @importFrom abind abind
 #' @importFrom graphics matplot
 #' @importFrom graphics legend
+#' @importFrom stats rnorm
 #'
 #' @seealso \code{\link{scca}}
 #'
@@ -602,6 +604,7 @@ cv.scca <- function(X, Y,
 #' @importFrom abind abind
 #' @importFrom graphics matplot
 #' @importFrom graphics legend
+#' @importFrom stats rnorm
 #'
 #' @seealso \code{\link{cv.scca}}
 #'
@@ -695,6 +698,7 @@ plot2d <- function(x, ...)
 #' 
 #' @importFrom abind abind
 #' @importFrom ggplot2 ggplot aes geom_raster geom_contour scale_fill_viridis_c scale_x_continuous scale_y_continuous geom_point theme_bw
+#' @importFrom stats rnorm
 #'
 #' @method plot2d cv.scca
 #'
@@ -879,6 +883,8 @@ cv.scca.ridge <- function(X, Y, lambda1, lambda2, gamma1=0, gamma2=0, ndim=1,
    d <- foreach(fold=1:nfolds) %dopar% {
       Xtrn <- X[folds != fold, ]
       Ytrn <- Y[folds != fold, ]
+      Xtst <- X[folds != fold, ]
+      Ytst <- Y[folds != fold, ]
       n <- nrow(Xtrn)
       s1 <- svd(Xtrn)
       s2 <- svd(Ytrn)
@@ -912,38 +918,45 @@ cv.scca.ridge <- function(X, Y, lambda1, lambda2, gamma1=0, gamma2=0, ndim=1,
 	    }
 
 	    # (X'X / (n-1))^{-1/2}
-	    sx.invsqrt <- with(s1,
-	       tcrossprod(
-	          v[,mx] %*% diag(sqrt(n - 1) / sqrt(d[mx]^2 + (n - 1) * g1)), v[,mx]))
+	    #sx.invsqrt <- with(s1,
+	    #   tcrossprod(
+	    #      v[,mx] %*% diag(sqrt(n - 1) / sqrt(d[mx]^2 + (n - 1) * g1)), v[,mx]))
 
 	    # (Y'Y / (n-1))^{-1/2}
-	    sy.invsqrt <- with(s2,
-	       tcrossprod(
-	          v[,my] %*% diag(sqrt(n - 1) / sqrt(d[my]^2 + (n - 1) * g2)), v[,my]))
+	    #sy.invsqrt <- with(s2,
+	    #   tcrossprod(
+	    #      v[,my] %*% diag(sqrt(n - 1) / sqrt(d[my]^2 + (n - 1) * g2)), v[,my]))
+
+	    #Xwtrn <- Xtrn %*% sx.invsqrt
+	    #Xwtst <- Xtst %*% sx.invsqrt
+	    #Ywtrn <- Ytrn %*% sy.invsqrt
+	    #Ywtst <- Ytst %*% sy.invsqrt
+	    Xwtrn <- 
+
+	    # FIXME: don't compute sx.invsqrt and sy.invsqrt
+	    # there faster ways
+	    stop("FIXME")
 
 	    if(verbose) {
 	       cat("computing correlations\n")
 	    }
-	    Xtrn <- X[folds != fold,]
-	    Xtst <- X[folds == fold,]
-	    Ytrn <- Y[folds != fold,]
-	    Ytst <- Y[folds == fold,]
-	    Xtrn1 <- Xtrn %*% sx.invsqrt
-	    Xtst1 <- Xtst %*% sx.invsqrt
-	    Ytrn1 <- Ytrn %*% sy.invsqrt
-	    Ytst1 <- Ytst %*% sy.invsqrt
-
 	    d <- lapply(seq(along=lambda1), function(i) {
 	       d <- lapply(seq(along=lambda2), function(j) {
 		  if(verbose) {
 		     cat("start")
 		  }
-		  Px.trn <- Xtrn1 %*% res[[i]][[j]]$U
-		  Py.trn <- Ytrn1 %*% res[[i]][[j]]$V
-		  Px.tst <- Xtst1 %*% res[[i]][[j]]$U
-		  Py.tst <- Ytst1 %*% res[[i]][[j]]$V
-	          r.trn <- suppressWarnings(diag(cor(Px.trn, Py.trn)))
-	          r.tst <- suppressWarnings(diag(cor(Px.tst, Py.tst)))
+
+		  a <- sx.invsqrt %*% res[[i]][[j]]$U
+		  b <- sy.invsqrt %*% res[[i]][[j]]$V
+
+		  Px.trn <- X[folds != fold,] %*% a
+		  Py.trn <- Y[folds != fold,] %*% b
+		  Px.tst <- X[folds == fold,] %*% a
+		  Py.tst <- Y[folds == fold,] %*% b
+
+		  r.trn <- suppressWarnings(diag(cor(Px.trn, Py.trn)))
+		  r.tst <- suppressWarnings(diag(cor(Px.tst, Py.tst)))
+
 		  if(verbose) {
 		     cat("-end-\n")
 		  }
@@ -962,34 +975,32 @@ cv.scca.ridge <- function(X, Y, lambda1, lambda2, gamma1=0, gamma2=0, ndim=1,
    }
    res <- do.call(rbind, d)
 
-   #if(!is(try(library("data.table"), silent=TRUE), "try-error")) {
-      setDT(res)
-   #}
+   setDT(res)
 
-   # Averagee and stderr of correlation, across the dimensions, for all grid
+   # Average and stderr of correlation, across the dimensions, for all grid
    # points
    res.agg <- res[, list(r.trn.mean=mean(r.trn), r.trn.se=sqrt(var(r.trn) / .N),
       r.tst.mean=mean(r.tst), r.tst.se=sqrt(var(r.tst) / .N)),
-       by=.(dim, gamma1, gamma2, lambda1, lambda2)]
+      by=.(dim, gamma1, gamma2, lambda1, lambda2)]
 
    # Sum of squared correlations across the dimensions, for each model
    # # on the penalty grid. I.e., the best overall model taking all
    # dimensions into account.
    res.agg.avg <- res.agg[, list(avg.sq.cor=mean(r.tst.mean^2, na.rm=TRUE)),
-       by=.(gamma1, gamma2, lambda1, lambda2)]
+      by=.(gamma1, gamma2, lambda1, lambda2)]
    res.agg.avg.best <- res.agg.avg[which.max(avg.sq.cor), ]
    
    # results are for all folds, need to average over them
    obj <- list(lambda1=lambda1, lambda2=lambda2, gamma1=gamma1, gamma2=gamma2,
-      nfolds=nfolds, folds=folds, result.raw=res, result=res.agg.avg,
-      result.best=res.agg.avg.best)
+      nfolds=nfolds, folds=folds, result.raw=res, result.agg=res.agg,
+      result=res.agg.avg, result.best=res.agg.avg.best)
    class(obj) <- "cv.scca.ridge"
    obj
 }
 
 #' @export
 scca.ridge <- function(X, Y, ndim=1, lambda1, lambda2, gamma1, gamma2,
-   V=NULL, verbose=FALSE, svd.tol=1e-12)
+   V=NULL, verbose=FALSE, svd.tol=1e-12, ...)
 {
    if(mode(X) != "numeric" || any(dim(X) == 0)) {
       stop("X must be a numeric matrix")
@@ -1020,11 +1031,19 @@ scca.ridge <- function(X, Y, ndim=1, lambda1, lambda2, gamma1, gamma2,
       stop("ndim must be a single number > 0")
    }
 
+   if(verbose) {
+      cat("start svd\n") 
+   }
+
    n <- nrow(X)
    s1 <- svd(X)
    s2 <- svd(Y)
    mx <- s1$d > svd.tol
    my <- s2$d > svd.tol
+
+   if(verbose) {
+      cat("end svd\n")
+   }
 
    Xw <- with(s1,
       tcrossprod(u[,mx] %*% diag(d[mx] / sqrt(d[mx]^2 + (n - 1) * gamma1)),
@@ -1034,24 +1053,36 @@ scca.ridge <- function(X, Y, ndim=1, lambda1, lambda2, gamma1, gamma2,
 	 v[,my]))
 
    # (X'X / (n-1))^{-1/2}
-   sx.invsqrt <- with(s1,
-      tcrossprod(
-         v[,mx] %*% diag(sqrt(n - 1) / sqrt(d[mx]^2 + (n - 1) * gamma1)), v[,mx]))
-
+   #sx.invsqrt <- with(s1,
+   #   tcrossprod(
+   #      v[,mx] %*% diag(sqrt(n - 1) / sqrt(d[mx]^2 + (n - 1) * gamma1)), v[,mx]))
    # (Y'Y / (n-1))^{-1/2}
-   sy.invsqrt <- with(s2,
-      tcrossprod(
-         v[,my] %*% diag(sqrt(n - 1) / sqrt(d[my]^2 + (n - 1) * gamma2)), v[,my]))
+   #sy.invsqrt <- with(s2,
+   #   tcrossprod(
+   #      v[,my] %*% diag(sqrt(n - 1) / sqrt(d[my]^2 + (n - 1) * gamma2)), v[,my]))
 
    if(is.null(V)) {
       r <- scca(Xw, Yw, ndim=ndim, lambda1=lambda1, lambda2=lambda2,
-	 standx="none", standy="none", divisor="none", verbose=verbose)
+	 standx="none", standy="none", divisor="none",
+	 verbose=verbose, ...)
    } else {
       r <- scca(Xw, Yw, ndim=ndim, lambda1=lambda1, lambda2=lambda2,
-	 standx="none", standy="none", divisor="none", V=V, verbose=verbose)
+	 standx="none", standy="none", divisor="none", V=V,
+	 verbose=verbose, ...)
    }
-   a <- sx.invsqrt %*% r$U
-   b <- sy.invsqrt %*% r$V
+
+   if(verbose) {
+      cat("end scca\n")
+   }
+   #a <- sx.invsqrt %*% r$U
+   #b <- sy.invsqrt %*% r$V
+   Za <- crossprod(s1$v[, mx], r$U)
+   Zb <- crossprod(s2$v[, my], r$V)
+   a <- with(s1,
+      v[,mx] %*% diag(sqrt(n - 1) / sqrt(d[mx]^2 + (n - 1) * gamma1)) %*% Za)
+   b <- with(s2,
+      v[,my] %*% diag(sqrt(n - 1) / sqrt(d[my]^2 + (n - 1) * gamma2)) %*% Zb)
+      
    rownames(a) <- colnames(X)
    rownames(b) <- colnames(Y)
    Px <- X %*% a
