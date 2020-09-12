@@ -255,6 +255,7 @@ bool scca_lowmem(MatrixXd& X, MatrixXd &Y, MatrixXd& U, MatrixXd& V,
 
    std::vector<bool> converged(U.cols(), false);
    std::vector<bool> all_zero(U.cols(), false);
+   double diff_u = 0, diff_v = 0;
 
    for(unsigned int j = 0 ; j < U.cols() ; j++)
    {
@@ -353,9 +354,14 @@ bool scca_lowmem(MatrixXd& X, MatrixXd &Y, MatrixXd& U, MatrixXd& V,
 	 }
 	 V.col(j) = vj;
 
-	 if(iter > 0
-	    && (vj_old.array() - vj.array()).abs().maxCoeff() < tol
-	       && (uj_old.array() - uj.array()).abs().maxCoeff() < tol)
+	 diff_u = (uj_old.array() - uj.array()).abs().maxCoeff();
+	 diff_v = (vj_old.array() - vj.array()).abs().maxCoeff();
+
+	 verbose && STDOUT << timestamp() << "dim " << j <<
+	    ", abs diff u: " << diff_u << ", abs diff v: " << diff_v
+	    << std::endl;
+
+	 if(iter > 0 && diff_u < tol && diff_v < tol)
 	 {
 	    verbose && STDOUT << timestamp() << "dim " << j << " finished in "
 	       << iter << " iterations" << std::endl;
@@ -371,7 +377,8 @@ bool scca_lowmem(MatrixXd& X, MatrixXd &Y, MatrixXd& U, MatrixXd& V,
 	 verbose && STDOUT << timestamp()
 	    << " SCCA, dim " << j << 
 	    " did not converge in " << maxiter << " iterations" <<
-	    std::endl;
+	    " (abs diff u: " << diff_u << ", abs diff v: " << diff_v <<
+	    ")" << std::endl;
 	 return false;
       }
 

@@ -238,7 +238,7 @@ List scca_internal(
       else
       {
          rpca.scca(Xm, Ym, lambda1, lambda2, seed,
-            ndim,  maxiter, tol);
+            ndim, maxiter, tol);
       }
 
       NumericMatrix U(wrap(rpca.U));
@@ -250,6 +250,7 @@ List scca_internal(
       Rcpp::List res;
 
       res = Rcpp::List::create(
+	    Rcpp::Named("ndim")=ndim,
             Rcpp::Named("U")=U,
             Rcpp::Named("V")=V,
             Rcpp::Named("d")=d,
@@ -400,6 +401,7 @@ List scca_plink_internal(
       Rcpp::List res;
 
       res = Rcpp::List::create(
+	    Rcpp::Named("ndim")=ndim,
             Rcpp::Named("U")=U,
             Rcpp::Named("V")=V,
             Rcpp::Named("d")=d,

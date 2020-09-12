@@ -214,3 +214,73 @@ test_that("Testing cv.scca", {
        ndim=ndim, standx="none", standy="none", nfolds=3))
 })
 
+test_that("Testing fcca", {
+   #lambda1 <- seq(1e-6, 1e-2, length=10)   
+   #lambda2 <- seq(1e-6, 1e-2, length=10)   
+   lambda1 <- 1e-3
+   lambda2 <- 1e-2
+   gamma1 <- 1e-3
+   gamma2 <- 1e-2
+   ndim <- 3
+   s1 <- fcca(X, Y, lambda1=lambda1, lambda2=lambda2,
+      gamma1=gamma1, gamma2=gamma2,
+      ndim=ndim, standx="none", standy="none")
+   expect_true(s1$converged)
+   expect_true(is(s1, "fcca"))
+   expect_equal(s1$ndim, ndim)
+   expect_equal(length(s1$d), ndim)
+   expect_equal(ncol(s1$U), ndim)
+   expect_equal(ncol(s1$V), ndim)
+   expect_equal(ncol(s1$a), ndim)
+   expect_equal(ncol(s1$b), ndim)
+   expect_equal(ncol(s1$Px), ndim)
+   expect_equal(ncol(s1$Py), ndim)
+   expect_equal(nrow(s1$Px), nrow(X))
+   expect_equal(nrow(s1$Py), nrow(X))
+   expect_equal(nrow(s1$U), ncol(X))
+   expect_equal(nrow(s1$V), ncol(Y))
+   expect_equal(nrow(s1$a), ncol(X))
+   expect_equal(nrow(s1$b), ncol(Y))
+
+   expect_error(
+      fcca(X, Y, lambda1=lambda1, lambda2=lambda2,
+	 gamma1=gamma1, gamma2=gamma2,
+	 ndim=0, standx="none", standy="none"))
+   expect_error(
+      fcca(X, NULL, lambda1=lambda1, lambda2=lambda2,
+	 gamma1=gamma1, gamma2=gamma2,
+	 ndim=ndim, standx="none", standy="none"))
+   expect_error(
+      fcca(NULL, Y, lambda1=lambda1, lambda2=lambda2,
+	 gamma1=gamma1, gamma2=gamma2,
+	 ndim=ndim, standx="none", standy="none"))
+   expect_error(
+      fcca(X, Y, lambda1=lambda1, lambda2=NA,
+	 gamma1=gamma1, gamma2=gamma2,
+	 ndim=ndim, standx="none", standy="none"))
+   expect_error(
+      fcca(X, Y, lambda1=-1, lambda2=lambda2,
+	 gamma1=gamma1, gamma2=gamma2,
+	 ndim=ndim, standx="none", standy="none"))
+   expect_error(
+      fcca(X, Y, lambda1=lambda1, lambda2=lambda2,
+	 gamma1=gamma1, gamma2=gamma2,
+	 ndim=ndim, standx="blah", standy="none"))
+   expect_error(
+      fcca(X, Y, lambda1=lambda1, lambda2=lambda2,
+	 gamma1=gamma1, gamma2=gamma2,
+	 ndim=ndim, standx="none", standy="foo"))
+   expect_error(
+      fcca(X, Y, lambda1=lambda1, lambda2=lambda2,
+	 gamma1=-1, gamma2=gamma2,
+	 ndim=ndim, standx="none", standy="none"))
+   expect_error(
+      fcca(X, Y, lambda1=lambda1, lambda2=lambda2,
+	 gamma1=gamma1, gamma2=NULL,
+	 ndim=ndim, standx="none", standy="none"))
+})
+
+#test_that("Testing cv.fcca", {
+#})
+
+

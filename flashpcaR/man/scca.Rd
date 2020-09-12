@@ -39,11 +39,9 @@ PLINK dataset.}
 \item{standx}{Character. One of "binom" (zero mean, unit variance
 where variance is p * (1 - p), for SNP data), "binom2" (zero mean, unit
 variance where variance is 2 * p * (1 - p),
-"sd" (zero-mean, unit Gaussian variance), "center" (zero mean), or "none". Note
-that if you use "binom" for non-SNP data you may get garbage. Note that
-currently the same standardization is applied to both X and Y. If you
-require different standardizations, it's best to standardise yourself
-and then choose standx="none". When X is a PLINK dataset name, standx must be one of "binom2" 
+"sd" (empricial standard deviation), "center" (zero mean), or "none". Note
+that if you use "binom" for non-SNP data you may get garbage.
+When X is a PLINK dataset name, standx must be one of "binom3" 
 or "binom".}
 
 \item{standy}{Character. Stanardisation of Y.}

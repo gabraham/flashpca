@@ -12,11 +12,9 @@
 #' @param standx Character. One of "binom" (zero mean, unit variance
 #' where variance is p * (1 - p), for SNP data), "binom2" (zero mean, unit
 #' variance where variance is 2 * p * (1 - p),
-#' "sd" (zero-mean, unit Gaussian variance), "center" (zero mean), or "none". Note
-#' that if you use "binom" for non-SNP data you may get garbage. Note that
-#' currently the same standardization is applied to both X and Y. If you
-#' require different standardizations, it's best to standardise yourself
-#' and then choose standx="none". When X is a PLINK dataset name, standx must be one of "binom2" 
+#' "sd" (empricial standard deviation), "center" (zero mean), or "none". Note
+#' that if you use "binom" for non-SNP data you may get garbage.
+#' When X is a PLINK dataset name, standx must be one of "binom3" 
 #' or "binom".
 #'
 #' @param standy Character. Stanardisation of Y.
@@ -325,7 +323,7 @@ scca <- function(X, Y, lambda1=0, lambda2=0,
 #' @export 
 print.scca <- function(x, ...)
 {
-   cat("scca object; ndim=", length(x$d), "\n")
+   cat("scca object; ndim=", x$ndim, "\n")
    if(!x$converged) {
       cat("warning: model has not converged\n")
    }
@@ -843,7 +841,7 @@ validate.rank <- function(X, maxdim=20, test.prop=0.1, const=0)
 
 #' @importFrom data.table setDT 
 #' @export
-cv.scca.ridge <- function(X, Y, lambda1, lambda2, gamma1=0, gamma2=0, ndim=1,
+cv.fcca <- function(X, Y, lambda1, lambda2, gamma1=0, gamma2=0, ndim=1,
    nfolds=10, folds=NULL, svd.tol=1e-12, verbose=FALSE)
 {
    if(!is.numeric(X) && !is.null(dim(x))) {
@@ -1005,13 +1003,14 @@ cv.scca.ridge <- function(X, Y, lambda1, lambda2, gamma1=0, gamma2=0, ndim=1,
    obj <- list(lambda1=lambda1, lambda2=lambda2, gamma1=gamma1, gamma2=gamma2,
       nfolds=nfolds, folds=folds, result.raw=res, result.agg=res.agg,
       result=res.agg.avg, result.best=res.agg.avg.best)
-   class(obj) <- "cv.scca.ridge"
+   class(obj) <- "cv.fcca"
    obj
 }
 
 #' @export
-scca.ridge <- function(X, Y, ndim=1, lambda1, lambda2, gamma1, gamma2,
-   V=NULL, verbose=FALSE, svd.tol=1e-12, ...)
+fcca <- function(X, Y, ndim=1, lambda1, lambda2, gamma1, gamma2,
+   V=NULL, verbose=FALSE, standx=c("sd", "none"), standy=c("sd", "none"),
+   svd.tol=1e-12)
 {
    if(mode(X) != "numeric" || any(dim(X) == 0)) {
       stop("X must be a numeric matrix")
@@ -1041,12 +1040,21 @@ scca.ridge <- function(X, Y, ndim=1, lambda1, lambda2, gamma1, gamma2,
    if(!is.numeric(ndim) || length(ndim) > 1 || ndim <= 0) {
       stop("ndim must be a single number > 0")
    }
+   standx <- match.arg(standx)
+   standy <- match.arg(standy)
 
    if(verbose) {
       cat("start svd\n") 
    }
 
    n <- nrow(X)
+
+   if(standx == "sd") {
+      X <- scale(X)
+   }
+   if(standy == "sd") {
+      Y <- scale(Y)
+   }
    s1 <- svd(X)
    s2 <- svd(Y)
    mx <- s1$d > svd.tol
@@ -1075,11 +1083,11 @@ scca.ridge <- function(X, Y, ndim=1, lambda1, lambda2, gamma1, gamma2,
    if(is.null(V)) {
       r <- scca(Xw, Yw, ndim=ndim, lambda1=lambda1, lambda2=lambda2,
 	 standx="none", standy="none", divisor="none",
-	 verbose=verbose, ...)
+	 verbose=verbose)
    } else {
       r <- scca(Xw, Yw, ndim=ndim, lambda1=lambda1, lambda2=lambda2,
 	 standx="none", standy="none", divisor="none", V=V,
-	 verbose=verbose, ...)
+	 verbose=verbose)
    }
 
    if(verbose) {
@@ -1105,31 +1113,31 @@ scca.ridge <- function(X, Y, ndim=1, lambda1, lambda2, gamma1, gamma2,
    res <- list(ndim=r$ndim, U=r$U, V=r$V, d=r$d,
       a=a, b=b, Px=Px, Py=Py, r=rp,
       converged=r$converged)
-   class(res) <- "scca.ridge"
+   class(res) <- "fcca"
    res
 }
 
-#' Prints a cv.scca.ridge object
+#' Prints a cv.fcca object
 #'
-#' @param x A cv.scca.ridge object to be printed
+#' @param x A cv.fcca object to be printed
 #' @param ... Ignored
 #' @export 
-print.cv.scca.ridge <- function(x, ...)
+print.cv.fcca <- function(x, ...)
 {
    cat(paste0(
-      "cv.scca.ridge object; ", x$nfolds,
+      "cv.fcca object; ", x$nfolds,
       "-fold cross-validation\n"))
    invisible(x)
 }
 
-#' Prints an scca.ridge object
+#' Prints an fcca object
 #'
-#' @param x An scca.ridge object to be printed
+#' @param x An fcca object to be printed
 #' @param ... Ignored
 #' @export 
-print.scca.ridge <- function(x, ...)
+print.fcca <- function(x, ...)
 {
-   cat("scca.ridge object; ndim=", length(x$d), "\n")
+   cat("fcca object; ndim=", length(x$d), "\n")
    if(!x$converged) {
       cat("warning: model has not converged\n")
    }
