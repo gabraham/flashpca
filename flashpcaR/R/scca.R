@@ -295,6 +295,7 @@ scca <- function(X, Y, lambda1=0, lambda2=0,
             s <- func(X, Y, l1, l2, ndim,
                standx_i, standy_i, div, seed, maxiter, tol,
                verbose, num_threads, useV, V)
+	    class(s) <- "scca"
 	    s
          })
       })
@@ -306,9 +307,10 @@ scca <- function(X, Y, lambda1=0, lambda2=0,
 	 #rownames(res$result) <- colnames(X)
       #}
       if(simplify && length(lambda1) == 1 && length(lambda2) == 1) {
-	 x <- res[[1]][[1]]
-	 class(x) <- "scca"
-	 x
+	 #x <- res[[1]][[1]]
+	 #class(x) <- "scca"
+	 #x
+	 res[[1]][[1]]
       } else {
 	 class(res) <- "scca-list"
 	 res
@@ -839,10 +841,29 @@ validate.rank <- function(X, maxdim=20, test.prop=0.1, const=0)
    data.frame(dim=cbind(1:maxdim), mse=err)
 }
 
-#' @importFrom data.table setDT 
+#' Cross-validation for the FCCA model.
+#'
+#' @param X
+#' @param Y
+#' @param lambda1
+#' @param lambda2
+#' @param gamma1
+#' @param gamma2
+#' @param ndim
+#' @param nfolds
+#' @param folds
+#' @param return.models
+#' @param svd.tol
+#' @param verbose
+#' @return
+#' @details
+#' @example
+#' @importFrom data.table setDT data.table rbindlist
+#' @importFrom foreach `%dopar%` foreach
 #' @export
 cv.fcca <- function(X, Y, lambda1, lambda2, gamma1=0, gamma2=0, ndim=1,
-   nfolds=10, folds=NULL, svd.tol=1e-12, verbose=FALSE)
+   nfolds=10, folds=NULL, return.models=FALSE, svd.tol=1e-12,
+   verbose=FALSE, maxiter=1000)
 {
    if(!is.numeric(X) && !is.null(dim(x))) {
       stop("X must be a numeric matrix")
@@ -860,6 +881,9 @@ cv.fcca <- function(X, Y, lambda1, lambda2, gamma1=0, gamma2=0, ndim=1,
    
    n <- nrow(X)
    if(is.null(folds)) {
+      if(is.null(nfolds) || length(nfolds) > 1 || nfolds < 2 || nfolds >= n) {
+	 stop("'nfolds' must be an integer >1 and < sample size")
+      }
       folds <- sample(1:nfolds, n, replace=TRUE)
    } else {
       if(length(folds) > n) {
@@ -878,11 +902,11 @@ cv.fcca <- function(X, Y, lambda1, lambda2, gamma1=0, gamma2=0, ndim=1,
    Y <- scale(Y)
 
    # All the SVD + whitening needs to be within the crossval loop..
-   d <- foreach(fold=1:nfolds) %dopar% {
+   res <- foreach(fold=1:nfolds) %dopar% {
       Xtrn <- X[folds != fold, ]
       Ytrn <- Y[folds != fold, ]
-      Xtst <- X[folds != fold, ]
-      Ytst <- Y[folds != fold, ]
+      Xtst <- X[folds == fold, ]
+      Ytst <- Y[folds == fold, ]
       n <- nrow(Xtrn)
       s1 <- svd(Xtrn)
       s2 <- svd(Ytrn)
@@ -907,9 +931,9 @@ cv.fcca <- function(X, Y, lambda1, lambda2, gamma1=0, gamma2=0, ndim=1,
 	       cat("start scca\n")
 	    }
 	    st <- system.time({
-	       res <- scca(Xwtrn, Ywtrn, standx="none", standy="none",
+	       mod <- scca(Xwtrn, Ywtrn, standx="none", standy="none",
 	          lambda1=lambda1, lambda2=lambda2, ndim=ndim, verbose=verbose,
-		  simplify=FALSE, divisor="none")
+		  simplify=FALSE, divisor="none", maxiter=maxiter)
 	    })
 	    if(verbose) {
 	       cat("end scca\n")
@@ -925,18 +949,23 @@ cv.fcca <- function(X, Y, lambda1, lambda2, gamma1=0, gamma2=0, ndim=1,
 	    #   tcrossprod(
 	    #      v[,my] %*% diag(sqrt(n - 1) / sqrt(d[my]^2 + (n - 1) * g2)), v[,my]))
 
+
 	    #Xwtrn <- Xtrn %*% sx.invsqrt
 	    #Xwtst <- Xtst %*% sx.invsqrt
 	    #Ywtrn <- Ytrn %*% sy.invsqrt
 	    #Ywtst <- Ytst %*% sy.invsqrt
 	    Xwtst <- with(s1,
 	       tcrossprod(
-		  Xtst %*% v[,mx] %*% diag(sqrt((n - 1) / (d[mx]^2 + (n - 1) * g1)),
-		  v[,mx])))
+		  Xtst %*% v[,mx] %*% diag(sqrt((n - 1) / (d[mx]^2 + (n - 1) * g1))),
+		  v[,mx]
+	       )
+	    )
 	    Ywtst <- with(s2,
 	       tcrossprod(
-		  Ytst %*% v[,my] %*% diag(sqrt((n - 1) / (d[my]^2 + (n - 1) * g2)),
-		  v[,my])))
+		  Ytst %*% v[,my] %*% diag(sqrt((n - 1) / (d[my]^2 + (n - 1) * g2))),
+		  v[,my]
+	       )
+	    )
 
 	    if(verbose) {
 	       cat("computing correlations\n")
@@ -949,8 +978,8 @@ cv.fcca <- function(X, Y, lambda1, lambda2, gamma1=0, gamma2=0, ndim=1,
 
 		  #a <- sx.invsqrt %*% res[[i]][[j]]$U
 		  #b <- sy.invsqrt %*% res[[i]][[j]]$V
-		  Za <- crossprod(s1$v[, mx], res[[i]][[j]]$U)
-		  Zb <- crossprod(s2$v[, my], res[[i]][[j]]$V)
+		  Za <- crossprod(s1$v[, mx], mod[[i]][[j]]$U)
+		  Zb <- crossprod(s2$v[, my], mod[[i]][[j]]$V)
 		  a <- with(s1,
 		     v[,mx] %*% diag(sqrt((n - 1) / (d[mx]^2 + (n - 1) * g1)))
 		     %*% Za)
@@ -969,40 +998,67 @@ cv.fcca <- function(X, Y, lambda1, lambda2, gamma1=0, gamma2=0, ndim=1,
 		  if(verbose) {
 		     cat("-end-\n")
 		  }
-	          data.table(fold=fold, dim=1:ndim, gamma1=g1, gamma2=g2,
+	          dd <- data.table(fold=fold, dim=1:ndim, gamma1=g1, gamma2=g2,
 		     lambda1=lambda1[i], lambda2=lambda2[j],
 		     r.trn=r.trn, r.tst=r.tst,
 		     n.trn=nrow(Px.trn), n.tst=nrow(Px.tst))
+		  if(return.models) {
+		     list(result=dd, model=mod[[i]][[j]])
+		  } else {
+		     list(result=dd)
+		  }
 	       })
-	       do.call(rbind, d)
 	    })
-	    do.call(rbind, d)
 	 })
-	 do.call(rbind, d)
       })
-      do.call(rbind, d)
    }
-   res <- do.call(rbind, d)
 
-   setDT(res)
+   res.stat <- lapply(seq_along(res), function(i) {
+      l <- lapply(seq_along(res[[i]]), function(j) {
+	 l <- lapply(seq_along(res[[i]][[j]]), function(k) {
+	    l <- lapply(seq_along(res[[i]][[j]][[k]]), function(m) {
+	       l <- lapply(seq_along(res[[i]][[j]][[k]][[m]]), function(n) {
+		  r <- res[[i]][[j]][[k]][[m]][[n]]$result
+		  r[, c("idx.i", "idx.j", "idx.k", "idx.m", "idx.n")
+		     := list(i, j, k, m, m)]
+		  r
+	       })
+	       rbindlist(l)
+	    })
+	    rbindlist(l)
+	 })
+	 rbindlist(l)
+      })
+      rbindlist(l)
+   })
+   res.stat <- rbindlist(res.stat)
 
    # Average and stderr of correlation, across the dimensions, for all grid
    # points
-   res.agg <- res[, list(r.trn.mean=mean(r.trn), r.trn.se=sqrt(var(r.trn) / .N),
+   res.stat.agg <- res.stat[,
+      list(r.trn.mean=mean(r.trn), r.trn.se=sqrt(var(r.trn) / .N),
       r.tst.mean=mean(r.tst), r.tst.se=sqrt(var(r.tst) / .N)),
       by=.(dim, gamma1, gamma2, lambda1, lambda2)]
 
    # Sum of squared correlations across the dimensions, for each model
    # # on the penalty grid. I.e., the best overall model taking all
    # dimensions into account.
-   res.agg.avg <- res.agg[, list(avg.sq.cor=mean(r.tst.mean^2, na.rm=TRUE)),
+   res.stat.agg.avg <- res.stat.agg[,
+      list(avg.sq.cor=mean(r.tst.mean^2, na.rm=TRUE)),
       by=.(gamma1, gamma2, lambda1, lambda2)]
-   res.agg.avg.best <- res.agg.avg[which.max(avg.sq.cor), ]
+   res.stat.agg.avg.best <- res.stat.agg.avg[which.max(avg.sq.cor), ]
    
    # results are for all folds, need to average over them
-   obj <- list(lambda1=lambda1, lambda2=lambda2, gamma1=gamma1, gamma2=gamma2,
-      nfolds=nfolds, folds=folds, result.raw=res, result.agg=res.agg,
-      result=res.agg.avg, result.best=res.agg.avg.best)
+   obj <- list(ndim=ndim, lambda1=lambda1, lambda2=lambda2,
+      gamma1=gamma1, gamma2=gamma2,
+      nfolds=nfolds, folds=folds,
+      result.raw=res.stat, 
+      result.agg=res.stat.agg,
+      result=res.stat.agg.avg,
+      result.best=res.stat.agg.avg.best)
+   if(return.models) {
+      obj$models <- res
+   }
    class(obj) <- "cv.fcca"
    obj
 }
@@ -1010,7 +1066,7 @@ cv.fcca <- function(X, Y, lambda1, lambda2, gamma1=0, gamma2=0, ndim=1,
 #' @export
 fcca <- function(X, Y, ndim=1, lambda1, lambda2, gamma1, gamma2,
    V=NULL, verbose=FALSE, standx=c("sd", "none"), standy=c("sd", "none"),
-   svd.tol=1e-12)
+   svd.tol=1e-12, maxiter=1000)
 {
    if(mode(X) != "numeric" || any(dim(X) == 0)) {
       stop("X must be a numeric matrix")
@@ -1083,11 +1139,11 @@ fcca <- function(X, Y, ndim=1, lambda1, lambda2, gamma1, gamma2,
    if(is.null(V)) {
       r <- scca(Xw, Yw, ndim=ndim, lambda1=lambda1, lambda2=lambda2,
 	 standx="none", standy="none", divisor="none",
-	 verbose=verbose)
+	 verbose=verbose, maxiter=maxiter)
    } else {
       r <- scca(Xw, Yw, ndim=ndim, lambda1=lambda1, lambda2=lambda2,
 	 standx="none", standy="none", divisor="none", V=V,
-	 verbose=verbose)
+	 verbose=verbose, maxiter=maxiter)
    }
 
    if(verbose) {
