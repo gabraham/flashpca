@@ -347,21 +347,42 @@ test_that("Testing cv.fcca", {
       maxiter=5000, return.models=TRUE)
 
    # Extract the model using the saved indexing
-   idx <- as.numeric(
+   # The indexing is a bit clunky; the results have one row for each
+   # dimension, but because each model contains all dimensions, the
+   # model index is repeated several times (once for each dimension).
+   #
+   # fold 1
+   idx1 <- as.numeric(
       s2$result.raw[1, .(idx.i, idx.j, idx.k, idx.m, idx.n)])
-   s2.mod <- s2$models[[
-      idx[1] ]][[ idx[2] ]][[ idx[3] ]][[ idx[4] ]][[ idx[5] ]]$model
+   s2.mod1 <- s2$models[[
+      idx1[1] ]][[ idx1[2] ]][[ idx1[3] ]][[ idx1[4] ]][[ idx1[5] ]]$model
+   # fold 2
+   idx2 <- as.numeric(
+      s2$result.raw[4, .(idx.i, idx.j, idx.k, idx.m, idx.n)])
+   s2.mod2 <- s2$models[[
+      idx2[1] ]][[ idx2[2] ]][[ idx2[3] ]][[ idx2[4] ]][[ idx2[5] ]]$model
 
-   expect_equal(s1$ndim, s2.mod$ndim)
-   expect_true(max(abs(s1$U - s2.mod$U)) < 1e-4)
-   expect_true(max(abs(s1$V - s2.mod$V)) < 1e-4)
-   expect_equal(diag(cor(s1$U, s2.mod$U)), rep(1, ndim), tol=1e-6)
-   expect_equal(diag(cor(s1$V, s2.mod$V)), rep(1, ndim), tol=1e-6)
-   expect_equal(diag(cor(s1$a, s2.mod$a)), rep(1, ndim), tol=1e-6)
-   expect_equal(diag(cor(s1$b, s2.mod$b)), rep(1, ndim), tol=1e-6)
-   expect_equal(diag(cor(s1$Px, s2.mod$Px)), rep(1, ndim), tol=1e-6)
-   expect_equal(diag(cor(s1$Py, s2.mod$Py)), rep(1, ndim), tol=1e-6)
-   expect_equal(s1$d, s2.mod$d, tol=1e-5)
+   expect_equal(s1$ndim, s2.mod1$ndim)
+   expect_true(mean(abs(s1$U - s2.mod1$U)) < 1e-4)
+   expect_true(mean(abs(s1$V - s2.mod1$V)) < 1e-4)
+   expect_equal(diag(cor(s1$U, s2.mod1$U)), rep(1, ndim), tol=1e-6)
+   expect_equal(diag(cor(s1$V, s2.mod1$V)), rep(1, ndim), tol=1e-6)
+   expect_equal(diag(cor(s1$a, s2.mod1$a)), rep(1, ndim), tol=1e-6)
+   expect_equal(diag(cor(s1$b, s2.mod1$b)), rep(1, ndim), tol=1e-6)
+   expect_equal(diag(cor(s1$Px, s2.mod1$Px)), rep(1, ndim), tol=1e-6)
+   expect_equal(diag(cor(s1$Py, s2.mod1$Py)), rep(1, ndim), tol=1e-6)
+   expect_equal(s1$d, s2.mod1$d, tol=1e-5)
+
+   expect_equal(s1$ndim, s2.mod2$ndim)
+   expect_true(mean(abs(s1$U - s2.mod2$U)) < 1e-4)
+   expect_true(mean(abs(s1$V - s2.mod2$V)) < 1e-4)
+   expect_equal(diag(cor(s1$U, s2.mod2$U)), rep(1, ndim), tol=1e-6)
+   expect_equal(diag(cor(s1$V, s2.mod2$V)), rep(1, ndim), tol=1e-6)
+   expect_equal(diag(cor(s1$a, s2.mod2$a)), rep(1, ndim), tol=1e-6)
+   expect_equal(diag(cor(s1$b, s2.mod2$b)), rep(1, ndim), tol=1e-6)
+   expect_equal(diag(cor(s1$Px, s2.mod2$Px)), rep(1, ndim), tol=1e-6)
+   expect_equal(diag(cor(s1$Py, s2.mod2$Py)), rep(1, ndim), tol=1e-6)
+   expect_equal(s1$d, s2.mod2$d, tol=1e-5)
 })
 
 
