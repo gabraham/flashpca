@@ -1243,9 +1243,14 @@ optim.cv.fcca <- function(X, Y, ndim=1, nfolds=5, folds=NULL,
    gamma1.grid=10^(-2:0), gamma2.grid=10^(-2:0),
    lambda1.bopt=c(0, 0.1), lambda2.bopt=c(0, 0.1),
    gamma1.bopt=10^c(-3, 4), gamma2.bopt=10^c(-3, 4),
-   method=c("bopt", "grid"), final.model=TRUE, verbose=FALSE)
+   method=c("bopt", "grid"),
+   final.model=TRUE, final.model.cv=FALSE, final.model.reorder=FALSE,
+   verbose=FALSE)
 {
    method <- match.arg(method)
+   if(final.model.reorder && !final.model.cv) {
+      stop("final.model.cv must be TRUE if final.model.reorder is TRUE")
+   }
 
    if(method == "bopt"
       && (!requireNamespace("mlrMBO", quietly=TRUE)
@@ -1263,7 +1268,7 @@ optim.cv.fcca <- function(X, Y, ndim=1, nfolds=5, folds=NULL,
    des.fcca.cv <- cv.fcca(X, Y, ndim=ndim,
       lambda1=lambda1.grid, lambda2=lambda2.grid,
       gamma1=gamma1.grid, gamma2=gamma2.grid,
-      folds=folds)
+      folds=folds, verbose=verbose)
    
    des.fcca <- copy(des.fcca.cv$result)
    setcolorder(des.fcca, c(3, 4, 1, 2))
@@ -1315,19 +1320,69 @@ optim.cv.fcca <- function(X, Y, ndim=1, nfolds=5, folds=NULL,
 	 gamma1=10^(run.fcca$x$x3), gamma2=10^(run.fcca$x$x4))
    } else {
       dmax <- des.fcca[which.max(avg.sq.cor), ]
-      opt.param <- c(lambda1=dmax$x1, lambda2=dmax$x2,
-	 gamma1=10^(dmax$x3), gamma2=10^(dmax$x4))
+      opt.param <- c(lambda1=dmax$lambda1, lambda2=dmax$lambda2,
+	 gamma1=10^(dmax$gamma2), gamma2=10^(dmax$gamma2))
    }
 
+   mod.fcca <- mod.fcca.cv <- NULL
+
+   # A final model on all the data
    if(final.model) {
       mod.fcca <- fcca(X, Y, ndim=ndim,
 	 lambda1=opt.param["lambda1"], lambda2=opt.param["lambda2"],
 	 gamma1=opt.param["gamma1"], gamma2=opt.param["gamma2"],
 	 verbose=verbose)
+
+      # It's difficult to extract the cross-validation results
+      # for the final model from the optimisation process so we do it again
+      # here for the optimal hyperparameters
+      if(final.model.cv) {
+	 mod.fcca.cv <- cv.fcca(X, Y, ndim=ndim, folds=folds,
+	    lambda1=opt.param["lambda1"], lambda2=opt.param["lambda2"],
+	    gamma1=opt.param["gamma1"], gamma2=opt.param["gamma2"],
+	    verbose=verbose)
+
+	 # Re-order the final model's canonical vectors based on the
+	 # cross-validated canonical correlations (decreasing magnitude)
+	 if(final.model.reorder && ndim > 1) {
+	    ord <- mod.fcca.cv$result.agg[,
+	       order(r.tst.mean, decreasing=TRUE)]
+	    mod.fcca$U <- mod.fcca$U[, ord]   
+	    mod.fcca$V <- mod.fcca$V[, ord]   
+	    mod.fcca$a <- mod.fcca$a[, ord]   
+	    mod.fcca$b <- mod.fcca$b[, ord]   
+	    mod.fcca$Px <- mod.fcca$Px[, ord]   
+	    mod.fcca$Py <- mod.fcca$Py[, ord]   
+	    mod.fcca$r <- mod.fcca$r[ord]   
+	 }
+      }
    }
 
-   res <- list(grid.path=des.fcca, bopt=run.fcca,
-      bopt.path=run.fcca.path,
-      opt.param=opt.param, final.model=mod.fcca)
+   if(method == "grid") {
+      res <- list(
+	 folds=folds, nfolds=nfolds, grid.path=des.fcca,
+	 opt.param=opt.param, final.model=mod.fcca, final.model.cv=mod.fcca.cv)
+   } else {
+      res <- list(
+	 folds=folds, nfolds=nfolds,
+	 grid.path=des.fcca, bopt=run.fcca,
+	 bopt.path=run.fcca.path, opt.param=opt.param,
+	 final.model=mod.fcca, final.model.cv=mod.fcca.cv)
+   }
+   class(res) <- "optim.cv.fcca"
+   res
+}
+
+#' Prints an optim.cv.fcca object
+#'
+#' @param x An optim.cv.fcca object to be printed
+#' @param ... Ignored
+#' @export 
+print.optim.cv.fcca <- function(x, ...)
+{
+   cat(paste0(
+      "optim.cv.fcca object; ", x$nfolds,
+      "-fold cross-validation\n"))
+   invisible(x)
 }
 
