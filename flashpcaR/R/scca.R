@@ -1325,6 +1325,7 @@ optim.cv.fcca <- function(X, Y, ndim=1, nfolds=5, folds=NULL,
    }
 
    mod.fcca <- mod.fcca.cv <- NULL
+   reordered <- FALSE
 
    # A final model on all the data
    if(final.model) {
@@ -1347,6 +1348,9 @@ optim.cv.fcca <- function(X, Y, ndim=1, nfolds=5, folds=NULL,
 	 if(final.model.reorder && ndim > 1) {
 	    ord <- mod.fcca.cv$result.agg[,
 	       order(r.tst.mean, decreasing=TRUE)]
+	    if(any(ord != seq_along(ord))) {
+	       reordered <- TRUE
+	    }
 	    mod.fcca$U <- mod.fcca$U[, ord]   
 	    mod.fcca$V <- mod.fcca$V[, ord]   
 	    mod.fcca$a <- mod.fcca$a[, ord]   
@@ -1361,13 +1365,15 @@ optim.cv.fcca <- function(X, Y, ndim=1, nfolds=5, folds=NULL,
    if(method == "grid") {
       res <- list(
 	 folds=folds, nfolds=nfolds, grid.path=des.fcca,
-	 opt.param=opt.param, final.model=mod.fcca, final.model.cv=mod.fcca.cv)
+	 opt.param=opt.param, final.model=mod.fcca,
+	 final.model.cv=mod.fcca.cv, final.model.reordered=reordered)
    } else {
       res <- list(
 	 folds=folds, nfolds=nfolds,
 	 grid.path=des.fcca, bopt=run.fcca,
 	 bopt.path=run.fcca.path, opt.param=opt.param,
-	 final.model=mod.fcca, final.model.cv=mod.fcca.cv)
+	 final.model=mod.fcca, final.model.cv=mod.fcca.cv,
+	 final.model.reordered=reordered)
    }
    class(res) <- "optim.cv.fcca"
    res
