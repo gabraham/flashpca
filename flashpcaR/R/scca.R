@@ -1013,17 +1013,17 @@ cv.fcca <- function(X, Y, lambda1, lambda2, gamma1=0, gamma2=0, ndim=1,
 
 		  Za <- crossprod(s1$v[, mx], mod[[i]][[j]]$U)
 		  Zb <- crossprod(s2$v[, my], mod[[i]][[j]]$V)
-		  a <- with(s1,
+		  mod[[i]][[j]]$a <- with(s1,
 		     v[,mx] %*% diag(sqrt((n - 1) / (d[mx]^2 + (n - 1) * g1)))
 			%*% Za)
-		  b <- with(s2,
+		  mod[[i]][[j]]$b <- with(s2,
 		     v[,my] %*% diag(sqrt((n - 1) / (d[my]^2 + (n - 1) * g2)))
 			%*% Zb)
 
-		  Px.trn <- Xtrn %*% a
-		  Py.trn <- Ytrn %*% b
-		  Px.tst <- Xtst %*% a
-		  Py.tst <- Ytst %*% b
+		  Px.trn <- Xtrn %*% mod[[i]][[j]]$a
+		  Py.trn <- Ytrn %*% mod[[i]][[j]]$b
+		  Px.tst <- Xtst %*% mod[[i]][[j]]$a
+		  Py.tst <- Ytst %*% mod[[i]][[j]]$b
 
 		  r.trn <- suppressWarnings(diag(cor(Px.trn, Py.trn)))
 		  r.tst <- suppressWarnings(diag(cor(Px.tst, Py.tst)))
@@ -1325,6 +1325,7 @@ optim.cv.fcca <- function(X, Y, ndim=1, nfolds=5, folds=NULL,
    }
 
    mod.fcca <- mod.fcca.cv <- NULL
+   Px.cv <- Py.cv <- NULL
    reordered <- FALSE
 
    # A final model on all the data
@@ -1341,7 +1342,14 @@ optim.cv.fcca <- function(X, Y, ndim=1, nfolds=5, folds=NULL,
 	 mod.fcca.cv <- cv.fcca(X, Y, ndim=ndim, folds=folds,
 	    lambda1=opt.param["lambda1"], lambda2=opt.param["lambda2"],
 	    gamma1=opt.param["gamma1"], gamma2=opt.param["gamma2"],
-	    verbose=verbose)
+	    verbose=verbose, return.models=TRUE)
+
+	 Px.cv <- Py.cv <- matrix(0, nrow(X), ndim)
+	 for(fold in 1:nfolds) {
+	    mod <- mod.fcca.cv$models[[fold]][[1]][[1]][[1]][[1]]$model
+	    Px.cv[folds != fold,] <- X[folds != fold,] %*% mod$a
+	    Py.cv[folds != fold,] <- Y[folds != fold,] %*% mod$b
+	 }
 
 	 # Re-order the final model's canonical vectors based on the
 	 # cross-validated canonical correlations (decreasing magnitude)
@@ -1365,14 +1373,16 @@ optim.cv.fcca <- function(X, Y, ndim=1, nfolds=5, folds=NULL,
    if(method == "grid") {
       res <- list(
 	 folds=folds, nfolds=nfolds, grid.path=des.fcca,
-	 opt.param=opt.param, final.model=mod.fcca,
-	 final.model.cv=mod.fcca.cv, final.model.reordered=reordered)
+	 opt.param=opt.param, final.model=mod.fcca, 
+	 final.model.cv=mod.fcca.cv, final.model.cv.Px=Px.cv,
+	 final.model.cv.Py=Py.cv, final.model.reordered=reordered)
    } else {
       res <- list(
 	 folds=folds, nfolds=nfolds,
 	 grid.path=des.fcca, bopt=run.fcca,
 	 bopt.path=run.fcca.path, opt.param=opt.param,
 	 final.model=mod.fcca, final.model.cv=mod.fcca.cv,
+	 final.model.cv.Px=Px.cv, final.model.cv.Py=Py.cv,
 	 final.model.reordered=reordered)
    }
    class(res) <- "optim.cv.fcca"
@@ -1388,7 +1398,8 @@ print.optim.cv.fcca <- function(x, ...)
 {
    cat(paste0(
       "optim.cv.fcca object; ", x$nfolds,
-      "-fold cross-validation\n"))
+      "-fold cross-validation (re-ordered: ",
+      x.final.model.reordered, ")\n"))
    invisible(x)
 }
 
