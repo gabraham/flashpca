@@ -884,6 +884,7 @@ validate.rank <- function(X, maxdim=20, test.prop=0.1, const=0)
 #' }
 #' 
 #' @details
+#' Standardisation is done once for X and Y
 #'
 #' @examples
 #'
@@ -1160,15 +1161,6 @@ fcca <- function(X, Y, ndim=1, lambda1, lambda2, gamma1, gamma2,
       tcrossprod(u[,my] %*% diag(d[my] / sqrt(d[my]^2 + (n - 1) * gamma2)),
 	 v[,my]))
 
-   # (X'X / (n-1))^{-1/2}
-   #sx.invsqrt <- with(s1,
-   #   tcrossprod(
-   #      v[,mx] %*% diag(sqrt(n - 1) / sqrt(d[mx]^2 + (n - 1) * gamma1)), v[,mx]))
-   # (Y'Y / (n-1))^{-1/2}
-   #sy.invsqrt <- with(s2,
-   #   tcrossprod(
-   #      v[,my] %*% diag(sqrt(n - 1) / sqrt(d[my]^2 + (n - 1) * gamma2)), v[,my]))
-
    if(is.null(V)) {
       r <- scca(Xw, Yw, ndim=ndim, lambda1=lambda1, lambda2=lambda2,
 	 standx="none", standy="none", divisor="none",
@@ -1182,8 +1174,6 @@ fcca <- function(X, Y, ndim=1, lambda1, lambda2, gamma1, gamma2,
    if(verbose) {
       cat("end scca\n")
    }
-   #a <- sx.invsqrt %*% r$U
-   #b <- sy.invsqrt %*% r$V
    Za <- crossprod(s1$v[, mx], r$U)
    Zb <- crossprod(s2$v[, my], r$V)
    a <- with(s1,
@@ -1347,8 +1337,8 @@ optim.cv.fcca <- function(X, Y, ndim=1, nfolds=5, folds=NULL,
 	 Px.cv <- Py.cv <- matrix(0, nrow(X), ndim)
 	 for(fold in 1:nfolds) {
 	    mod <- mod.fcca.cv$models[[fold]][[1]][[1]][[1]][[1]]$model
-	    Px.cv[folds != fold,] <- X[folds != fold,] %*% mod$a
-	    Py.cv[folds != fold,] <- Y[folds != fold,] %*% mod$b
+	    Px.cv[folds == fold,] <- X[folds == fold,] %*% mod$a
+	    Py.cv[folds == fold,] <- Y[folds == fold,] %*% mod$b
 	 }
 
 	 # Re-order the final model's canonical vectors based on the
