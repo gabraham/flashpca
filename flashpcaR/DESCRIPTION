@@ -2,8 +2,8 @@ Package: flashpcaR
 Depends: R(>= 3.0.2)
 Type: Package
 Title: R Interface to FlashPCA
-Version: 2.1
-Date: 2020-04-20
+Version: 3.0
+Date: 2020-09-26
 Authors@R: c(
    person("Gad", "Abraham", email="gad.abraham@gmail.edu.au", role=c("aut", "cre")),
    person("Rodrigo", "Canovas", email="rodrigo.canovas@baker.edu.au", role=c("aut")),
@@ -28,3 +28,5 @@ LinkingTo:
 RoxygenNote: 7.1.0
 Suggests: testthat, foreach, knitr, rmarkdown, mlrMBO, smoof
 VignetteBuilder: knitr
+Encoding: UTF-8
+
