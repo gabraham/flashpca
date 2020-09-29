@@ -387,54 +387,75 @@ test_that("Testing cv.fcca", {
 
 
 test_that("Testing optim.cv.fcca", {
-   lambda1 <- seq(1e-6, 1e-2, length=3)
+   lambda1 <- seq(1e-5, 5e-2, length=4)
    lambda2 <- seq(1e-6, 1e-2, length=3)
    gamma1 <- 10^c(-2, -1)
-   gamma2 <- 10^c(-3, -2)
+   gamma2 <- 10^c(-3, 0)
    ndim <- 3
    nfolds <- 3
    folds <- sample(1:nfolds, nrow(X), replace=TRUE)
 
    # Test the grid optimisation, without returning models
-   res <- optim.cv.fcca(X, Y, ndim=ndim, folds=folds,
+   res1 <- optim.cv.fcca(X, Y, ndim=ndim, folds=folds,
       lambda1.grid=lambda1, lambda2.grid=lambda2,
       gamma1.grid=gamma1, gamma2.grid=gamma2,
       method="grid")
    
-   expect_equal(nrow(res$grid.path),
+   expect_equal(nrow(res1$grid.path),
       length(lambda1) * length(lambda2) * length(gamma1) * length(gamma2))
-   expect_equal(res$nfolds, nfolds)
-   expect_equal(res$ndim, ndim)
-   expect_null(res$final.model.cv)
-   expect_null(res$final.model.cv.Px)
-   expect_null(res$final.model.cv.Py)
-   expect_equal(res$final.model$ndim, ndim)
-   expect_true(res$opt.param["lambda1"] %in% lambda1)
-   expect_true(res$opt.param["lambda2"] %in% lambda2)
-   expect_true(res$opt.param["gamma1"] %in% gamma1)
-   expect_true(res$opt.param["gamma2"] %in% gamma2)
+   expect_equal(res1$nfolds, nfolds)
+   expect_equal(res1$ndim, ndim)
+   expect_null(res1$final.model.cv)
+   expect_null(res1$final.model.cv.Px)
+   expect_null(res1$final.model.cv.Py)
+   expect_is(res1$final.model, "fcca")
+   expect_equal(res1$final.model$ndim, ndim)
+   expect_true(res1$opt.param["lambda1"] %in% lambda1)
+   expect_true(res1$opt.param["lambda2"] %in% lambda2)
+   expect_true(res1$opt.param["gamma1"] %in% gamma1)
+   expect_true(res1$opt.param["gamma2"] %in% gamma2)
 
    # Test the grid optimisation, with returning models
-   res <- optim.cv.fcca(X, Y, ndim=ndim, folds=folds,
+   res2 <- optim.cv.fcca(X, Y, ndim=ndim, folds=folds,
       lambda1.grid=lambda1, lambda2.grid=lambda2,
       gamma1.grid=gamma1, gamma2.grid=gamma2,
-      method="grid", )
+      method="grid", final.model=TRUE, final.model.cv=TRUE)
    
-   expect_equal(nrow(res$grid.path),
+   expect_equal(nrow(res2$grid.path),
       length(lambda1) * length(lambda2) * length(gamma1) * length(gamma2))
-   expect_equal(res$nfolds, nfolds)
-   expect_equal(res$ndim, ndim)
-   expect_null(res$final.model.cv)
-   expect_null(res$final.model.cv.Px)
-   expect_null(res$final.model.cv.Py)
-   expect_equal(res$final.model$ndim, ndim)
-   expect_true(res$opt.param["lambda1"] %in% lambda1)
-   expect_true(res$opt.param["lambda2"] %in% lambda2)
-   expect_true(res$opt.param["gamma1"] %in% gamma1)
-   expect_true(res$opt.param["gamma2"] %in% gamma2)
+   expect_equal(res2$nfolds, nfolds)
+   expect_equal(res2$ndim, ndim)
+   expect_is(res2$final.model.cv, "cv.fcca")
+   expect_equal(res2$final.model.cv$folds, folds)
+   expect_equal(ncol(res2$final.model.cv.Px), ndim)
+   expect_equal(ncol(res2$final.model.cv.Py), ndim)
+   expect_equal(res2$final.model$ndim, ndim)
+   expect_equal(res2$final.model.cv$lambda1, res2$opt.param["lambda1"])
+   expect_equal(res2$final.model.cv$lambda2, res2$opt.param["lambda2"])
+   expect_equal(res2$final.model.cv$gamma1, res2$opt.param["gamma1"])
+   expect_equal(res2$final.model.cv$gamma2, res2$opt.param["gamma2"])
    
    # Test the Bayesian optimisation, if installed
    skip_if_not_installed("mlrMBO")
    skip_if_not_installed("DiceKriging")
+
+   res3 <- optim.cv.fcca(X, Y, ndim=ndim, folds=folds,
+      lambda1.grid=lambda1, lambda2.grid=lambda2,
+      gamma1.grid=gamma1, gamma2.grid=gamma2,
+      method="bopt", final.model=TRUE, final.model.cv=TRUE)
+   
+   expect_equal(nrow(res3$grid.path),
+      length(lambda1) * length(lambda2) * length(gamma1) * length(gamma2))
+   expect_equal(res3$nfolds, nfolds)
+   expect_equal(res3$ndim, ndim)
+   expect_is(res3$final.model.cv, "cv.fcca")
+   expect_equal(res3$final.model.cv$folds, folds)
+   expect_equal(ncol(res3$final.model.cv.Px), ndim)
+   expect_equal(ncol(res3$final.model.cv.Py), ndim)
+   expect_equal(res3$final.model$ndim, ndim)
+   expect_equal(res3$final.model.cv$lambda1, res3$opt.param["lambda1"])
+   expect_equal(res3$final.model.cv$lambda2, res3$opt.param["lambda2"])
+   expect_equal(res3$final.model.cv$gamma1, res3$opt.param["gamma1"])
+   expect_equal(res3$final.model.cv$gamma2, res3$opt.param["gamma2"])
 })
 

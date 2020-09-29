@@ -460,6 +460,10 @@ cv.scca <- function(X, Y,
 
    # https://cran.r-project.org/doc/manuals/r-release/R-exts.html#Suggested-packages
    if(parallel && requireNamespace("foreach", quietly=TRUE)) {
+      # Avoid dopar warnings
+      if(!foreach::getDoParRegistered()) {
+	 foreach::registerDoSEQ()
+      }
       res <- foreach::`%dopar%`(foreach::foreach(fold=1:nfolds), {
          w <- folds != fold
 	 V0 <- NULL
@@ -905,7 +909,7 @@ validate.rank <- function(X, maxdim=20, test.prop=0.1, const=0)
 #' diag(cor(s1$Px, s1$Py))
 #' 
 #' @importFrom data.table setDT data.table rbindlist
-#' @importFrom foreach `%dopar%` foreach
+#' @importFrom foreach `%dopar%` foreach registerDoSEQ
 #'
 #' @seealso \code{\link{fcca}}
 #'
@@ -913,7 +917,7 @@ validate.rank <- function(X, maxdim=20, test.prop=0.1, const=0)
 #'
 cv.fcca <- function(X, Y, lambda1, lambda2, gamma1=0, gamma2=0, ndim=1,
    nfolds=10, folds=NULL, reorder=TRUE, return.models=FALSE, svd.tol=1e-12,
-   verbose=FALSE, maxiter=1000)
+   verbose=FALSE, maxiter=1000, parallel=TRUE)
 {
    if(!is.numeric(X) && !is.null(dim(x))) {
       stop("X must be a numeric matrix")
@@ -952,7 +956,7 @@ cv.fcca <- function(X, Y, lambda1, lambda2, gamma1=0, gamma2=0, ndim=1,
    Y <- scale(Y)
 
    # All the SVD + whitening needs to be within the crossval loop..
-   res <- foreach(fold=1:nfolds) %dopar% {
+   run_fold <- function(fold) {
       Xtrn <- X[folds != fold, ]
       Ytrn <- Y[folds != fold, ]
       Xtst <- X[folds == fold, ]
@@ -993,15 +997,11 @@ cv.fcca <- function(X, Y, lambda1, lambda2, gamma1=0, gamma2=0, ndim=1,
 	    Xwtst <- with(s1,
 	       tcrossprod(
 		  Xtst %*% v[,mx] %*% diag(sqrt((n - 1) / (d[mx]^2 + (n - 1) * g1))),
-		  v[,mx]
-	       )
-	    )
+		  v[,mx]))
 	    Ywtst <- with(s2,
 	       tcrossprod(
 		  Ytst %*% v[,my] %*% diag(sqrt((n - 1) / (d[my]^2 + (n - 1) * g2))),
-		  v[,my]
-	       )
-	    )
+		  v[,my]))
 
 	    if(verbose) {
 	       cat("computing correlations\n")
@@ -1045,6 +1045,15 @@ cv.fcca <- function(X, Y, lambda1, lambda2, gamma1=0, gamma2=0, ndim=1,
 	    })
 	 })
       })
+   }
+
+   res <- if(parallel && requireNamespace("foreach", quietly=TRUE)) {
+      if(!foreach::getDoParRegistered()) {
+	 foreach::registerDoSEQ()
+      }
+      foreach::`%dopar%`(foreach::foreach(fold=1:nfolds), { run_fold(fold) })
+   } else {
+      lapply(1:nfolds, run_fold)
    }
 
    res.stat <- lapply(seq_along(res), function(i) {
@@ -1226,7 +1235,8 @@ print.fcca <- function(x, ...)
 #' Optimise FCCA via grid search and/or Bayesian optimisation
 #'
 #' @importFrom mlrMBO makeMBOControl
-#' @importFrom data.table copy setcolorder
+#' @importFrom data.table copy setcolorder setnames as.data.table
+#' @importFrom foreach foreach `%dopar%` registerDoSEQ
 #' @export
 optim.cv.fcca <- function(X, Y, ndim=1, nfolds=5, folds=NULL,
    lambda1.grid=c(0, seq(1e-4, 0.002, length=4)),
@@ -1267,7 +1277,8 @@ optim.cv.fcca <- function(X, Y, ndim=1, nfolds=5, folds=NULL,
    des.fcca[, log10_gamma2 := log10(gamma2)]
 
    if(method == "bopt") {
-      des.fcca.d <- as.data.frame(des.fcca)
+      des.fcca.d <- as.data.frame(des.fcca[, 
+	 .(lambda1, lambda2, gamma1, gamma2, avg.sq.cor)])
       colnames(des.fcca.d) <- c("x1", "x2", "x3", "x4", "y")
 
       obj.fun.fcca <- smoof::makeSingleObjectiveFunction(
@@ -1281,15 +1292,15 @@ optim.cv.fcca <- function(X, Y, ndim=1, nfolds=5, folds=NULL,
 	    }
 	    ifelse(is.nan(m) || !is.finite(m), runif(1, 0, 1e-2), m)
 	 },
-	 par.set=makeParamSet(
-	    makeNumericParam("x1",
+	 par.set=ParamHelpers::makeParamSet(
+	    ParamHelpers::makeNumericParam("x1",
 	       lower=lambda1.bopt[1], upper=lambda1.bopt[2]),
-	    makeNumericParam("x2",
+	    ParamHelpers::makeNumericParam("x2",
 	       lower=lambda2.bopt[1], upper=lambda2.bopt[2]),
-	    makeNumericParam("x3",
+	    ParamHelpers::makeNumericParam("x3",
 	       lower=log10(gamma1.bopt[1]), upper=log10(gamma1.bopt[2]),
 	       trafo=function(x) 10^x),
-	    makeNumericParam("x4",
+	    ParamHelpers::makeNumericParam("x4",
 	       lower=log10(gamma2.bopt[1]), upper=log10(gamma2.bopt[2]),
 	       trafo=function(x) 10^x)
 	 ),
@@ -1299,8 +1310,11 @@ optim.cv.fcca <- function(X, Y, ndim=1, nfolds=5, folds=NULL,
 
       ctrl <- mlrMBO::makeMBOControl()
       ctrl <- mlrMBO::setMBOControlTermination(ctrl, iters=50L)
-      ctrl <- mlrMBO::setMBOControlInfill(ctrl, crit=makeMBOInfillCritEI())
-      surr.km.fcca <- mlrMBO::makeMBOLearner(control=ctrl, obj.fun.fcca)
+      ctrl <- mlrMBO::setMBOControlInfill(ctrl,
+	 crit=mlrMBO::makeMBOInfillCritEI())
+      surr.km.fcca <- mlrMBO::makeMBOLearner(control=ctrl, fun=obj.fun.fcca,
+	 config=list(show.learner.output=verbose,
+	 on.learner.warning=ifelse(verbose, "warn", "quiet")))
       run.fcca <- mlrMBO::mbo(obj.fun.fcca, design=des.fcca.d,
          learner=surr.km.fcca, control=ctrl, show.info=verbose)
       run.fcca.path <- as.data.table(run.fcca$opt.path)
@@ -1312,7 +1326,7 @@ optim.cv.fcca <- function(X, Y, ndim=1, nfolds=5, folds=NULL,
    } else {
       dmax <- des.fcca[which.max(avg.sq.cor), ]
       opt.param <- c(lambda1=dmax$lambda1, lambda2=dmax$lambda2,
-	 gamma1=10^(dmax$log10_gamma2), gamma2=10^(dmax$log10_gamma2))
+	 gamma1=10^(dmax$log10_gamma1), gamma2=10^(dmax$log10_gamma2))
    }
 
    mod.fcca <- mod.fcca.cv <- NULL
