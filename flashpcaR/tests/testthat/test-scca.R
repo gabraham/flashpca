@@ -395,11 +395,43 @@ test_that("Testing optim.cv.fcca", {
    nfolds <- 3
    folds <- sample(1:nfolds, nrow(X), replace=TRUE)
 
-   # Test the grid optimisation
-   optim.cv.fcca(X, Y, ndim=ndim, folds=folds,
+   # Test the grid optimisation, without returning models
+   res <- optim.cv.fcca(X, Y, ndim=ndim, folds=folds,
       lambda1.grid=lambda1, lambda2.grid=lambda2,
       gamma1.grid=gamma1, gamma2.grid=gamma2,
       method="grid")
+   
+   expect_equal(nrow(res$grid.path),
+      length(lambda1) * length(lambda2) * length(gamma1) * length(gamma2))
+   expect_equal(res$nfolds, nfolds)
+   expect_equal(res$ndim, ndim)
+   expect_null(res$final.model.cv)
+   expect_null(res$final.model.cv.Px)
+   expect_null(res$final.model.cv.Py)
+   expect_equal(res$final.model$ndim, ndim)
+   expect_true(res$opt.param["lambda1"] %in% lambda1)
+   expect_true(res$opt.param["lambda2"] %in% lambda2)
+   expect_true(res$opt.param["gamma1"] %in% gamma1)
+   expect_true(res$opt.param["gamma2"] %in% gamma2)
+
+   # Test the grid optimisation, with returning models
+   res <- optim.cv.fcca(X, Y, ndim=ndim, folds=folds,
+      lambda1.grid=lambda1, lambda2.grid=lambda2,
+      gamma1.grid=gamma1, gamma2.grid=gamma2,
+      method="grid", )
+   
+   expect_equal(nrow(res$grid.path),
+      length(lambda1) * length(lambda2) * length(gamma1) * length(gamma2))
+   expect_equal(res$nfolds, nfolds)
+   expect_equal(res$ndim, ndim)
+   expect_null(res$final.model.cv)
+   expect_null(res$final.model.cv.Px)
+   expect_null(res$final.model.cv.Py)
+   expect_equal(res$final.model$ndim, ndim)
+   expect_true(res$opt.param["lambda1"] %in% lambda1)
+   expect_true(res$opt.param["lambda2"] %in% lambda2)
+   expect_true(res$opt.param["gamma1"] %in% gamma1)
+   expect_true(res$opt.param["gamma2"] %in% gamma2)
    
    # Test the Bayesian optimisation, if installed
    skip_if_not_installed("mlrMBO")

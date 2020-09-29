@@ -1187,7 +1187,7 @@ fcca <- function(X, Y, ndim=1, lambda1, lambda2, gamma1, gamma2,
    Py <- Y %*% b
    colnames(Px) <- paste0("Px", 1:ncol(Px))
    colnames(Py) <- paste0("Py", 1:ncol(Py))
-   rp <- diag(cor(Px, Py))
+   rp <- suppressWarnings(diag(cor(Px, Py)))
 
    res <- list(ndim=r$ndim, U=r$U, V=r$V, d=r$d,
       a=a, b=b, Px=Px, Py=Py, r=rp,
@@ -1226,6 +1226,7 @@ print.fcca <- function(x, ...)
 #' Optimise FCCA via grid search and/or Bayesian optimisation
 #'
 #' @importFrom mlrMBO makeMBOControl
+#' @importFrom data.table copy setcolorder
 #' @export
 optim.cv.fcca <- function(X, Y, ndim=1, nfolds=5, folds=NULL,
    lambda1.grid=c(0, seq(1e-4, 0.002, length=4)),
@@ -1262,8 +1263,8 @@ optim.cv.fcca <- function(X, Y, ndim=1, nfolds=5, folds=NULL,
    
    des.fcca <- copy(des.fcca.cv$result)
    setcolorder(des.fcca, c(3, 4, 1, 2))
-   des.fcca[, gamma1 := log10(gamma1)]
-   des.fcca[, gamma2 := log10(gamma2)]
+   des.fcca[, log10_gamma1 := log10(gamma1)]
+   des.fcca[, log10_gamma2 := log10(gamma2)]
 
    if(method == "bopt") {
       des.fcca.d <- as.data.frame(des.fcca)
@@ -1304,14 +1305,14 @@ optim.cv.fcca <- function(X, Y, ndim=1, nfolds=5, folds=NULL,
          learner=surr.km.fcca, control=ctrl, show.info=verbose)
       run.fcca.path <- as.data.table(run.fcca$opt.path)
       setnames(run.fcca.path, c("x1", "x2", "x3", "x4"),
-         c("lambda1", "lambda2", "log10.gamma1", "log10.gamma2"))
+         c("lambda1", "lambda2", "log10_gamma1", "log10_gamma2"))
 
       opt.param <- c(lambda1=run.fcca$x$x1, lambda2=run.fcca$x$x2,
 	 gamma1=10^(run.fcca$x$x3), gamma2=10^(run.fcca$x$x4))
    } else {
       dmax <- des.fcca[which.max(avg.sq.cor), ]
       opt.param <- c(lambda1=dmax$lambda1, lambda2=dmax$lambda2,
-	 gamma1=10^(dmax$gamma2), gamma2=10^(dmax$gamma2))
+	 gamma1=10^(dmax$log10_gamma2), gamma2=10^(dmax$log10_gamma2))
    }
 
    mod.fcca <- mod.fcca.cv <- NULL
@@ -1362,13 +1363,13 @@ optim.cv.fcca <- function(X, Y, ndim=1, nfolds=5, folds=NULL,
 
    if(method == "grid") {
       res <- list(
-	 folds=folds, nfolds=nfolds, grid.path=des.fcca,
+	 ndim=ndim, folds=folds, nfolds=nfolds, grid.path=des.fcca,
 	 opt.param=opt.param, final.model=mod.fcca, 
 	 final.model.cv=mod.fcca.cv, final.model.cv.Px=Px.cv,
 	 final.model.cv.Py=Py.cv, final.model.reordered=reordered)
    } else {
       res <- list(
-	 folds=folds, nfolds=nfolds,
+	 ndim=ndim, folds=folds, nfolds=nfolds,
 	 grid.path=des.fcca, bopt=run.fcca,
 	 bopt.path=run.fcca.path, opt.param=opt.param,
 	 final.model=mod.fcca, final.model.cv=mod.fcca.cv,
@@ -1389,7 +1390,7 @@ print.optim.cv.fcca <- function(x, ...)
    cat(paste0(
       "optim.cv.fcca object; ", x$nfolds,
       "-fold cross-validation (re-ordered: ",
-      x.final.model.reordered, ")\n"))
+      x$final.model.reordered, ")\n"))
    invisible(x)
 }
 
