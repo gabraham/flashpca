@@ -868,16 +868,18 @@ validate.rank <- function(X, maxdim=20, test.prop=0.1, const=0)
 #' @param folds Integer. The fold identifiers. Overrides the `nfolds'
 #' parameter.
 #'
-#' @param reorder Logical. Whether to re-order the canonical vectors
-#' by the cross-validated canonical correlations.
-#'
 #' @param return.models Logical. Whether to return all trained models.
 #'
 #' @param svd.tol Numeric. Tolerance under which to truncate singular values of X and Y.
 #'
 #' @param verbose Logical. 
+#' 
+#' @param maxiter Integer. Maximum number of iterations.
 #'
-#' @return a \code{cv.fcca} with the following components:
+#' @param parallal Logical. Whether to use parallelisation. Requires the use
+#' of the \code{foreach} package.
+#'
+#' @return an \code{cv.fcca} object with the following components:
 #'
 #' \describe{
 #'    \item{ndim:} Number of dimensions.
@@ -902,11 +904,11 @@ validate.rank <- function(X, maxdim=20, test.prop=0.1, const=0)
 #' B <- matrix(rnorm(m * k), m, k)
 #' Y <- X %*% B + rnorm(n * k)
 #' 
-#' s1 <- scca(X, Y, lambda1=1e-2, lambda2=1e-2, ndim=5,
-#'   standx="none", standy="sd")
-#' 
-#' ## The canonical correlations
-#' diag(cor(s1$Px, s1$Py))
+#' r <- cv.fcca(X, Y, ndim=1, nfolds=3,
+#'    lambda1=seq(1e-3, 1e-1, length=5),
+#'    lambda2=seq(1e-4, 0.5, length=3),
+#'    gamma1=10^c(-3, -1),
+#'    gamma2=10^c(-3, -1))
 #' 
 #' @importFrom data.table setDT data.table rbindlist
 #' @importFrom foreach `%dopar%` foreach registerDoSEQ
@@ -916,8 +918,8 @@ validate.rank <- function(X, maxdim=20, test.prop=0.1, const=0)
 #' @export
 #'
 cv.fcca <- function(X, Y, lambda1=0, lambda2=0, gamma1=0, gamma2=0, ndim=1,
-   nfolds=10, folds=NULL, reorder=TRUE, return.models=FALSE, svd.tol=1e-12,
-   verbose=FALSE, maxiter=1000, parallel=TRUE)
+   nfolds=10, folds=NULL, return.models=FALSE, svd.tol=1e-12,
+   verbose=FALSE, maxiter=1000, parallel=FALSE)
 {
    if(!is.numeric(X) && !is.null(dim(x))) {
       stop("X must be a numeric matrix")
@@ -1120,10 +1122,62 @@ cv.fcca <- function(X, Y, lambda1=0, lambda2=0, gamma1=0, gamma2=0, ndim=1,
    obj
 }
 
+#' Fit the FCCA model.
+#'
+#' @param X An n by p numeric matrix. Note: PLINK data is currently not supported.
+#'
+#' @param Y An n by k numeric matrix.
+#'
+#' @param ndim Integer. Positive number of canonical vectors to compute.
+#'
+#' @param lambda1 Numeric vector. Non-negative L1 penalty on canonical vectors of X.
+#'
+#' @param lambda2 Numeric vector. Non-negative L1 penalty on canonical vectors of Y.
+#'
+#' @param gamma1 Numeric vector. Non-negative L2 penalty on X.
+#'
+#' @param gamma2 Numeric vector. Non-negative L2 penalty on Y.
+#'
+#' @param V Numeric matrix. Initial estimate of the left singular
+#' vector of  X'Y.
+#'
+#' @param standx Character. One of "sd" (empricial standard deviation) or "none".
+#'
+#' @param standy Character. One of "sd" (empricial standard deviation) or "none".
+#'
+#' @param svd.tol Numeric. Tolerance under which to truncate singular values of X and Y.
+#'
+#' @param maxiter Integer. Maximum number of iterations.
+#'
+#' @param verbose Logical. Whether to print more information.
+#'
+#' @return an \code{fcca} object with the following components:
+#'
+#' \describe{
+#'    \item{ndim:} Number of dimensions.
+#'    \item{lambda1:} Vector of lambda1 penalties.
+#'    \item{lambda2:} Vector of lambda2 penalties.
+#'    \item{gamma1:} Vector of gamma1 penalties.
+#'    \item{gamma2:} Vector of gamma2 penalties.
+#'    \item{U:} Matrix of left singular vectors
+#'    \item{a:} Matrix of canonical vectors for X.
+#'    \item{V:} Matrix of right singular vectors
+#'    \item{b:} Matrix of canonical vectors for Y.
+#'    \item{Px:} Matrix of canonical coordinates, X * a
+#'    \item{Py:} Matrix of canonical coordinates, Y * b
+#'    \item{r:} Canonical correlations, diag(cor(Px, Py))
+#'    \item{converged:} whether the optimisation has converged or not
+#' }
+#' 
+#' @details
+#'
+#' Standardisation is done once for X and Y
+#'
 #' @export
-fcca <- function(X, Y, ndim=1, lambda1, lambda2, gamma1, gamma2,
-   V=NULL, verbose=FALSE, standx=c("sd", "none"), standy=c("sd", "none"),
-   reorder=TRUE, svd.tol=1e-12, maxiter=1000)
+#'
+fcca <- function(X, Y, ndim=1, lambda1=0, lambda2=0, gamma1=0, gamma2=0,
+   V=NULL, standx=c("sd", "none"), standy=c("sd", "none"),
+   svd.tol=1e-12, maxiter=1000, verbose=FALSE)
 {
    if(mode(X) != "numeric" || any(dim(X) == 0)) {
       stop("X must be a numeric matrix")
@@ -1246,7 +1300,112 @@ print.fcca <- function(x, ...)
    invisible(x)
 }
 
-#' Optimise FCCA via grid search and/or Bayesian optimisation
+#' Optimise FCCA via grid search and/or Bayesian optimisation.
+#'
+#' @param X An n by p numeric matrix. Note: PLINK data is currently not supported.
+#'
+#' @param Y An n by k numeric matrix.
+#'
+#' @param ndim Integer. Positive number of canonical vectors to compute.
+#'
+#' @param nfolds Integer. Number of cross-validation folds.
+#'
+#' @param folds Integer. The fold identifiers. Overrides the `nfolds'
+#' parameter.
+#'
+#' @param lambda1.grid Numeric vector. Non-negative L1 penalty on canonical
+#' vectors of X for use in the grid search.
+#'
+#' @param lambda2.grid Numeric vector. Non-negative L1 penalty on canonical vectors of Y
+#' for use in the grid search.
+#'
+#' @param gamma1.grid Numeric vector. Non-negative L2 penalty on X for
+#' use in the grid search.
+#'
+#' @param gamma2.grid Numeric vector. Non-negative L2 penalty on Y for
+#' use in the grid search.
+#'
+#' @param lambda1.bopt Numeric vector. Non-negative L1 penalty on canonical
+#' vectors of X for use in the Bayesian optimisation.
+#'
+#' @param lambda2.bopt Numeric vector. Non-negative L1 penalty on canonical vectors of Y
+#' for use in the Bayesian optimisation.
+#'
+#' @param gamma1.bopt Numeric vector. Non-negative L2 penalty on X for
+#' use in the Bayesian optimisation.
+#'
+#' @param gamma2.bopt Numeric vector. Non-negative L2 penalty on Y for
+#' use in the Bayesian optimisation.
+#' 
+#' @param method Character. Either "bapt" (Bayesian optimisation) or "grid"
+#' (grid search).
+#'
+#' @param parallal Logical. Whether to use parallelisation. Requires the use
+#' of the \code{foreach} package.
+#' 
+#' @param final.model Logical. Whether to fit and return the final model trained on
+#' all the data using the optimal hyperparameters.
+#' 
+#' @param final.model.cv Logical. Whether to fit a model in cross-validation 
+#' using the optimal hyperparameters, and return it.
+#'
+#' @param final.model.reorder Logical. Whether to reorder the canonical
+#' coordinates based on the cross-validation correlations (in decreasing
+#' magnitude).
+#'
+#' @param maxiter Integer. Maximum number of iterations for FCCA fitting.
+#'
+#' @param svd.tol Numeric. Tolerance under which to truncate singular values of X and Y.
+#'
+#' @param verbose Logical. 
+#'
+#' @return an \code{optim.cv.fcca} object with the following components:
+#'
+#' \describe{
+#'    \item{ndim:} Number of dimensions.
+#'    \item{folds:} The vector of folds.
+#'    \item{nfolds:} The number of folds.
+#'    \item{grid.path:} The results for the grid search.
+#'    \item{bopt:} The mlrMBO result (if using Bayesian optimisation).
+#'    \item{bopt.path:} The Bayesian optimisation results (if using Bayesian
+#' optimisation).
+#'    \item{opt.param:} The optimal hyperparameters .
+#'    \item{final.model:} An FCCA model trained on all the data using the
+#'	 optimal hyperparameters.
+#'    \item{final.model.cv:} An FCCA model trained in cross-validation using
+#'	 the optimal hyperparameters.
+#'    \item{final.model.cv.Px:} The canonical coordinates for X from
+#'	 the cross-validated FCCA model.
+#'    \item{final.model.cv.Py:} The canonical coordinates for Y from
+#'	 the cross-validated FCCA model.
+#'    \item{final.model.reordered:} Whether the canonical coordinates for the 
+#'	 final model were reordered by the cross-validated canonical
+#'	 correlations.
+#' }
+#' 
+#' @examples
+#' #######################
+#' ## HapMap3 chr1 example
+#' data(hm3.chr1)
+#' X <- scale2(hm3.chr1$bed)
+#' n <- nrow(X)
+#' m <- ncol(X)
+#' k <- 10
+#' B <- matrix(rnorm(m * k), m, k)
+#' Y <- X %*% B + rnorm(n * k)
+#' 
+#' r <- optim.cv.fcca(X, Y, ndim=1, nfolds=3,
+#'    lambda1.grid=seq(1e-3, 1e-1, length=5),
+#'    lambda2.grid=seq(1e-4, 0.5, length=3),
+#'    gamma1.grid=10^c(-3, -1),
+#'    gamma2.grid=10^c(-3, -1), method="grid",
+#'    final.model.cv=TRUE)
+#'
+#' # The optimal hyperparameters
+#' r$opt.param
+#'
+#' # The cross-validated canonical correlations
+#' diag(cor(r$final.model.cv.Px, r$final.model.cv.Py))
 #'
 #' @importFrom mlrMBO makeMBOControl
 #' @importFrom data.table copy setcolorder setnames as.data.table
@@ -1256,11 +1415,11 @@ optim.cv.fcca <- function(X, Y, ndim=1, nfolds=5, folds=NULL,
    lambda1.grid=c(0, seq(1e-4, 0.002, length=4)),
    lambda2.grid=c(0, seq(1e-4, 0.002, length=4)),
    gamma1.grid=10^(-2:0), gamma2.grid=10^(-2:0),
-   lambda1.bopt=c(0, 0.1), lambda2.bopt=c(0, 0.1),
+   lambda1.bopt=c(0, 1), lambda2.bopt=c(0, 1),
    gamma1.bopt=10^c(-3, 4), gamma2.bopt=10^c(-3, 4),
-   method=c("bopt", "grid"),
+   method=c("bopt", "grid"), parallel=FALSE,
    final.model=TRUE, final.model.cv=FALSE, final.model.reorder=FALSE,
-   verbose=FALSE)
+   maxiter=1e3, svd.tol=1e-12, verbose=FALSE)
 {
    method <- match.arg(method)
    if(final.model.reorder && !final.model.cv) {
@@ -1321,7 +1480,7 @@ optim.cv.fcca <- function(X, Y, ndim=1, nfolds=5, folds=NULL,
    des.fcca.cv <- cv.fcca(X, Y, ndim=ndim,
       lambda1=lambda1.grid, lambda2=lambda2.grid,
       gamma1=gamma1.grid, gamma2=gamma2.grid,
-      folds=folds, verbose=verbose)
+      folds=folds, svd.tol=svd.tol, verbose=verbose)
    
    des.fcca <- copy(des.fcca.cv$result)
    setcolorder(des.fcca, c(3, 4, 1, 2))
@@ -1333,31 +1492,79 @@ optim.cv.fcca <- function(X, Y, ndim=1, nfolds=5, folds=NULL,
 	 .(lambda1, lambda2, gamma1, gamma2, avg.sq.cor)])
       colnames(des.fcca.d)[5] <- "y"
 
+      # Super ugly hack to get around the fact that mlrMBO cannot handle
+      # constant hyperpameters but needs them as extra arguments
+      par.set.l <- vector("list", 4)
+      more.args <- list()
+
+      if(length(lambda1.bopt) > 1) {
+	 par.set.l[[1]] <- ParamHelpers::makeNumericParam("lambda1",
+	    lower=lambda1.bopt[1], upper=lambda1.bopt[2])
+      } else {
+	 more.args <- c(more.args, c("lambda1"=lambda1.bopt))
+      }
+
+      if(length(lambda2.bopt) > 1) {
+	 par.set.l[[2]] <- ParamHelpers::makeNumericParam("lambda2",
+	    lower=lambda2.bopt[1], upper=lambda2.bopt[2])
+      } else {
+	 more.args <- c(more.args, c("lambda2"=lambda2.bopt))
+      }
+      
+      if(length(gamma1.bopt) > 1) {
+	 par.set.l[[3]] <- ParamHelpers::makeNumericParam("gamma1",
+	    lower=log10(gamma1.bopt[1]), upper=log10(gamma1.bopt[2]),
+	    trafo=function(x) 10^x)
+      } else {
+	 more.args <- c(more.args, c("gamma1"=gamma1.bopt))
+      }
+
+      if(length(gamma2.bopt) > 1) {
+	 par.set.l[[4]] <- ParamHelpers::makeNumericParam("gamma2",
+	    lower=log10(gamma2.bopt[1]), upper=log10(gamma2.bopt[2]),
+	    trafo=function(x) 10^x)
+      } else {
+	 more.args <- c(more.args, c("gamma2"=gamma2.bopt))
+      }
+
+      par.set.l <- par.set.l[!sapply(par.set.l, is.null)]
+      par.set <- do.call(ParamHelpers::makeParamSet, par.set.l)
+
       obj.fun.fcca <- smoof::makeSingleObjectiveFunction(
          name="fcca",
-	 fn=function(x) {
+	 fn=function(x, ...) {
+	    more.args <- list(...)
+	    if("lambda1" %in% names(x)) {
+	       lambda1 <- x["lambda1"]
+	    } else if("lambda1" %in% names(more.args)) {
+	       lambda1 <- more.args$lambda1
+	    }
+	    if("lambda2" %in% names(x)) {
+	       lambda2 <- x["lambda2"]
+	    } else if("lambda2" %in% names(more.args)) {
+	       lambda2 <- more.args$lambda2
+	    }
+	    if("gamma1" %in% names(x)) {
+	       gamma1 <- x["gamma1"]
+	    } else if("gamma1" %in% names(more.args)) {
+	       gamma1 <- more.args$gamma1
+	    }
+	    if("gamma2" %in% names(x)) {
+	       gamma2 <- x["gamma2"]
+	    } else if("gamma2" %in% names(more.args)) {
+	       gamma2 <- more.args$gamma2
+	    }
+
 	    r <- cv.fcca(X, Y, ndim=ndim,
-	       lambda1=x["lambda1"], lambda2=x["lambda2"],
-	       gamma1=x["gamma1"], gamma2=x["gamma2"],
-	       folds=folds, verbose=FALSE)
+	       lambda1=lambda1, lambda2=lambda2, gamma1=gamma1, gamma2=gamma2,
+	       folds=folds, svd.tol=svd.tol, maxiter=maxiter, verbose=FALSE)
 	    m <- r$result$avg.sq.cor
 	    if(verbose) {
 	       cat("x:", x, "m:", m, "\n")
 	    }
 	    ifelse(is.nan(m) || !is.finite(m), runif(1, 0, 1e-2), m)
 	 },
-	 par.set=ParamHelpers::makeParamSet(
-	    ParamHelpers::makeNumericParam("lambda1",
-	       lower=lambda1.bopt[1], upper=lambda1.bopt[2]),
-	    ParamHelpers::makeNumericParam("lambda2",
-	       lower=lambda2.bopt[1], upper=lambda2.bopt[2]),
-	    ParamHelpers::makeNumericParam("gamma1",
-	       lower=log10(gamma1.bopt[1]), upper=log10(gamma1.bopt[2]),
-	       trafo=function(x) 10^x),
-	    ParamHelpers::makeNumericParam("gamma2",
-	       lower=log10(gamma2.bopt[1]), upper=log10(gamma2.bopt[2]),
-	       trafo=function(x) 10^x)
-	 ),
+	 par.set=par.set,
 	 minimize=FALSE,
 	 noisy=TRUE
       )
@@ -1369,16 +1576,23 @@ optim.cv.fcca <- function(X, Y, ndim=1, nfolds=5, folds=NULL,
       surr.km.fcca <- mlrMBO::makeMBOLearner(control=ctrl, fun=obj.fun.fcca,
 	 config=list(show.learner.output=verbose,
 	 on.learner.warning=ifelse(verbose, "warn", "quiet")))
+
+      des.fcca.d <- subset(des.fcca.d, !is.nan(y))
+      des.fcca.d <- des.fcca.d[, c(names(par.set$pars), "y")]
+
       run.fcca <- mlrMBO::mbo(obj.fun.fcca, design=des.fcca.d,
-         learner=surr.km.fcca, control=ctrl, show.info=verbose)
+         learner=surr.km.fcca, control=ctrl, show.info=verbose,
+	 more.args=more.args)
       run.fcca.path <- as.data.table(run.fcca$opt.path)
-      #setnames(run.fcca.path, 1:4
-      #   c("lambda1", "lambda2", "log10_gamma1", "log10_gamma2"))
 
       # Note that gamma1, gamma2 are retured on log10 scale
       opt.param <- c(
 	 lambda1=run.fcca$x$lambda1, lambda2=run.fcca$x$lambda2,
-	 gamma1=10^(run.fcca$x$gamma1), gamma2=10^(run.fcca$x$gamma2))
+	    gamma1=10^(run.fcca$x$gamma1), gamma2=10^(run.fcca$x$gamma2))
+      if(length(more.args) > 0) {
+	 opt.param <- c(opt.param, unlist(more.args))
+	 opt.param <- opt.param[c("lambda1", "lambda2", "gamma1", "gamma2")]
+      }
    } else {
       dmax <- des.fcca[which.max(avg.sq.cor), ]
       opt.param <- c(lambda1=dmax$lambda1, lambda2=dmax$lambda2,
@@ -1394,7 +1608,7 @@ optim.cv.fcca <- function(X, Y, ndim=1, nfolds=5, folds=NULL,
       mod.fcca <- fcca(X, Y, ndim=ndim,
 	 lambda1=opt.param["lambda1"], lambda2=opt.param["lambda2"],
 	 gamma1=opt.param["gamma1"], gamma2=opt.param["gamma2"],
-	 verbose=verbose)
+	 verbose=verbose, svd.tol=svd.tol, maxiter=maxiter)
 
       # It's difficult to extract the cross-validation results
       # for the final model from the optimisation process so we do it again
@@ -1403,7 +1617,8 @@ optim.cv.fcca <- function(X, Y, ndim=1, nfolds=5, folds=NULL,
 	 mod.fcca.cv <- cv.fcca(X, Y, ndim=ndim, folds=folds,
 	    lambda1=opt.param["lambda1"], lambda2=opt.param["lambda2"],
 	    gamma1=opt.param["gamma1"], gamma2=opt.param["gamma2"],
-	    verbose=verbose, return.models=TRUE)
+	    verbose=verbose, return.models=TRUE, svd.tol=svd.tol,
+	    maxiter=maxiter)
 
 	 Px.cv <- Py.cv <- matrix(0, nrow(X), ndim)
 	 for(fold in 1:nfolds) {

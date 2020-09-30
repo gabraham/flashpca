@@ -35,6 +35,8 @@ supported.}
 
 \item{nfolds}{Integer. The number of cross-validation folds.}
 
+\item{folds}{Integer vector. The fold identifiers.}
+
 \item{opt.dim}{Integer. Which dimension to select the optimal penalties
 for.}
 
