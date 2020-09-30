@@ -110,11 +110,12 @@ test_that("Testing optim.cv.fcca", {
       res.fcca.cv$Py[folds == fold, ] <- Ys[folds == fold,] %*% m1$b
    }
 
-   expect_equal(diag(cor(res.fcca.cv$Px, res3$final.model.cv.Px)),
+   expect_equivalent(
+      diag(cor(res.fcca.cv$Px, res3$final.model.cv.Px)),
       rep(1, ndim), tolerance=1e-3)
-   expect_equal(diag(cor(res.fcca.cv$Py, res3$final.model.cv.Py)),
+   expect_equivalent(
+      diag(cor(res.fcca.cv$Py, res3$final.model.cv.Py)),
       rep(1, ndim), tolerance=1e-3)
-
 })
 
 test_that("Testing optim.cv.fcca, more", {
@@ -224,10 +225,32 @@ test_that("Testing optim.cv.fcca, more", {
       res.fcca.cv$Py[folds == fold, ] <- Ys[folds == fold,] %*% m1$b
    }
 
-   expect_equal(diag(cor(res.fcca.cv$Px, res3$final.model.cv.Px)),
+   expect_equivalent(
+      diag(cor(res.fcca.cv$Px, res3$final.model.cv.Px)),
       rep(1, ndim), tolerance=1e-3)
-   expect_equal(diag(cor(res.fcca.cv$Py, res3$final.model.cv.Py)),
+   expect_equivalent(
+      diag(cor(res.fcca.cv$Py, res3$final.model.cv.Py)),
       rep(1, ndim), tolerance=1e-3)
+
+   res4 <- optim.cv.fcca(X, Y, ndim=ndim, folds=folds,
+      lambda1.grid=lambda1.grid, lambda2.grid=lambda2.grid,
+      gamma1.grid=0, gamma2.grid=0,
+      lambda1.bopt=lambda1.bopt, lambda2.bopt=lambda2.bopt,
+      gamma1.bopt=0, gamma2.bopt=0,
+      method="bopt", final.model=TRUE, final.model.cv=TRUE)
+
+   expect_equivalent(res4$opt.param["gamma1"], 0)
+   expect_equivalent(res4$opt.param["gamma2"], 0)
+
+   res5 <- optim.cv.fcca(X, Y, ndim=ndim, folds=folds,
+      lambda1.grid=0, lambda2.grid=0,
+      gamma1.grid=gamma1.grid, gamma2.grid=gamma2.grid,
+      lambda1.bopt=0, lambda2.bopt=0,
+      gamma1.bopt=gamma1.bopt, gamma2.bopt=gamma2.bopt,
+      method="bopt", final.model=TRUE, final.model.cv=TRUE)
+
+   expect_equivalent(res5$opt.param["lambda1"], 0)
+   expect_equivalent(res5$opt.param["lambda2"], 0)
 
 })
 

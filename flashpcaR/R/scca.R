@@ -1480,7 +1480,8 @@ optim.cv.fcca <- function(X, Y, ndim=1, nfolds=5, folds=NULL,
    des.fcca.cv <- cv.fcca(X, Y, ndim=ndim,
       lambda1=lambda1.grid, lambda2=lambda2.grid,
       gamma1=gamma1.grid, gamma2=gamma2.grid,
-      folds=folds, svd.tol=svd.tol, verbose=verbose)
+      folds=folds, parallel=parallel,
+      svd.tol=svd.tol, verbose=verbose)
    
    des.fcca <- copy(des.fcca.cv$result)
    setcolorder(des.fcca, c(3, 4, 1, 2))
@@ -1557,12 +1558,14 @@ optim.cv.fcca <- function(X, Y, ndim=1, nfolds=5, folds=NULL,
 
 	    r <- cv.fcca(X, Y, ndim=ndim,
 	       lambda1=lambda1, lambda2=lambda2, gamma1=gamma1, gamma2=gamma2,
-	       folds=folds, svd.tol=svd.tol, maxiter=maxiter, verbose=FALSE)
+	       folds=folds, parallel=parallel, svd.tol=svd.tol,
+	       maxiter=maxiter, verbose=FALSE)
 	    m <- r$result$avg.sq.cor
 	    if(verbose) {
 	       cat("x:", x, "m:", m, "\n")
 	    }
-	    ifelse(is.nan(m) || !is.finite(m), runif(1, 0, 1e-2), m)
+	    #ifelse(is.nan(m) || !is.finite(m), runif(1, 0, 1e-2), m)
+	    ifelse(is.nan(m), 0, m)
 	 },
 	 par.set=par.set,
 	 minimize=FALSE,
@@ -1621,6 +1624,8 @@ optim.cv.fcca <- function(X, Y, ndim=1, nfolds=5, folds=NULL,
 	    maxiter=maxiter)
 
 	 Px.cv <- Py.cv <- matrix(0, nrow(X), ndim)
+	 colnames(Px.cv) <- paste0("Px", 1:ndim)
+	 colnames(Py.cv) <- paste0("Py", 1:ndim)
 	 for(fold in 1:nfolds) {
 	    mod <- mod.fcca.cv$models[[fold]][[1]][[1]][[1]][[1]]$model
 	    Px.cv[folds == fold,] <- X[folds == fold,] %*% mod$a
