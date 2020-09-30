@@ -1,14 +1,5 @@
 context("Testing SCCA")
 
-## It's kind of hard to test that SCCA is working, but we can at least test
-## that SCCA of X with X gives 
-## - canonical correlations, i.e., diag(cor(Px, Py)), are equal to 1.
-## - and that the canonical covariances ``d'' are the same as the eigenvalues
-## of X^T X.
-##
-## We use very small penalisation so as to give very close results to
-## classic eigen-decomposition.
-
 data(hm3.chr1)
 
 bedf <- gsub("\\.bed", "",
@@ -457,5 +448,43 @@ test_that("Testing optim.cv.fcca", {
    expect_equal(res3$final.model.cv$lambda2, res3$opt.param["lambda2"])
    expect_equal(res3$final.model.cv$gamma1, res3$opt.param["gamma1"])
    expect_equal(res3$final.model.cv$gamma2, res3$opt.param["gamma2"])
+})
+
+test_that("Testing optim.cv.fcca, more", {
+   lambda1 <- seq(1e-5, 5e-2, length=4)
+   lambda2 <- seq(1e-6, 1e-2, length=3)
+   gamma1 <- 10^c(-2, -1)
+   gamma2 <- 10^c(-3, 0)
+   ndim <- 3
+   nfolds <- 3
+   folds <- sample(1:nfolds, nrow(X), replace=TRUE)
+
+   expect_error(optim.cv.fcca(X, Y, ndim=ndim, folds=folds,
+      lambda1.grid=lambda1, lambda2.grid=NULL,
+      gamma1.grid=gamma1, gamma2.grid=gamma2,
+      method="grid"))
+
+   expect_error(optim.cv.fcca(X, Y, ndim=ndim, folds=folds,
+      lambda1.grid=NULL, lambda2.grid=lambda2.grid,
+      gamma1.grid=gamma1, gamma2.grid=gamma2,
+      method="grid"))
+
+   expect_error(optim.cv.fcca(X, Y, ndim=ndim, folds=folds,
+      lambda1.grid=c(-1, 2), lambda2.grid=lambda2.grid,
+      gamma1.grid=gamma1, gamma2.grid=gamma2,
+      method="grid"))
+
+   expect_error(optim.cv.fcca(X, Y, ndim=ndim, folds=folds,
+      lambda1.grid=lambda1, lambda2.grid=lambda2.grid,
+      gamma1.grid=gamma1, gamma2.grid=gamma2,
+      lambda1.bopt=-1, lambda2.bopt=NULL,
+      method="bopt"))
+
+   expect_error(optim.cv.fcca(X, Y, ndim=ndim, folds=folds,
+      lambda1.grid=lambda1, lambda2.grid=lambda2.grid,
+      gamma1.grid=gamma1, gamma2.grid=gamma2,
+      lambda1.bopt=0, lambda2.bopt=0,
+      gamma1.bopt=0, gamma2.bopt=0,
+      method="bopt"))
 })
 

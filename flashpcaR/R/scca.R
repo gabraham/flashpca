@@ -915,7 +915,7 @@ validate.rank <- function(X, maxdim=20, test.prop=0.1, const=0)
 #'
 #' @export
 #'
-cv.fcca <- function(X, Y, lambda1, lambda2, gamma1=0, gamma2=0, ndim=1,
+cv.fcca <- function(X, Y, lambda1=0, lambda2=0, gamma1=0, gamma2=0, ndim=1,
    nfolds=10, folds=NULL, reorder=TRUE, return.models=FALSE, svd.tol=1e-12,
    verbose=FALSE, maxiter=1000, parallel=TRUE)
 {
@@ -928,6 +928,20 @@ cv.fcca <- function(X, Y, lambda1, lambda2, gamma1=0, gamma2=0, ndim=1,
    if(nrow(X) != nrow(Y)) {
       stop("X and Y must have the same number of rows")
    }
+
+   if(is.null(lambda1) || any(lambda1 < 0)) {
+      stop("lambda1 must be a numeric vector >=0") 
+   }
+   if(is.null(lambda2) || any(lambda2 < 0)) {
+      stop("lambda2 must be a numeric vector >=0") 
+   }
+   if(is.null(gamma1) || any(gamma1 < 0)) {
+      stop("gamma1 must be a numeric vector >=0") 
+   }
+   if(is.null(gamma2) || any(gamma2 < 0)) {
+      stop("gamma2 must be a numeric vector >=0") 
+   }
+
    if(!is.numeric(svd.tol) || svd.tol <= .Machine$double.eps
       || length(svd.tol) > 1) {
       stop("svd.tol must be a single number >0")
@@ -1265,6 +1279,44 @@ optim.cv.fcca <- function(X, Y, ndim=1, nfolds=5, folds=NULL,
       folds <- sample(nfolds, nrow(X), replace=TRUE)
    }
 
+   if(method == "bopt") {
+      if(is.null(lambda1.bopt)) {
+         stop("lambda1.bopt must be a vector c(min, max), or a numeric >=0")
+      }
+
+      if(is.null(lambda2.bopt)) {
+         stop("lambda2.bopt must be a vector c(min, max), or a numeric >=0")
+      }
+
+      if(is.null(gamma1.bopt)) {
+         stop("gamma1.bopt must be a vector c(min, max), or a numeric >=0")
+      }
+
+      if(is.null(gamma2.bopt)) {{
+         stop("gamma2.bopt must be a vector c(min, max), or a numeric >=0")
+      }
+
+      if(all(sapply(
+	 list(lambda1.bopt, lambda2.bopt, gamma1.bopt, gamma2.bopt),
+	    length) == 1))
+	    stop("Can't do Bayesian optimisation if lambda1.bopt, ",
+	       "lambda2.bopt, gamma1.bopt, gamma2.bopt are all constants")
+      }
+   }
+
+   if(is.null(lambda1.grid) || any(lambda1.grid < 0)) {
+      stop("lambda1.grid must be a numeric vector of values >= 0")
+   }
+   if(is.null(lambda2.grid) || any(lambda2.grid < 0)) {
+      stop("lambda2.grid must be a numeric vector of values >=0")
+   }
+   if(is.null(gamma1.grid) || any(gamma1.grid < 0)) {
+      stop("gamma1.grid must be a numeric vector of values >=0")
+   }
+   if(is.null(gamma2.grid) || any(gamma2.grid < 0)) {
+      stop("gamma2.grid must be a numeric vector of values >=0")
+   }
+   
    # Setup initial 'warmup' results for mlrMBO
    des.fcca.cv <- cv.fcca(X, Y, ndim=ndim,
       lambda1=lambda1.grid, lambda2=lambda2.grid,
@@ -1279,13 +1331,15 @@ optim.cv.fcca <- function(X, Y, ndim=1, nfolds=5, folds=NULL,
    if(method == "bopt") {
       des.fcca.d <- as.data.frame(des.fcca[, 
 	 .(lambda1, lambda2, gamma1, gamma2, avg.sq.cor)])
-      colnames(des.fcca.d) <- c("x1", "x2", "x3", "x4", "y")
+      colnames(des.fcca.d)[5] <- "y"
 
       obj.fun.fcca <- smoof::makeSingleObjectiveFunction(
          name="fcca",
 	 fn=function(x) {
-	    r <- cv.fcca(X, Y, ndim=ndim, lambda1=x[1], lambda2=x[2],
-	       gamma1=x[3], gamma2=x[4], folds=folds, verbose=FALSE)
+	    r <- cv.fcca(X, Y, ndim=ndim,
+	       lambda1=x["lambda1"], lambda2=x["lambda2"],
+	       gamma1=x["gamma1"], gamma2=x["gamma2"],
+	       folds=folds, verbose=FALSE)
 	    m <- r$result$avg.sq.cor
 	    if(verbose) {
 	       cat("x:", x, "m:", m, "\n")
@@ -1293,14 +1347,14 @@ optim.cv.fcca <- function(X, Y, ndim=1, nfolds=5, folds=NULL,
 	    ifelse(is.nan(m) || !is.finite(m), runif(1, 0, 1e-2), m)
 	 },
 	 par.set=ParamHelpers::makeParamSet(
-	    ParamHelpers::makeNumericParam("x1",
+	    ParamHelpers::makeNumericParam("lambda1",
 	       lower=lambda1.bopt[1], upper=lambda1.bopt[2]),
-	    ParamHelpers::makeNumericParam("x2",
+	    ParamHelpers::makeNumericParam("lambda2",
 	       lower=lambda2.bopt[1], upper=lambda2.bopt[2]),
-	    ParamHelpers::makeNumericParam("x3",
+	    ParamHelpers::makeNumericParam("gamma1",
 	       lower=log10(gamma1.bopt[1]), upper=log10(gamma1.bopt[2]),
 	       trafo=function(x) 10^x),
-	    ParamHelpers::makeNumericParam("x4",
+	    ParamHelpers::makeNumericParam("gamma2",
 	       lower=log10(gamma2.bopt[1]), upper=log10(gamma2.bopt[2]),
 	       trafo=function(x) 10^x)
 	 ),
@@ -1318,11 +1372,13 @@ optim.cv.fcca <- function(X, Y, ndim=1, nfolds=5, folds=NULL,
       run.fcca <- mlrMBO::mbo(obj.fun.fcca, design=des.fcca.d,
          learner=surr.km.fcca, control=ctrl, show.info=verbose)
       run.fcca.path <- as.data.table(run.fcca$opt.path)
-      setnames(run.fcca.path, c("x1", "x2", "x3", "x4"),
-         c("lambda1", "lambda2", "log10_gamma1", "log10_gamma2"))
+      #setnames(run.fcca.path, 1:4
+      #   c("lambda1", "lambda2", "log10_gamma1", "log10_gamma2"))
 
-      opt.param <- c(lambda1=run.fcca$x$x1, lambda2=run.fcca$x$x2,
-	 gamma1=10^(run.fcca$x$x3), gamma2=10^(run.fcca$x$x4))
+      # Note that gamma1, gamma2 are retured on log10 scale
+      opt.param <- c(
+	 lambda1=run.fcca$x$lambda1, lambda2=run.fcca$x$lambda2,
+	 gamma1=10^(run.fcca$x$gamma1), gamma2=10^(run.fcca$x$gamma2))
    } else {
       dmax <- des.fcca[which.max(avg.sq.cor), ]
       opt.param <- c(lambda1=dmax$lambda1, lambda2=dmax$lambda2,
