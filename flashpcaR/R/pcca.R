@@ -20,13 +20,17 @@
 #'
 #' @param standy Character. One of "sd" (empricial standard deviation) or "none".
 #'
+#' @param final.model Logical. Whether to return a \code{pcca} model trained
+#' on all the data.
+#'
 #' @param svd.tol Numeric. Tolerance under which to truncate singular values of X and Y.
 #'
 #' @importFrom stats cancor
 #'
 #' @export
-cv.pcca <- function(X, Y, ndim=1, kx=3, ky=3, nfolds=3, folds=NULL,
-   standx=c("sd", "none"), standy=c("sd", "none"), svd.tol=1e-12)
+cv.pcca <- function(X, Y, ndim=NULL, kx=3, ky=3, nfolds=3, folds=NULL,
+   standx=c("sd", "none"), standy=c("sd", "none"), final.model=FALSE,
+   svd.tol=1e-12)
 {
    standx <- match.arg(standx)
    standy <- match.arg(standy)
@@ -67,7 +71,11 @@ cv.pcca <- function(X, Y, ndim=1, kx=3, ky=3, nfolds=3, folds=NULL,
       folds <- sample(nfolds, nrow(X), replace=TRUE)
    }
 
-   ndim.max <- min(kx, ky)
+   if(is.null(ndim)) {
+      ndim.max <- min(kx, ky)
+   } else {
+      ndim.max <- min(ndim, kx, ky)
+   }
 
    Px.tst <- matrix(0, nrow(X), ndim.max)
    Py.tst <- matrix(0, nrow(X), ndim.max)
@@ -81,7 +89,7 @@ cv.pcca <- function(X, Y, ndim=1, kx=3, ky=3, nfolds=3, folds=NULL,
       kxf <- min(kx, sum(fx$d > svd.tol))
       kyf <- min(ky, sum(fy$d > svd.tol))
 
-      ndim <- min(kx, ky)
+      ndimf <- min(kxf, kyf)
    
       # On the training data
       rc <- cancor(fx$u[, 1:kxf], fy$u[, 1:kyf], xcenter=FALSE, ycenter=FALSE)
@@ -89,13 +97,21 @@ cv.pcca <- function(X, Y, ndim=1, kx=3, ky=3, nfolds=3, folds=NULL,
       Ux.tst <- X[folds == fold, ] %*% fx$v[, 1:kxf] %*% diag(1 / fx$d[1:kxf])
       Uy.tst <- Y[folds == fold, ] %*% fy$v[, 1:kyf] %*% diag(1 / fy$d[1:kyf])
 
-      Px.tst[folds == fold, ] <- Ux.tst %*% rc$xcoef[, 1:ndim]
-      Py.tst[folds == fold, ] <- Uy.tst %*% rc$ycoef[, 1:ndim]
+      Px.tst[folds == fold, ] <- Ux.tst %*% rc$xcoef[, 1:ndimf]
+      Py.tst[folds == fold, ] <- Uy.tst %*% rc$ycoef[, 1:ndimf]
    }
    r.tst <- diag(cor(Px.tst, Py.tst))
 
-   res <- list(ndim=ndim, nfolds=nfolds, folds=folds,
-      kx=kx, ky=ky, Px=Px.tst, Py=Py.tst, r=r.tst)
+   mod <- NULL
+   if(final.model) {
+      mod <- pcca(X, Y, ndim=ndim,
+	 kx=kx, ky=ky, standx=standx, standy=standy,
+	 svd.tol=svd.tol)
+   }
+
+   res <- list(ndim=ndim.max, nfolds=nfolds, folds=folds,
+      kx=kx, ky=ky, Px=Px.tst, Py=Py.tst, r=r.tst,
+      final.model=mod)
    class(res) <- "cv.pcca"
    res
 }
@@ -126,7 +142,7 @@ cv.pcca <- function(X, Y, ndim=1, kx=3, ky=3, nfolds=3, folds=NULL,
 #' @importFrom stats cancor
 #'
 #' @export
-pcca <- function(X, Y, ndim=1, kx=3, ky=3,
+pcca <- function(X, Y, ndim=NULL, kx=3, ky=3,
    standx=c("sd", "none"), standy=c("sd", "none"), svd.tol=1e-12)
 {
    standx <- match.arg(standx)
@@ -164,7 +180,11 @@ pcca <- function(X, Y, ndim=1, kx=3, ky=3,
    kx <- min(kx, sum(fx$d > svd.tol))
    ky <- min(ky, sum(fy$d > svd.tol))
 
-   ndim <- min(kx, ky)
+   if(is.null(ndim)) {
+      ndim <- min(kx, ky)
+   } else {
+      ndim <- min(ndim, kx, ky)
+   }
    
    rc <- cancor(fx$u[, 1:kx], fy$u[, 1:ky], xcenter=FALSE, ycenter=FALSE)
    
