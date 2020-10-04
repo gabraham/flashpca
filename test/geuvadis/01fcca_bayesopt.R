@@ -31,7 +31,7 @@ snps <- snps[, vs > 0.1]
 
 #X <- scale(snps[, sample(ncol(snps), 15000)])
 Y <- scale(exp_gene)
-X <- scale(snps[, sample(ncol(snps), 3500)])
+X <- scale(snps[, sample(ncol(snps), 5000)])
 #Y <- scale(exp_gene[, sample(ncol(exp_gene), 10000)])
 
 save(X, Y, file="geuvadis_data.RData")
@@ -70,6 +70,117 @@ png("geuvadis_fcca_cv_pairs_Py.png")
 pairs(run.fcca$final.model.cv.Py, gap=0,
    col=factor(sample_info$pop))
 dev.off()
+
+
+warning("Strongly suspect singular vector sign flipping in CV")
+
+pdf("fcca_check_folds.pdf")
+for(fold in 1:nfolds) {
+   A <- run.fcca$final.model.cv$models[[fold]][[1]][[1]][[1]][[1]]$model$a
+   B <- run.fcca$final.model.cv$models[[fold]][[1]][[1]][[1]][[1]]$model$b
+   Px.tmp <- X[folds == fold,] %*% A
+   Py.tmp <- Y[folds == fold,] %*% B
+   colnames(Px.tmp) <- paste0("Py", 1:ncol(Py.tmp))
+   pairs(Py.tmp, col=factor(sample_info$pop[folds == fold]), gap=0, pch=19,
+      main=paste0("Fold ", fold),
+      panel=function(x, y, ...) {
+	 points(x, y, ...)
+	 abline(h=0, v=0, lty=3)
+      })
+}
+dev.off()
+
+B3 <- sapply(1:nfolds, function(fold)
+   run.fcca$final.model.cv$models[[fold]][[1]][[1]][[1]][[1]]$model$b[,3])
+sapply(1:nfolds, function(fold) {
+    b <- run.fcca$final.model.cv$models[[fold]][[1]][[1]][[1]][[1]]$model$b[,3]
+    #cy <- cor(b, t(Y[folds == fold,]))
+    cy <- cor(b, t(Y[folds != fold,]))
+    #cy <- cor(b, t(Y))
+    rowSums(sign(cy) * cy^2)
+})
+
+
+Px <- Py <- matrix(0, nrow(X), ndim)
+for(fold in 1:nfolds) {
+   A <- run.fcca$final.model.cv$models[[fold]][[1]][[1]][[1]][[1]]$model$a
+   B <- run.fcca$final.model.cv$models[[fold]][[1]][[1]][[1]][[1]]$model$b
+   Px.tmp <- X[folds == fold,] %*% A
+   Py.tmp <- Y[folds == fold,] %*% B
+
+   mx <- cor(A, t(X[folds != fold,]))
+   sx <- rowSums(sign(mx) * mx^2)
+   my <- cor(B, t(Y[folds != fold,]))
+   sy <- rowSums(sign(my) * my^2)
+   
+   for(j in 1:ndim) {
+      cat("dim: ", j, "\n")
+      cat("sx: ", sx[j], ", sy: ", sy[j], "\n")
+      if(sign(sx[j]) != sign(sy[j])) {
+         if(sx[j] < sy[j]) {
+            cat("flipx\n")
+            sx[j] <- -sx[j]
+         } else {
+            cat("flipy\n")
+            sy[j] <- -sy[j]
+         }
+      }
+      Px.tmp[,j] <- sign(sx[j]) * Px.tmp[,j]
+      Py.tmp[,j] <- sign(sy[j]) * Py.tmp[,j]
+   }
+
+   #Px.tmp <- sweep(Px.tmp, 2, sign(sx), FUN="*")
+   #Py.tmp <- sweep(Py.tmp, 2, sign(sy), FUN="*")
+   Px[folds == fold, ] <- Px.tmp
+   Py[folds == fold, ] <- Py.tmp
+}
+   
+   #mx <- crossprod(Px.tmp, X[folds == fold,])
+   #s.left <- rowSums(sign(mx) * mx^2)
+
+   #my <- crossprod(Py.tmp, Y[folds == fold,])
+   #s.right <- rowSums(sign(my) * my^2)
+
+   #A.flip <- A
+   #A.flip[] <- 0
+   #B.flip <- B
+   #B.flip[] <- 0
+
+   #for(j in 1:ndim) {
+   #   cat("dim: ", j, "\n")
+   #   cat("s.left: ", s.left[j], ", s.right: ", s.right[j], "\n")
+   #   if(sign(s.left[j]) != sign(s.right[j])) {
+   #      if(s.left[j] < s.right[j]) {
+   #         cat("flip left\n")
+   #         s.left[j] <- -s.left[j]
+   #      } else {
+   #         cat("flip right\n")
+   #         s.right[j] <- -s.right[j]
+   #      }
+   #   }
+   #   A.flip[,j] <- sign(s.left[j]) * A[,j]
+   #   B.flip[,j] <- sign(s.right[j]) * B[,j]
+   #}
+
+#   Px[folds == fold,] <- X[folds == fold, ] %*% A.flip
+#   Py[folds == fold,] <- Y[folds == fold, ] %*% B.flip
+#}
+
+diag(cor(Px, run.fcca$final.model.cv.Px))
+diag(cor(Py, run.fcca$final.model.cv.Py))
+
+png("fcca_sign_flip.png", width=900, height=300)
+par(mfrow=c(1, 3))
+plot(run.fcca$final.model.cv.Py[,c(1,3)], col=factor(sample_info$pop),
+   main="cv", pch=19)
+abline(h=0, v=0, lty=2)
+plot(Py[, c(1, 3)], col=factor(sample_info$pop), main="cv flipped", pch=19)
+abline(h=0, v=0, lty=2)
+plot(run.fcca$final.model$Py[, c(1, 2)], # been reordered
+   col=factor(sample_info$pop), main="Final model", pch=19)
+abline(h=0, v=0, lty=2)
+dev.off()
+
 
 save(run.fcca, file="geuvadis_fcca_model.RData")
 
