@@ -20,17 +20,20 @@
 #'
 #' @param standy Character. One of "sd" (empricial standard deviation) or "none".
 #'
-#' @param final.model Logical. Whether to return a \code{pcca} model trained
+#' @param check_sign Logical. Whether to check and correct possible sign flips 
+#' of the singular vectors within the cross-validation.
+#'
+#' @param final_model Logical. Whether to return a \code{pcca} model trained
 #' on all the data.
 #'
-#' @param svd.tol Numeric. Tolerance under which to truncate singular values of X and Y.
+#' @param svd_tol Numeric. Tolerance under which to truncate singular values of X and Y.
 #'
 #' @importFrom stats cancor
 #'
 #' @export
 cv.pcca <- function(X, Y, ndim=NULL, kx=3, ky=3, nfolds=3, folds=NULL,
-   standx=c("sd", "none"), standy=c("sd", "none"), final.model=FALSE,
-   svd.tol=1e-12)
+   standx=c("sd", "none"), standy=c("sd", "none"), check_sign=TRUE,
+   final_model=FALSE, svd_tol=1e-12)
 {
    standx <- match.arg(standx)
    standy <- match.arg(standy)
@@ -82,36 +85,47 @@ cv.pcca <- function(X, Y, ndim=NULL, kx=3, ky=3, nfolds=3, folds=NULL,
    colnames(Px.tst) <- paste0("Px", 1:ndim.max)
    colnames(Py.tst) <- paste0("Py", 1:ndim.max)
 
+   A.list <- vector("list", nfolds)
+   B.list <- vector("list", nfolds)
+
    for(fold in 1:nfolds) {
-      fx <- svd(X[folds != fold,])
-      fy <- svd(Y[folds != fold,])
+      Xtrn <- X[folds != fold,]
+      Ytrn <- Y[folds != fold,]
+      fx <- svd(Xtrn)
+      fy <- svd(Ytrn)
 
-      kxf <- min(kx, sum(fx$d > svd.tol))
-      kyf <- min(ky, sum(fy$d > svd.tol))
+      kxf <- min(kx, sum(fx$d > svd_tol))
+      kyf <- min(ky, sum(fy$d > svd_tol))
 
-      ndimf <- min(kxf, kyf)
+      ndimf <- min(kxf, kyf, ndim.max)
    
       # On the training data
       rc <- cancor(fx$u[, 1:kxf], fy$u[, 1:kyf], xcenter=FALSE, ycenter=FALSE)
    
-      Ux.tst <- X[folds == fold, ] %*% fx$v[, 1:kxf] %*% diag(1 / fx$d[1:kxf])
-      Uy.tst <- Y[folds == fold, ] %*% fy$v[, 1:kyf] %*% diag(1 / fy$d[1:kyf])
+      A.list[[fold]] <- fx$v[, 1:kxf] %*% diag(1 / fx$d[1:kxf]) %*% rc$xcoef[, 1:ndimf]
+      B.list[[fold]] <- fy$v[, 1:kyf] %*% diag(1 / fy$d[1:kyf]) %*% rc$ycoef[, 1:ndimf]
 
-      Px.tst[folds == fold, ] <- Ux.tst %*% rc$xcoef[, 1:ndimf]
-      Py.tst[folds == fold, ] <- Uy.tst %*% rc$ycoef[, 1:ndimf]
+      if(check_sign) {
+	 sc <- check.eig.sign(A.list[[fold]], B.list[[fold]], Xtrn, Ytrn)
+	 A.list[[fold]] <- sc$A
+	 B.list[[fold]] <- sc$B
+      }
+      Px.tst[folds == fold, ] <- X[folds == fold,] %*% A.list[[fold]]
+      Py.tst[folds == fold, ] <- Y[folds == fold,] %*% B.list[[fold]]
    }
    r.tst <- diag(cor(Px.tst, Py.tst))
 
    mod <- NULL
-   if(final.model) {
+   if(final_model) {
       mod <- pcca(X, Y, ndim=ndim,
-	 kx=kx, ky=ky, standx=standx, standy=standy,
-	 svd.tol=svd.tol)
+	 kx=kx, ky=ky, standx=standx, standy=standy, check_sign=check_sign,
+	 svd_tol=svd_tol)
    }
 
    res <- list(ndim=ndim.max, nfolds=nfolds, folds=folds,
-      kx=kx, ky=ky, Px=Px.tst, Py=Py.tst, r=r.tst,
-      final.model=mod)
+      kx=kx, ky=ky, final_model=mod,
+      final_model_cv_Px=Px.tst, final_model_cv_Py=Py.tst,
+      final_model_cv_r=r.tst, final_model_cv_A=A.list, final_model_cv_B=B.list)
    class(res) <- "cv.pcca"
    res
 }
@@ -137,13 +151,17 @@ cv.pcca <- function(X, Y, ndim=NULL, kx=3, ky=3, nfolds=3, folds=NULL,
 #'
 #' @param standy Character. One of "sd" (empricial standard deviation) or "none".
 #'
-#' @param svd.tol Numeric. Tolerance under which to truncate singular values of X and Y.
+#' @param check_sign Logical. Whether to check and correct possible sign flips 
+#' of the singular vectors within the cross-validation.
+#'
+#' @param svd_tol Numeric. Tolerance under which to truncate singular values of X and Y.
 #'
 #' @importFrom stats cancor
 #'
 #' @export
 pcca <- function(X, Y, ndim=NULL, kx=3, ky=3,
-   standx=c("sd", "none"), standy=c("sd", "none"), svd.tol=1e-12)
+   standx=c("sd", "none"), standy=c("sd", "none"), check_sign=TRUE,
+   svd_tol=1e-12)
 {
    standx <- match.arg(standx)
    standy <- match.arg(standy)
@@ -177,8 +195,8 @@ pcca <- function(X, Y, ndim=NULL, kx=3, ky=3,
 
    fx <- svd(X)
    fy <- svd(Y)
-   kx <- min(kx, sum(fx$d > svd.tol))
-   ky <- min(ky, sum(fy$d > svd.tol))
+   kx <- min(kx, sum(fx$d > svd_tol))
+   ky <- min(ky, sum(fy$d > svd_tol))
 
    if(is.null(ndim)) {
       ndim <- min(kx, ky)
@@ -188,8 +206,20 @@ pcca <- function(X, Y, ndim=NULL, kx=3, ky=3,
    
    rc <- cancor(fx$u[, 1:kx], fy$u[, 1:ky], xcenter=FALSE, ycenter=FALSE)
    
-   Px <- fx$u[, 1:kx] %*% rc$xcoef[, 1:ndim]
-   Py <- fy$u[, 1:ky] %*% rc$ycoef[, 1:ndim]
+   A <- fx$v[, 1:kx] %*% diag(1 / fx$d[1:kx]) %*% rc$xcoef[, 1:ndim]
+   B <- fy$v[, 1:ky] %*% diag(1 / fy$d[1:ky]) %*% rc$ycoef[, 1:ndim]
+
+   #Px <- fx$u[, 1:kx] %*% rc$xcoef[, 1:ndim]
+   #Py <- fy$u[, 1:ky] %*% rc$ycoef[, 1:ndim]
+   
+   if(check_sign) {
+      sc <- check.eig.sign(A, B, X, Y)
+      A <- sc$A
+      B <- sc$B
+   }
+
+   Px <- X %*% A
+   Py <- Y %*% B
    colnames(Px) <- paste0("Px", 1:ndim)
    colnames(Py) <- paste0("Py", 1:ndim)
    
@@ -225,3 +255,4 @@ print.pcca <- function(x, ...)
       "pcca object; ndim=", x$ndim, "\n"))
    invisible(x)
 }
+
