@@ -5,14 +5,14 @@
 \title{Estimates the effective number of dimensions of a matrix X, based on
 reconstruction error from singular value decomposition.}
 \usage{
-validate.rank(X, maxdim = 20, test.prop = 0.1, const = 0)
+validate.rank(X, maxdim = 20, test_prop = 0.1, const = 0)
 }
 \arguments{
 \item{X}{numeric matrix.}
 
 \item{maxdim}{Integer. How many dimensions to try.}
 
-\item{test.prop}{numeric. What proportion of the data to reserve for
+\item{test_prop}{numeric. What proportion of the data to reserve for
 evaluating the reconstruction error on.}
 
 \item{const}{numeric. What value to set the test observations to.}

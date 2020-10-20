@@ -4,14 +4,14 @@
 \alias{whiten}
 \title{Performs a low-rank whitening of a matrix X.}
 \usage{
-whiten(X, ndim = 20, keep.svd = TRUE, stand = "none")
+whiten(X, ndim = 20, keep_svd = TRUE, stand = "none")
 }
 \arguments{
 \item{X}{numeric matrix.}
 
 \item{ndim}{Integer. How many dimensions to use in the whitening.}
 
-\item{keep.svd}{Logical. Whether to keep the singular value decomposition
+\item{keep_svd}{Logical. Whether to keep the singular value decomposition
 results.}
 
 \item{stand}{character. Which standardisation to use on columns of X.}

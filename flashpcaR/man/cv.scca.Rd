@@ -12,12 +12,12 @@ cv.scca(
   ndim = 1,
   nfolds = 10,
   folds = NULL,
-  opt.dim = 1,
+  opt_dim = 1,
   parallel = FALSE,
   init = TRUE,
   verbose = FALSE,
-  return.models = FALSE,
-  return.folds = FALSE,
+  return_models = FALSE,
+  return_folds = FALSE,
   ...
 )
 }
@@ -37,7 +37,7 @@ supported.}
 
 \item{folds}{Integer vector. The fold identifiers.}
 
-\item{opt.dim}{Integer. Which dimension to select the optimal penalties
+\item{opt_dim}{Integer. Which dimension to select the optimal penalties
 for.}
 
 \item{parallel}{Logical. Whether to parallelise the cross-validation using
