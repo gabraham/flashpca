@@ -25,8 +25,7 @@ Imports:
     Rcpp (>= 0.11.1), methods, abind, ggplot2, data.table
 LinkingTo:
    Rcpp, RcppEigen (>= 0.3.2.5.1), BH, RSpectra
-RoxygenNote: 7.1.0
+RoxygenNote: 7.1.1
 Suggests: testthat, foreach, knitr, rmarkdown, mlrMBO, smoof
 VignetteBuilder: knitr
 Encoding: UTF-8
-
