@@ -1,6 +1,9 @@
 
 context("Testing FCCA optim")
 
+# otherwise .() won't be found during testing
+library(data.table)
+
 data(hm3.chr1)
 
 bedf <- gsub("\\.bed", "",
@@ -28,66 +31,66 @@ test_that("Testing optim.cv.fcca", {
 
    # Test the grid optimisation, without returning models
    res1 <- optim.cv.fcca(X, Y, ndim=ndim, folds=folds,
-      lambda1.grid=lambda1, lambda2.grid=lambda2,
-      gamma1.grid=gamma1, gamma2.grid=gamma2,
+      lambda1_grid=lambda1, lambda2_grid=lambda2,
+      gamma1_grid=gamma1, gamma2_grid=gamma2,
       method="grid")
    
-   expect_equal(nrow(res1$grid.path),
+   expect_equal(nrow(res1$grid_path),
       length(lambda1) * length(lambda2) * length(gamma1) * length(gamma2))
    expect_equal(res1$nfolds, nfolds)
    expect_equal(res1$ndim, ndim)
-   expect_null(res1$final.model.cv)
-   expect_null(res1$final.model.cv.Px)
-   expect_null(res1$final.model.cv.Py)
-   expect_is(res1$final.model, "fcca")
-   expect_equal(res1$final.model$ndim, ndim)
-   expect_true(res1$opt.param["lambda1"] %in% lambda1)
-   expect_true(res1$opt.param["lambda2"] %in% lambda2)
-   expect_true(res1$opt.param["gamma1"] %in% gamma1)
-   expect_true(res1$opt.param["gamma2"] %in% gamma2)
+   expect_null(res1$final_model_cv)
+   expect_null(res1$final_model_cv_Px)
+   expect_null(res1$final_model_cv_Py)
+   expect_is(res1$final_model, "fcca")
+   expect_equal(res1$final_model$ndim, ndim)
+   expect_true(res1$opt_param["lambda1"] %in% lambda1)
+   expect_true(res1$opt_param["lambda2"] %in% lambda2)
+   expect_true(res1$opt_param["gamma1"] %in% gamma1)
+   expect_true(res1$opt_param["gamma2"] %in% gamma2)
 
    # Test the grid optimisation, with returning models
    res2 <- optim.cv.fcca(X, Y, ndim=ndim, folds=folds,
-      lambda1.grid=lambda1, lambda2.grid=lambda2,
-      gamma1.grid=gamma1, gamma2.grid=gamma2,
-      method="grid", final.model=TRUE, final.model.cv=TRUE)
+      lambda1_grid=lambda1, lambda2_grid=lambda2,
+      gamma1_grid=gamma1, gamma2_grid=gamma2,
+      method="grid", final_model=TRUE, final_model_cv=TRUE)
    
-   expect_equal(nrow(res2$grid.path),
+   expect_equal(nrow(res2$grid_path),
       length(lambda1) * length(lambda2) * length(gamma1) * length(gamma2))
    expect_equal(res2$nfolds, nfolds)
    expect_equal(res2$ndim, ndim)
-   expect_is(res2$final.model.cv, "cv.fcca")
-   expect_equal(res2$final.model.cv$folds, folds)
-   expect_equal(ncol(res2$final.model.cv.Px), ndim)
-   expect_equal(ncol(res2$final.model.cv.Py), ndim)
-   expect_equal(res2$final.model$ndim, ndim)
-   expect_equal(res2$final.model.cv$lambda1, res2$opt.param["lambda1"])
-   expect_equal(res2$final.model.cv$lambda2, res2$opt.param["lambda2"])
-   expect_equal(res2$final.model.cv$gamma1, res2$opt.param["gamma1"])
-   expect_equal(res2$final.model.cv$gamma2, res2$opt.param["gamma2"])
+   expect_is(res2$final_model_cv, "cv.fcca")
+   expect_equal(res2$final_model_cv$folds, folds)
+   expect_equal(ncol(res2$final_model_cv_Px), ndim)
+   expect_equal(ncol(res2$final_model_cv_Py), ndim)
+   expect_equal(res2$final_model$ndim, ndim)
+   expect_equal(res2$final_model_cv$lambda1, res2$opt_param["lambda1"])
+   expect_equal(res2$final_model_cv$lambda2, res2$opt_param["lambda2"])
+   expect_equal(res2$final_model_cv$gamma1, res2$opt_param["gamma1"])
+   expect_equal(res2$final_model_cv$gamma2, res2$opt_param["gamma2"])
    
    # Test the Bayesian optimisation, if installed
    skip_if_not_installed("mlrMBO")
    skip_if_not_installed("DiceKriging")
 
    res3 <- optim.cv.fcca(X, Y, ndim=ndim, folds=folds,
-      lambda1.grid=lambda1, lambda2.grid=lambda2,
-      gamma1.grid=gamma1, gamma2.grid=gamma2,
-      method="bopt", final.model=TRUE, final.model.cv=TRUE)
+      lambda1_grid=lambda1, lambda2_grid=lambda2,
+      gamma1_grid=gamma1, gamma2_grid=gamma2,
+      method="bopt", final_model=TRUE, final_model_cv=TRUE)
    
-   expect_equal(nrow(res3$grid.path),
+   expect_equal(nrow(res3$grid_path),
       length(lambda1) * length(lambda2) * length(gamma1) * length(gamma2))
    expect_equal(res3$nfolds, nfolds)
    expect_equal(res3$ndim, ndim)
-   expect_is(res3$final.model.cv, "cv.fcca")
-   expect_equal(res3$final.model.cv$folds, folds)
-   expect_equal(ncol(res3$final.model.cv.Px), ndim)
-   expect_equal(ncol(res3$final.model.cv.Py), ndim)
-   expect_equal(res3$final.model$ndim, ndim)
-   expect_equal(res3$final.model.cv$lambda1, res3$opt.param["lambda1"])
-   expect_equal(res3$final.model.cv$lambda2, res3$opt.param["lambda2"])
-   expect_equal(res3$final.model.cv$gamma1, res3$opt.param["gamma1"])
-   expect_equal(res3$final.model.cv$gamma2, res3$opt.param["gamma2"])
+   expect_is(res3$final_model_cv, "cv.fcca")
+   expect_equal(res3$final_model_cv$folds, folds)
+   expect_equal(ncol(res3$final_model_cv_Px), ndim)
+   expect_equal(ncol(res3$final_model_cv_Py), ndim)
+   expect_equal(res3$final_model$ndim, ndim)
+   expect_equal(res3$final_model_cv$lambda1, res3$opt_param["lambda1"])
+   expect_equal(res3$final_model_cv$lambda2, res3$opt_param["lambda2"])
+   expect_equal(res3$final_model_cv$gamma1, res3$opt_param["gamma1"])
+   expect_equal(res3$final_model_cv$gamma2, res3$opt_param["gamma2"])
 
    # Sanity check of test-set predictions
    res.fcca.cv <- list(
@@ -101,20 +104,20 @@ test_that("Testing optim.cv.fcca", {
    {
       m1 <- fcca(Xs[folds != fold,], Ys[folds != fold,],
          ndim=ndim, standx="none", standy="none",
-         lambda1=res3$opt.param["lambda1"],
-         lambda2=res3$opt.param["lambda2"],
-         gamma1=res3$opt.param["gamma1"],
-         gamma2=res3$opt.param["gamma2"]
+         lambda1=res3$opt_param["lambda1"],
+         lambda2=res3$opt_param["lambda2"],
+         gamma1=res3$opt_param["gamma1"],
+         gamma2=res3$opt_param["gamma2"]
       )
-      res.fcca.cv$Px[folds == fold, ] <- Xs[folds == fold,] %*% m1$a
-      res.fcca.cv$Py[folds == fold, ] <- Ys[folds == fold,] %*% m1$b
+      res.fcca.cv$Px[folds == fold, ] <- Xs[folds == fold,] %*% m1$A
+      res.fcca.cv$Py[folds == fold, ] <- Ys[folds == fold,] %*% m1$B
    }
 
    expect_equivalent(
-      diag(cor(res.fcca.cv$Px, res3$final.model.cv.Px)),
+      diag(cor(res.fcca.cv$Px, res3$final_model_cv_Px)),
       rep(1, ndim), tolerance=1e-3)
    expect_equivalent(
-      diag(cor(res.fcca.cv$Py, res3$final.model.cv.Py)),
+      diag(cor(res.fcca.cv$Py, res3$final_model_cv_Py)),
       rep(1, ndim), tolerance=1e-3)
 })
 
@@ -122,15 +125,15 @@ test_that("Testing optim.cv.fcca, more", {
 
    skip_on_cran()
    
-   lambda1.grid <- 1e-3
-   lambda2.grid <- seq(1e-6, 1e-2, length=3)
-   gamma1.grid <- 10^c(-2, -1)
-   gamma2.grid <- 10^c(-3, 0)
+   lambda1_grid <- 1e-3
+   lambda2_grid <- seq(1e-6, 1e-2, length=3)
+   gamma1_grid <- 10^c(-2, -1)
+   gamma2_grid <- 10^c(-3, 0)
 
-   lambda1.bopt <- 1e-3
-   lambda2.bopt <- c(0, 1e-1)
-   gamma1.bopt <- 10^c(-3, 3)
-   gamma2.bopt <- 10^c(-3, 3)
+   lambda1_bopt <- 1e-3
+   lambda2_bopt <- c(0, 1e-1)
+   gamma1_bopt <- 10^c(-3, 3)
+   gamma2_bopt <- 10^c(-3, 3)
 
    ndim <- 3
    nfolds <- 3
@@ -138,71 +141,71 @@ test_that("Testing optim.cv.fcca, more", {
 
    # Test the grid optimisation, without returning models
    res1 <- optim.cv.fcca(X, Y, ndim=ndim, folds=folds,
-      lambda1.grid=lambda1.grid, lambda2.grid=lambda2.grid,
-      gamma1.grid=gamma1.grid, gamma2.grid=gamma2.grid,
+      lambda1_grid=lambda1_grid, lambda2_grid=lambda2_grid,
+      gamma1_grid=gamma1_grid, gamma2_grid=gamma2_grid,
       method="grid")
    
-   expect_equal(nrow(res1$grid.path),
-      length(lambda1.grid) * length(lambda2.grid) 
-      * length(gamma1.grid) * length(gamma2.grid))
+   expect_equal(nrow(res1$grid_path),
+      length(lambda1_grid) * length(lambda2_grid) 
+      * length(gamma1_grid) * length(gamma2_grid))
    expect_equal(res1$nfolds, nfolds)
    expect_equal(res1$ndim, ndim)
-   expect_null(res1$final.model.cv)
-   expect_null(res1$final.model.cv.Px)
-   expect_null(res1$final.model.cv.Py)
-   expect_is(res1$final.model, "fcca")
-   expect_equal(res1$final.model$ndim, ndim)
-   expect_true(res1$opt.param["lambda1"] %in% lambda1.grid)
-   expect_true(res1$opt.param["lambda2"] %in% lambda2.grid)
-   expect_true(res1$opt.param["gamma1"] %in% gamma1.grid)
-   expect_true(res1$opt.param["gamma2"] %in% gamma2.grid)
+   expect_null(res1$final_model_cv)
+   expect_null(res1$final_model_cv_Px)
+   expect_null(res1$final_model_cv_Py)
+   expect_is(res1$final_model, "fcca")
+   expect_equal(res1$final_model$ndim, ndim)
+   expect_true(res1$opt_param["lambda1"] %in% lambda1_grid)
+   expect_true(res1$opt_param["lambda2"] %in% lambda2_grid)
+   expect_true(res1$opt_param["gamma1"] %in% gamma1_grid)
+   expect_true(res1$opt_param["gamma2"] %in% gamma2_grid)
 
    # Test the grid optimisation, with returning models
    res2 <- optim.cv.fcca(X, Y, ndim=ndim, folds=folds,
-      lambda1.grid=lambda1.grid, lambda2.grid=lambda2.grid,
-      gamma1.grid=gamma1.grid, gamma2.grid=gamma2.grid,
-      method="grid", final.model=TRUE, final.model.cv=TRUE)
+      lambda1_grid=lambda1_grid, lambda2_grid=lambda2_grid,
+      gamma1_grid=gamma1_grid, gamma2_grid=gamma2_grid,
+      method="grid", final_model=TRUE, final_model_cv=TRUE)
    
-   expect_equal(nrow(res2$grid.path),
-      length(lambda1.grid) * length(lambda2.grid) 
-      * length(gamma1.grid) * length(gamma2.grid))
+   expect_equal(nrow(res2$grid_path),
+      length(lambda1_grid) * length(lambda2_grid) 
+      * length(gamma1_grid) * length(gamma2_grid))
    expect_equal(res2$nfolds, nfolds)
    expect_equal(res2$ndim, ndim)
-   expect_is(res2$final.model.cv, "cv.fcca")
-   expect_equal(res2$final.model.cv$folds, folds)
-   expect_equal(ncol(res2$final.model.cv.Px), ndim)
-   expect_equal(ncol(res2$final.model.cv.Py), ndim)
-   expect_equal(res2$final.model$ndim, ndim)
-   expect_equal(res2$final.model.cv$lambda1, res2$opt.param["lambda1"])
-   expect_equal(res2$final.model.cv$lambda2, res2$opt.param["lambda2"])
-   expect_equal(res2$final.model.cv$gamma1, res2$opt.param["gamma1"])
-   expect_equal(res2$final.model.cv$gamma2, res2$opt.param["gamma2"])
+   expect_is(res2$final_model_cv, "cv.fcca")
+   expect_equal(res2$final_model_cv$folds, folds)
+   expect_equal(ncol(res2$final_model_cv_Px), ndim)
+   expect_equal(ncol(res2$final_model_cv_Py), ndim)
+   expect_equal(res2$final_model$ndim, ndim)
+   expect_equal(res2$final_model_cv$lambda1, res2$opt_param["lambda1"])
+   expect_equal(res2$final_model_cv$lambda2, res2$opt_param["lambda2"])
+   expect_equal(res2$final_model_cv$gamma1, res2$opt_param["gamma1"])
+   expect_equal(res2$final_model_cv$gamma2, res2$opt_param["gamma2"])
    
    # Test the Bayesian optimisation, if installed
    skip_if_not_installed("mlrMBO")
    skip_if_not_installed("DiceKriging")
 
    res3 <- optim.cv.fcca(X, Y, ndim=ndim, folds=folds,
-      lambda1.grid=lambda1.grid, lambda2.grid=lambda2.grid,
-      gamma1.grid=gamma1.grid, gamma2.grid=gamma2.grid,
-      lambda1.bopt=lambda1.bopt, lambda2.bopt=lambda2.bopt,
-      gamma1.bopt=gamma1.bopt, gamma2.bopt=gamma2.bopt,
-      method="bopt", final.model=TRUE, final.model.cv=TRUE)
+      lambda1_grid=lambda1_grid, lambda2_grid=lambda2_grid,
+      gamma1_grid=gamma1_grid, gamma2_grid=gamma2_grid,
+      lambda1_bopt=lambda1_bopt, lambda2_bopt=lambda2_bopt,
+      gamma1_bopt=gamma1_bopt, gamma2_bopt=gamma2_bopt,
+      method="bopt", final_model=TRUE, final_model_cv=TRUE)
    
-   expect_equal(nrow(res3$grid.path),
-      length(lambda1.grid) * length(lambda2.grid) 
-      * length(gamma1.grid) * length(gamma2.grid))
+   expect_equal(nrow(res3$grid_path),
+      length(lambda1_grid) * length(lambda2_grid) 
+      * length(gamma1_grid) * length(gamma2_grid))
    expect_equal(res3$nfolds, nfolds)
    expect_equal(res3$ndim, ndim)
-   expect_is(res3$final.model.cv, "cv.fcca")
-   expect_equal(res3$final.model.cv$folds, folds)
-   expect_equal(ncol(res3$final.model.cv.Px), ndim)
-   expect_equal(ncol(res3$final.model.cv.Py), ndim)
-   expect_equal(res3$final.model$ndim, ndim)
-   expect_equal(res3$final.model.cv$lambda1, res3$opt.param["lambda1"])
-   expect_equal(res3$final.model.cv$lambda2, res3$opt.param["lambda2"])
-   expect_equal(res3$final.model.cv$gamma1, res3$opt.param["gamma1"])
-   expect_equal(res3$final.model.cv$gamma2, res3$opt.param["gamma2"])
+   expect_is(res3$final_model_cv, "cv.fcca")
+   expect_equal(res3$final_model_cv$folds, folds)
+   expect_equal(ncol(res3$final_model_cv_Px), ndim)
+   expect_equal(ncol(res3$final_model_cv_Py), ndim)
+   expect_equal(res3$final_model$ndim, ndim)
+   expect_equal(res3$final_model_cv$lambda1, res3$opt_param["lambda1"])
+   expect_equal(res3$final_model_cv$lambda2, res3$opt_param["lambda2"])
+   expect_equal(res3$final_model_cv$gamma1, res3$opt_param["gamma1"])
+   expect_equal(res3$final_model_cv$gamma2, res3$opt_param["gamma2"])
 
    # Sanity check of test-set predictions
    res.fcca.cv <- list(
@@ -216,41 +219,41 @@ test_that("Testing optim.cv.fcca, more", {
    {
       m1 <- fcca(Xs[folds != fold,], Ys[folds != fold,],
          ndim=ndim, standx="none", standy="none",
-         lambda1=res3$opt.param["lambda1"],
-         lambda2=res3$opt.param["lambda2"],
-         gamma1=res3$opt.param["gamma1"],
-         gamma2=res3$opt.param["gamma2"]
+         lambda1=res3$opt_param["lambda1"],
+         lambda2=res3$opt_param["lambda2"],
+         gamma1=res3$opt_param["gamma1"],
+         gamma2=res3$opt_param["gamma2"]
       )
-      res.fcca.cv$Px[folds == fold, ] <- Xs[folds == fold,] %*% m1$a
-      res.fcca.cv$Py[folds == fold, ] <- Ys[folds == fold,] %*% m1$b
+      res.fcca.cv$Px[folds == fold, ] <- Xs[folds == fold,] %*% m1$A
+      res.fcca.cv$Py[folds == fold, ] <- Ys[folds == fold,] %*% m1$B
    }
 
    expect_equivalent(
-      diag(cor(res.fcca.cv$Px, res3$final.model.cv.Px)),
+      diag(cor(res.fcca.cv$Px, res3$final_model_cv_Px)),
       rep(1, ndim), tolerance=1e-3)
    expect_equivalent(
-      diag(cor(res.fcca.cv$Py, res3$final.model.cv.Py)),
+      diag(cor(res.fcca.cv$Py, res3$final_model_cv_Py)),
       rep(1, ndim), tolerance=1e-3)
 
    res4 <- optim.cv.fcca(X, Y, ndim=ndim, folds=folds,
-      lambda1.grid=lambda1.grid, lambda2.grid=lambda2.grid,
-      gamma1.grid=0, gamma2.grid=0,
-      lambda1.bopt=lambda1.bopt, lambda2.bopt=lambda2.bopt,
-      gamma1.bopt=0, gamma2.bopt=0,
-      method="bopt", final.model=TRUE, final.model.cv=TRUE)
+      lambda1_grid=lambda1_grid, lambda2_grid=lambda2_grid,
+      gamma1_grid=0, gamma2_grid=0,
+      lambda1_bopt=lambda1_bopt, lambda2_bopt=lambda2_bopt,
+      gamma1_bopt=0, gamma2_bopt=0,
+      method="bopt", final_model=TRUE, final_model_cv=TRUE)
 
-   expect_equivalent(res4$opt.param["gamma1"], 0)
-   expect_equivalent(res4$opt.param["gamma2"], 0)
+   expect_equivalent(res4$opt_param["gamma1"], 0)
+   expect_equivalent(res4$opt_param["gamma2"], 0)
 
    res5 <- optim.cv.fcca(X, Y, ndim=ndim, folds=folds,
-      lambda1.grid=0, lambda2.grid=0,
-      gamma1.grid=gamma1.grid, gamma2.grid=gamma2.grid,
-      lambda1.bopt=0, lambda2.bopt=0,
-      gamma1.bopt=gamma1.bopt, gamma2.bopt=gamma2.bopt,
-      method="bopt", final.model=TRUE, final.model.cv=TRUE)
+      lambda1_grid=0, lambda2_grid=0,
+      gamma1_grid=gamma1_grid, gamma2_grid=gamma2_grid,
+      lambda1_bopt=0, lambda2_bopt=0,
+      gamma1_bopt=gamma1_bopt, gamma2_bopt=gamma2_bopt,
+      method="bopt", final_model=TRUE, final_model_cv=TRUE)
 
-   expect_equivalent(res5$opt.param["lambda1"], 0)
-   expect_equivalent(res5$opt.param["lambda2"], 0)
+   expect_equivalent(res5$opt_param["lambda1"], 0)
+   expect_equivalent(res5$opt_param["lambda2"], 0)
 
 })
 
@@ -264,31 +267,31 @@ test_that("Testing optim.cv.fcca, argument checks", {
    folds <- sample(1:nfolds, nrow(X), replace=TRUE)
 
    expect_error(optim.cv.fcca(X, Y, ndim=ndim, folds=folds,
-      lambda1.grid=lambda1, lambda2.grid=NULL,
-      gamma1.grid=gamma1, gamma2.grid=gamma2,
+      lambda1_grid=lambda1, lambda2_grid=NULL,
+      gamma1_grid=gamma1, gamma2_grid=gamma2,
       method="grid"))
 
    expect_error(optim.cv.fcca(X, Y, ndim=ndim, folds=folds,
-      lambda1.grid=NULL, lambda2.grid=lambda2.grid,
-      gamma1.grid=gamma1, gamma2.grid=gamma2,
+      lambda1_grid=NULL, lambda2_grid=lambda2_grid,
+      gamma1_grid=gamma1, gamma2_grid=gamma2,
       method="grid"))
 
    expect_error(optim.cv.fcca(X, Y, ndim=ndim, folds=folds,
-      lambda1.grid=c(-1, 2), lambda2.grid=lambda2.grid,
-      gamma1.grid=gamma1, gamma2.grid=gamma2,
+      lambda1_grid=c(-1, 2), lambda2_grid=lambda2_grid,
+      gamma1_grid=gamma1, gamma2_grid=gamma2,
       method="grid"))
 
    expect_error(optim.cv.fcca(X, Y, ndim=ndim, folds=folds,
-      lambda1.grid=lambda1, lambda2.grid=lambda2.grid,
-      gamma1.grid=gamma1, gamma2.grid=gamma2,
-      lambda1.bopt=-1, lambda2.bopt=NULL,
+      lambda1_grid=lambda1, lambda2_grid=lambda2_grid,
+      gamma1_grid=gamma1, gamma2_grid=gamma2,
+      lambda1_bopt=-1, lambda2_bopt=NULL,
       method="bopt"))
 
    expect_error(optim.cv.fcca(X, Y, ndim=ndim, folds=folds,
-      lambda1.grid=lambda1, lambda2.grid=lambda2.grid,
-      gamma1.grid=gamma1, gamma2.grid=gamma2,
-      lambda1.bopt=0, lambda2.bopt=0,
-      gamma1.bopt=0, gamma2.bopt=0,
+      lambda1_grid=lambda1, lambda2_grid=lambda2_grid,
+      gamma1_grid=gamma1, gamma2_grid=gamma2,
+      lambda1_bopt=0, lambda2_bopt=0,
+      gamma1_bopt=0, gamma2_bopt=0,
       method="bopt"))
 })
 

@@ -13,12 +13,12 @@ n <- nrow(X)
 By <- matrix(rnorm(m * k), m, k)
 Y <- scale(X %*% By + rnorm(n * k))
 colnames(Y) <- paste0("marker", 1:k)
+nfolds <- 3
 
 test_that("Testing pcca", {
    kx <- 3
    ky <- 5
    ndim <- min(kx, ky)
-   nfolds <- 3
    s1 <- pcca(X, Y, kx=kx, ky=ky)
 
    expect_equal(s1$ndim, ndim)
@@ -42,11 +42,14 @@ test_that("Testing cv.pcca", {
 
    expect_equal(s1$ndim, ndim)
    expect_equal(s1$nfolds, nfolds)
-   expect_equivalent(diag(cor(s1$Px, s1$Py)), s1$r)
+   expect_equivalent(
+      diag(cor(s1$final_model_cv_Px, s1$final_model_cv_Py)),
+      s1$final_model_cv_r)
    expect_equal(s1$folds, s2$folds)
 
    s3 <- cv.pcca(X, X, kx=kx, ky=ky, folds=s1$folds)
-   expect_equivalent(diag(cor(s3$Px, s3$Py)), rep(1, ndim))
+   expect_equivalent(
+      diag(cor(s3$final_model_cv_Px, s3$final_model_cv_Py)), rep(1, ndim))
 
    expect_error(cv.pcca(X, NULL))
    expect_error(cv.pcca(NULL, Y))
