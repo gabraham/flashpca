@@ -8,4 +8,8 @@
 *.fam
 *.log
 .DS_Store
+*.png
+*.pdf
+*.swp
+*.so
 

@@ -1,5 +1,4 @@
 
-
 library(devtools)
 library(data.table)
 library(doMC)
@@ -65,7 +64,7 @@ obj.fun <- smoof::makeSingleObjectiveFunction(
 
 # Setup initial 'warmup' results for mlrMBO
 run.time1 <- system.time({
-   des.cv <- cv.scca.ridge(X, Y, ndim=ndim,
+   des.cv <- cv.fcca(X, Y, ndim=ndim,
       lambda1=seq(1e-4, 0.002, length=3),
       lambda2=seq(1e-4, 0.002, length=3),
       gamma1=10^(-2:0), gamma2=10^(-2:0), folds=folds)

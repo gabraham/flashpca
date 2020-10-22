@@ -21,10 +21,14 @@ check.eig.sign <- function(A, B, X, Y) {
       stop("X and Y must have the same number of rows")
    }
 
-   mx <- crossprod(A, t(X))
-   sx <- rowSums(sign(mx) * mx^2)
-   my <- crossprod(B, t(Y))
-   sy <- rowSums(sign(my) * my^2)
+   #mx <- crossprod(A, t(X))
+   #my <- crossprod(B, t(Y))
+   #sx <- rowSums(sign(mx) * mx^2)
+   #sy <- rowSums(sign(my) * my^2)
+   mx <- X %*% A
+   my <- Y %*% B
+   sx <- colSums(sign(mx) * mx^2)
+   sy <- colSums(sign(my) * my^2)
    ndim <- ncol(A)
 
    for(j in 1:ndim) {
@@ -41,6 +45,6 @@ check.eig.sign <- function(A, B, X, Y) {
       }
    }
 
-   list(A=A, B=B)
+   list(A=A, B=B, sx=sx, sy=sy)
 }
 

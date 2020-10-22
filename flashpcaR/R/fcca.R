@@ -189,22 +189,22 @@ cv.fcca <- function(X, Y, lambda1=0, lambda2=0, gamma1=0, gamma2=0, ndim=1,
 
 		  Za <- crossprod(s1$v[, mx], mod[[i]][[j]]$U)
 		  Zb <- crossprod(s2$v[, my], mod[[i]][[j]]$V)
-		  mod[[i]][[j]]$a <- A <- with(s1,
+		  mod[[i]][[j]]$A <- with(s1,
 		     v[,mx] %*% diag(sqrt((n - 1) / (d[mx]^2 + (n - 1) * g1)))
 			%*% Za)
-		  mod[[i]][[j]]$b <- B <- with(s2,
+		  mod[[i]][[j]]$B <- with(s2,
 		     v[,my] %*% diag(sqrt((n - 1) / (d[my]^2 + (n - 1) * g2)))
 			%*% Zb)
 
 		  if(check_sign) {
-		     sc <- check.eig.sign(A, B, Xtrn, Ytrn)
-		     A <- sc$A
-		     B <- sc$B
+		     sc <- check.eig.sign(mod[[i]][[j]]$A, mod[[i]][[j]]$B, Xtrn, Ytrn)
+		     mod[[i]][[j]]$A <- sc$A
+		     mod[[i]][[j]]$B <- sc$B
 		  }
-		  Px.trn <- Xtrn %*% A 
-		  Py.trn <- Ytrn %*% B
-		  Px.tst <- Xtst %*% A
-		  Py.tst <- Ytst %*% B
+		  Px.trn <- Xtrn %*% mod[[i]][[j]]$A 
+		  Py.trn <- Ytrn %*% mod[[i]][[j]]$B
+		  Px.tst <- Xtst %*% mod[[i]][[j]]$A
+		  Py.tst <- Ytst %*% mod[[i]][[j]]$B
 
 		  r.trn <- suppressWarnings(diag(cor(Px.trn, Py.trn)))
 		  r.tst <- suppressWarnings(diag(cor(Px.tst, Py.tst)))
@@ -793,7 +793,7 @@ optim.cv.fcca <- function(X, Y, ndim=1, nfolds=5, folds=NULL,
       mod.fcca <- fcca(X, Y, ndim=ndim,
 	 lambda1=opt.param["lambda1"], lambda2=opt.param["lambda2"],
 	 gamma1=opt.param["gamma1"], gamma2=opt.param["gamma2"],
-	 check_sign=TRUE, verbose=verbose,
+	 check_sign=check_sign, verbose=verbose,
 	 svd_tol=svd_tol, maxiter=maxiter)
 
       # It's difficult to extract the cross-validation results
@@ -811,8 +811,8 @@ optim.cv.fcca <- function(X, Y, ndim=1, nfolds=5, folds=NULL,
 	 colnames(Py.cv) <- paste0("Py", 1:ndim)
 	 for(fold in 1:nfolds) {
 	    mod <- mod.fcca.cv$models[[fold]][[1]][[1]][[1]][[1]]$model
-	    Px.cv[folds == fold,] <- X[folds == fold,] %*% mod$a
-	    Py.cv[folds == fold,] <- Y[folds == fold,] %*% mod$b
+	    Px.cv[folds == fold,] <- X[folds == fold,] %*% mod$A
+	    Py.cv[folds == fold,] <- Y[folds == fold,] %*% mod$B
 	 }
 
 	 # Re-order the final model's canonical vectors based on the

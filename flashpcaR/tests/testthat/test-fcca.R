@@ -186,7 +186,7 @@ test_that("Testing cv.fcca", {
    expect_equal(diag(cor(s1$U, s2.mod2$U)), rep(1, ndim), tol=1e-6)
    expect_equal(diag(cor(s1$V, s2.mod2$V)), rep(1, ndim), tol=1e-6)
    expect_equal(diag(cor(s1$A, s2.mod2$A)), rep(1, ndim), tol=1e-6)
-   expect_equal(diag(cor(s1$B, s2.mod2$B)), rep(1, ndim), tol=1e-6)
+   expect_equal(diag(cor(s2$B, s2.mod2$B)), rep(1, ndim), tol=1e-6)
    expect_equal(diag(cor(s1$Px, s2.mod2$Px)), rep(1, ndim), tol=1e-6)
    expect_equal(diag(cor(s1$Py, s2.mod2$Py)), rep(1, ndim), tol=1e-6)
    expect_equal(s1$d, s2.mod2$d, tol=1e-5)

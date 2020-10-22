@@ -33,7 +33,7 @@
 #' @export
 cv.pcca <- function(X, Y, ndim=NULL, kx=3, ky=3, nfolds=3, folds=NULL,
    standx=c("sd", "none"), standy=c("sd", "none"), check_sign=TRUE,
-   final_model=FALSE, svd_tol=1e-12)
+   final_model=FALSE, svd_tol=1e-12, verbose=FALSE)
 {
    standx <- match.arg(standx)
    standy <- match.arg(standy)
@@ -106,6 +106,9 @@ cv.pcca <- function(X, Y, ndim=NULL, kx=3, ky=3, nfolds=3, folds=NULL,
       B.list[[fold]] <- fy$v[, 1:kyf] %*% diag(1 / fy$d[1:kyf]) %*% rc$ycoef[, 1:ndimf]
 
       if(check_sign) {
+	 if(verbose) {
+	    cat("checking sign\n")
+	 }
 	 sc <- check.eig.sign(A.list[[fold]], B.list[[fold]], Xtrn, Ytrn)
 	 A.list[[fold]] <- sc$A
 	 B.list[[fold]] <- sc$B
