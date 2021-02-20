@@ -70,8 +70,8 @@ On Linux:
 * g++ compiler
 * Eigen (http://eigen.tuxfamily.org), v3.2 or higher
    (if you get a compile error ``error: no match for 'operator/' in '1 / ((Eigen::MatrixBase...`` you'll need a more recent Eigen)
-* Spectra (https://github.com/yixuan/spectra/)
-* Boost (http://www.boost.org/), specifically boost_program_options/boost_program_options-mt.
+* Spectra 0.4.0 (https://github.com/yixuan/spectra/releases/tag/v0.4.0)
+* Boost (http://www.boost.org/), specifically boost_program_options/boost_program_options-mt which requires building.
 * libgomp for openmp support
 * Recommended: plink2 (https://www.cog-genomics.org/plink2) for SNP
    thinning
