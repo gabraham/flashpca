@@ -1,0 +1,21 @@
+#citHeader("To cite package 'flashpcaR' in publications use:")
+     
+# Grab the version and date from the DESCRIPTION file
+if(!exists("meta") || is.null(meta)) {
+   meta <- packageDescription("flashpcaR")
+}
+vers <- paste("R package version", meta$Version)
+
+bibentry(
+   bibtype="article",
+   title="Fast Principal Component Analysis of Large-Scale Genome-Wide Data",
+   author=c(person("Gad", "Abraham"), person("Michael", "Inouye")),
+   journal="PLOS ONE",
+   volume="9(4)",
+   pages="e93766",
+   year="2014",
+   note=vers,
+   url="http://CRAN.R-project.org/package=flashpcaR",
+   key="flashpcaR-package"
+)
+

@@ -1,0 +1,30 @@
+Package: flashpcaR
+Depends: R(>= 3.0.2)
+Type: Package
+Title: R Interface to FlashPCA
+Version: 2.1
+Date: 2020-04-20
+Authors@R: c(
+   person("Gad", "Abraham", email="gad.abraham@gmail.edu.au", role=c("aut", "cre")),
+   person("Rodrigo", "Canovas", email="rodrigo.canovas@baker.edu.au", role=c("aut")),
+   person("Yixuan", "Qiu", email="yixuan.qiu@cos.name", role=c("aut"))
+   )
+Description: FlashPCA is an efficient implementation of principal
+   component analysis (PCA), useful for rapidly estimating the top principal
+   components of data. In addition to standard PCA, FlashPCA implements
+   sparse (L1-penalised) canonical correlation analysis (SCCA) as well as
+   per-SNP canonical correlation analysis (ANOVA).
+URL:
+   https://github.com/gabraham/flashpca
+BugReports:
+   https://github.com/gabraham/flashpca/issues
+License:
+   GPL (>= 3)
+NeedsCompilation: yes
+Imports: 
+    Rcpp (>= 0.11.1), methods, abind, ggplot2
+LinkingTo:
+   Rcpp, RcppEigen (>= 0.3.2.5.1), BH, RSpectra
+RoxygenNote: 7.1.0
+Suggests: testthat, foreach, knitr, rmarkdown, qqman
+VignetteBuilder: knitr
