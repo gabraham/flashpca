@@ -3,8 +3,10 @@ title: "Sparse Canonical Correlation Analysis (SCCA) with the package flashpcaR"
 author: "Gad Abraham, Rodrigo Canovas"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output:
-  pdf_document: default
-  html_document: default
+  rmarkdown::html_vignette:
+    number_sections: true
+    toc: true
+    toc_depth: 2
 csl: biomed-central.csl
 bibliography: bibliography.bib
 vignette: >
@@ -65,6 +67,7 @@ Pre-processing has been performed in the script `rna_metab_data.R` available
 at https://github.com/gabraham/flashpca/blob/master/data/DILGOM.
 
 The preprocessed datasets can be downloaded via:
+
 ```{r load_data}
 library(data.table, quietly = TRUE)
 rna <- fread("https://github.com/gabraham/flashpca/raw/master/data/DILGOM/rna.txt.gz")
@@ -78,6 +81,7 @@ dim(metab)
 We load the flashpcaR package as well as supporting packages for plotting. We
 also use parallel computing with two cores to speed up the computation,
 although this is not strictly necessary.
+
 ```{r libraries}
 library(flashpcaR, quietly = TRUE)
 library(ggplot2, quietly = TRUE)
@@ -85,6 +89,7 @@ library(ggVennDiagram, quietly = TRUE)
 ```
 
 We can enable parallel computing to speed up the cross-validation.
+
 ```{r parallel,eval=FALSE}
 library(doMC, quietly = TRUE)
 registerDoMC(cores = 2)
@@ -96,7 +101,8 @@ grid search, the number of dimensions, and the number of cross-validation folds.
 We use parallelisation to make it a faster.
 
 To save time, we will download a precomputed results from github:
-```{r run_cv_scca,cache=TRUE}
+
+```{r run_cv_scca}
 
 # Cross-validation to select optimal penalties
 set.seed(2329)
@@ -191,6 +197,7 @@ du1[annot, on = "Probe_Id", Symbol := i.Symbol]
 ```
 
 Finally, we can see whether the genes we have found map to the LL-module described earlier in [@inouye2010immune]:
+
 ```{r ll_module}
 # The LL module in terms of Illumina probe IDs and gene symbols
 LL.mod <- data.table(
