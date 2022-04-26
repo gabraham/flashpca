@@ -3,19 +3,15 @@ title: "flashpcaR"
 author: "Gad Abraham"
 date: "`r Sys.Date()`"
 output:
-   rmarkdown::html_document:
-      highlight: tango
-      keep_md: true
-      toc: true
+  rmarkdown::html_vignette:
+    number_sections: true
+    toc: true
+    toc_depth: 2
 vignette: >
-   %\VignetteIndexEntry{flashpcaR}
-   %\VignetteEngine{knitr::rmarkdown}
-   %\VignetteEncoding{UTF-8}
+  %\VignetteIndexEntry{flashpcaR}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
 ---
-
-```{r, echo=FALSE, cache=FALSE}
-options(width = 80)
-```
 
 ## Introduction
 
