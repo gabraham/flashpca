@@ -20,7 +20,7 @@ Install the development version from GitHub:
 
 ``` r
 # install.packages("remotes")
-remotes::install_github("mcanouil/eggla")
+remotes::install_github("umr1283/flashpcaR")
 ```
 
 ## PCA
