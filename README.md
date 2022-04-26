@@ -1,5 +1,11 @@
 # flashpcaR
 
+<!-- badges: start -->
+[![GitHub
+tag](https://img.shields.io/github/tag/umr1283/flashpcaR.svg?label=latest%20tag&include_prereleases)](https://github.com/umr1283/flashpcaR)
+[![R-CMD-check](https://github.com/umr1283/flashpcaR/workflows/R-CMD-check/badge.svg)](https://github.com/umr1283/flashpcaR/actions)
+<!-- badges: end -->
+
 FlashPCA performs fast principal component analysis (PCA) of single nucleotide
 polymorphism (SNP) data, similar to smartpca from EIGENSOFT
 (<http://www.hsph.harvard.edu/alkes-price/software/>) and shellfish
