@@ -33,12 +33,12 @@ and then choose standx="none".}
 \item{standy}{Character. Stanardisation of Y.}
 
 \item{check_geno}{Logical. Whether to explicitly check if the matrices
-X and Y contain values other than {0, 1, 2}, when standx or standy is one 
+X and Y contain values other than {0, 1, 2}, when standx or standy is one
 "binom" or "binom2". This can
 be set to FALSE if you are sure your matrices only contain these values
 (only matters when using "binom"/"binom2").}
 
-\item{check_fam}{Logical. Whether to check that the number of row in 
+\item{check_fam}{Logical. Whether to check that the number of row in
 the PLINK fam file (if X is a character string) matches the number of
 rows in the eigenvectors.}
 
@@ -47,7 +47,7 @@ rows in the eigenvectors.}
 \value{
 \code{ucca} returns a list containing the following components:
 
-\describe{  
+\describe{
    \item{result:}{A numeric matrix of the association results, in the original ordering.}
    \item{npheno:}{The number of phenotypes used.}
    \item{nsnps:}{The number of SNPs used.}
@@ -75,17 +75,19 @@ n <- nrow(hm3.chr1$bed)
 p <- ncol(hm3.chr1$bed)
 k <- 10
 X <- scale2(hm3.chr1$bed)
-By <- matrix(rnorm(p * k), p, k)
-Y <- scale(X \%*\% By + rnorm(n * k))
+By <- matrix(stats::rnorm(p * k), p, k)
+Y <- scale(X \%*\% By + stats::rnorm(n * k))
 
 # Call on a numeric matrix X;
 # X has already been standardised
-s1 <- ucca(X, Y, standx="none", standy="sd")
+s1 <- ucca(X, Y, standx = "none", standy = "sd")
 
 # Call on a PLINK dataset
-bedf <- gsub("\\\\.bed", "",
-    system.file("extdata", "data_chr1.bed", package="flashpcaR"))
-s2 <- ucca(bedf, Y, standx="binom2", standy="sd")
+bedf <- gsub(
+   "\\\\.bed", "",
+   system.file("extdata", "data_chr1.bed", package = "flashpcaR")
+)
+s2 <- ucca(bedf, Y, standx = "binom2", standy = "sd")
 
 head(s1$result)
 head(s2$result)

@@ -5,7 +5,7 @@
 #' PLINK dataset
 #'
 #' @param Y An n by k numeric matrix of phenotypes.
-#' 
+#'
 #' @param standx Character. One of "binom" (zero mean, unit variance
 #' where variance is p * (1 - p), for SNP data), "binom2" (zero mean, unit
 #' variance where variance is 2 * p * (1 - p),
@@ -20,15 +20,15 @@
 #' @param verbose Logical.
 #'
 #' @param check_geno Logical. Whether to explicitly check if the matrices
-#' X and Y contain values other than {0, 1, 2}, when standx or standy is one 
+#' X and Y contain values other than {0, 1, 2}, when standx or standy is one
 #' "binom" or "binom2". This can
 #' be set to FALSE if you are sure your matrices only contain these values
 #' (only matters when using "binom"/"binom2").
 #'
-#' @param check_fam Logical. Whether to check that the number of row in 
+#' @param check_fam Logical. Whether to check that the number of row in
 #' the PLINK fam file (if X is a character string) matches the number of
 #' rows in the eigenvectors.
-#' 
+#'
 #' @details This is an efficient implementation of Ferreira and Purcell's
 #' plink.multivariate test for association between multiple phenotypes and one SNP at a time.
 #'
@@ -41,7 +41,7 @@
 #'
 #' @return \code{ucca} returns a list containing the following components:
 #'
-#' \describe{  
+#' \describe{
 #'    \item{result:}{A numeric matrix of the association results, in the original ordering.}
 #'    \item{npheno:}{The number of phenotypes used.}
 #'    \item{nsnps:}{The number of SNPs used.}
@@ -57,17 +57,19 @@
 #' p <- ncol(hm3.chr1$bed)
 #' k <- 10
 #' X <- scale2(hm3.chr1$bed)
-#' By <- matrix(rnorm(p * k), p, k)
-#' Y <- scale(X %*% By + rnorm(n * k))
-#' 
+#' By <- matrix(stats::rnorm(p * k), p, k)
+#' Y <- scale(X %*% By + stats::rnorm(n * k))
+#'
 #' # Call on a numeric matrix X;
 #' # X has already been standardised
-#' s1 <- ucca(X, Y, standx="none", standy="sd")
-#' 
+#' s1 <- ucca(X, Y, standx = "none", standy = "sd")
+#'
 #' # Call on a PLINK dataset
-#' bedf <- gsub("\\.bed", "",
-#'     system.file("extdata", "data_chr1.bed", package="flashpcaR"))
-#' s2 <- ucca(bedf, Y, standx="binom2", standy="sd")
+#' bedf <- gsub(
+#'    "\\.bed", "",
+#'    system.file("extdata", "data_chr1.bed", package = "flashpcaR")
+#' )
+#' s2 <- ucca(bedf, Y, standx = "binom2", standy = "sd")
 #'
 #' head(s1$result)
 #' head(s2$result)
@@ -75,105 +77,110 @@
 #' # Same result (to within numerical tolerance)
 #' mean((s1$result[, "Fstat"] - s2$result[, "Fstat"])^2)
 #'
-#' @importFrom utils read.table
-#'
 #' @export
-ucca <- function(X, Y,
-   standx=c("binom2", "binom", "sd", "center", "none"),
-   standy=c("binom2", "binom", "sd", "center", "none"),
-   check_geno=TRUE, check_fam=TRUE, verbose=FALSE)
-{
+ucca <- function(
+   X, Y,
+   standx = c("binom2", "binom", "sd", "center", "none"),
+   standy = c("binom2", "binom", "sd", "center", "none"),
+   check_geno = TRUE, check_fam = TRUE, verbose = FALSE
+) {
    standx <- match.arg(standx)
    standy <- match.arg(standy)
 
-   if(!is.numeric(Y)) {
+   if (!is.numeric(Y)) {
       stop("Y must be a numeric matrix")
-   } else if(any(is.na(Y))) {
-       warning("Y contains missing values, will be mean-imputed")
+   } else if (any(is.na(Y))) {
+      warning("Y contains missing values, will be mean-imputed")
    }
 
    Y <- cbind(Y)
    # If Y is an integer matrix, Rcpp will throw exception
    storage.mode(Y) <- "numeric"
 
-   if(is.numeric(X)) {
+   if (is.numeric(X)) {
       X <- cbind(X)
       storage.mode(X) <- "numeric"
-      if(any(is.na(X))) {
-	 warning("X contains missing values, will be mean-imputed")
+      if (any(is.na(X))) {
+         warning("X contains missing values, will be mean-imputed")
       }
-   } else if(is.character(X)) {
-      if(!standx %in% c("binom", "binom2")) {
-	 stop("When using PLINK data, you must use standx='binom' or 'binom2'")
+   } else if (is.character(X)) {
+      if (!standx %in% c("binom", "binom2")) {
+         stop("When using PLINK data, you must use standx='binom' or 'binom2'")
       }
    } else {
       stop("X must be a numeric matrix or a string naming a PLINK fileset")
    }
 
-   if(is.character(X) && check_fam) {
-      fam <- read.table(paste0(X, ".fam"), header=FALSE, sep="",
-         stringsAsFactors=FALSE)
-      if(ncol(Y) > nrow(fam)) {
+   if (is.character(X) && check_fam) {
+      fam <- utils::read.table(paste0(X, ".fam"),
+         header = FALSE, sep = "",
+         stringsAsFactors = FALSE
+      )
+      if (ncol(Y) > nrow(fam)) {
          stop(paste(
             "The phenotype matrix Y cannot have more columns than",
-            "the sample size"))
-      } else if(nrow(Y) != nrow(fam)) {
+            "the sample size"
+         ))
+      } else if (nrow(Y) != nrow(fam)) {
          stop(paste0("The number of rows in ", X, ".fam and Y don't match"))
       }
       rm(fam)
    } else {
-      if(ncol(Y) > nrow(X)) {
-	 stop(paste(
-	    "The phenotype matrix Y cannot have more columns than",
-	    "the sample size"))
-      } else if(nrow(Y) != nrow(X)) {
-	 stop("The number of rows in X and Y don't match")
+      if (ncol(Y) > nrow(X)) {
+         stop(paste(
+            "The phenotype matrix Y cannot have more columns than",
+            "the sample size"
+         ))
+      } else if (nrow(Y) != nrow(X)) {
+         stop("The number of rows in X and Y don't match")
       }
    }
 
-   if(is.numeric(X) && standx %in% c("binom", "binom2") && check_geno) {
+   if (is.numeric(X) && standx %in% c("binom", "binom2") && check_geno) {
       wx <- X %in% c(0:2, NA)
-      if(sum(wx) != length(X)) {
+      if (sum(wx) != length(X)) {
          stop(
             paste("Your X matrix contains values other than {0, 1, 2},
-               standx='binom'/'binom2' can't be used here"))
+               standx='binom'/'binom2' can't be used here")
+         )
       }
    }
 
-   if(standy %in% c("binom", "binom2") && check_geno) {
+   if (standy %in% c("binom", "binom2") && check_geno) {
       wy <- Y %in% c(0:2, NA)
-      if(sum(wy) != length(Y)) {
+      if (sum(wy) != length(Y)) {
          stop(
             paste("Your Y matrix contains values other than {0, 1, 2},
-               standy='binom'/'binom2' can't be used here"))
+               standy='binom'/'binom2' can't be used here")
+         )
       }
    }
 
    std <- c(
-      "none"=0L,
-      "sd"=1L,
-      "binom"=2L,
-      "binom2"=3L,
-      "center"=4L
+      "none" = 0L,
+      "sd" = 1L,
+      "binom" = 2L,
+      "binom2" = 3L,
+      "center" = 4L
    )
 
    standx_i <- std[standx]
    standy_i <- std[standy]
 
    res <- try(
-      if(is.character(X)) {
-	 ucca_plink_internal(X, Y, standx_i, standy_i, verbose)
+      if (is.character(X)) {
+         ucca_plink_internal(X, Y, standx_i, standy_i, verbose)
       } else {
-	 ucca_internal(X, Y, standx_i, standy_i, verbose)
+         ucca_internal(X, Y, standx_i, standy_i, verbose)
       }
    )
    class(res) <- "ucca"
    res$npheno <- ncol(Y)
-   if(is(res, "try-error")) {
+   if (inherits(res, "try-error")) {
       NULL
    } else {
-      if(!is.character(X)) {
-	 rownames(res$result) <- colnames(X)
+      if (!is.character(X)) {
+         rownames(res$result) <- colnames(X)
       }
       res
    }
@@ -184,11 +191,11 @@ ucca <- function(X, Y,
 #' @param x A flashpca object to be printed
 #' @param ... Ignored
 #'
-#' @export 
-print.ucca <- function(x, ...)
-{
-   cat("ucca object; #phenotypes=",
-      x$npheno, ", #SNPs=", nrow(x$result), "\n")
+#' @export
+print.ucca <- function(x, ...) {
+   cat(
+      "ucca object; #phenotypes=",
+      x$npheno, ", #SNPs=", nrow(x$result), "\n"
+   )
    invisible(x)
 }
-

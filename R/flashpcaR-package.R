@@ -20,9 +20,6 @@
 #' doi:10.1371/journal.pone.0093766
 #'
 #' @useDynLib flashpcaR
-#' @importFrom Rcpp evalCpp
-#' @importFrom methods is
-#' @importFrom abind abind
 #'
 #'
 NULL

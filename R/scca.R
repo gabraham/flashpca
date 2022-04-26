@@ -4,7 +4,7 @@
 #' PLINK dataset.
 #'
 #' @param Y An n by k numeric matrix
-#' 
+#'
 #' @param lambda1 Numeric. Non-negative L1 penalty on canonical vectors of X.
 #'
 #' @param lambda2 Numeric. Non-negative L1 penalty on canonical vectors of Y.
@@ -16,7 +16,7 @@
 #' that if you use "binom" for non-SNP data you may get garbage. Note that
 #' currently the same standardization is applied to both X and Y. If you
 #' require different standardizations, it's best to standardise yourself
-#' and then choose standx="none". When X is a PLINK dataset name, standx must be one of "binom2" 
+#' and then choose standx="none". When X is a PLINK dataset name, standx must be one of "binom2"
 #' or "binom".
 #'
 #' @param standy Character. Stanardisation of Y.
@@ -42,7 +42,7 @@
 #' be set to FALSE if you are sure your matrices only contain these values
 #' (only matters when using "binom" or "binom2").
 #'
-#' @param check_fam Logical. Whether to check that the number of rows in 
+#' @param check_fam Logical. Whether to check that the number of rows in
 #' the PLINK fam file (if X is a character string) matches the number of
 #' rows in the eigenvectors.
 #'
@@ -60,11 +60,11 @@
 #'
 #' @return \code{scca} returns a list containing the following components:
 #'
-#' \describe{  
+#' \describe{
 #'    \item{U:}{Top ndim left canonical vectors of X^T Y.}
 #'    \item{V:}{Top ndim right canonical vectors of X^T Y.}
-#'    \item{d:}{Top ndim canonical covariances, i.e., diag(cov(X U, Y V)). 
-#'	 Note that we don't divide by n-1.}
+#'    \item{d:}{Top ndim canonical covariances, i.e., diag(cov(X U, Y V)).
+#' 	 Note that we don't divide by n-1.}
 #'    \item{Px:}{X * U.}
 #'    \item{Py:}{Y * V.}
 #' }
@@ -78,169 +78,183 @@
 #' n <- nrow(X)
 #' m <- ncol(X)
 #' k <- 10
-#' B <- matrix(rnorm(m * k), m, k)
-#' Y <- X %*% B + rnorm(n * k)
+#' B <- matrix(stats::rnorm(m * k), m, k)
+#' Y <- X %*% B + stats::rnorm(n * k)
 #'
-#' s1 <- scca(X, Y, lambda1=1e-2, lambda2=1e-2, ndim=5,
-#'   standx="none", standy="sd")
+#' s1 <- scca(X, Y,
+#'    lambda1 = 1e-2, lambda2 = 1e-2, ndim = 5,
+#'    standx = "none", standy = "sd"
+#' )
 #'
 #' ## The canonical correlations
-#' diag(cor(s1$Px, s1$Py))
+#' diag(stats::cor(s1$Px, s1$Py))
 #'
 #' ## Example with PLINK-format SNP genotype data
-#' f <- system.file("extdata", "data_chr1.bed", package="flashpcaR")
-#' s2 <- scca(gsub("\\.bed", "", f), Y, lambda1=1e-2, lambda2=1e-2,
-#'    ndim=3, standx="binom2", standy="sd")
-#'
-#' @importFrom utils read.table
+#' f <- system.file("extdata", "data_chr1.bed", package = "flashpcaR")
+#' s2 <- scca(gsub("\\.bed", "", f), Y,
+#'    lambda1 = 1e-2, lambda2 = 1e-2,
+#'    ndim = 3, standx = "binom2", standy = "sd"
+#' )
 #'
 #' @export
-scca <- function(X, Y, lambda1=0, lambda2=0,
-   standx=c("binom2", "binom", "sd", "center", "none"),
-   standy=c("binom2", "binom", "sd", "center", "none"),
-   ndim=10, divisor=c("n1", "none"),
-   maxiter=1e3, tol=1e-4, seed=1L, verbose=FALSE, num_threads=1,
-   check_geno=TRUE, check_fam=TRUE, check_bim=TRUE,
-   V=NULL, block_size=500, simplify=TRUE)
-{
+scca <- function(X, Y, lambda1 = 0, lambda2 = 0,
+   standx = c("binom2", "binom", "sd", "center", "none"),
+   standy = c("binom2", "binom", "sd", "center", "none"),
+   ndim = 10, divisor = c("n1", "none"),
+   maxiter = 1e3, tol = 1e-4, seed = 1L, verbose = FALSE, num_threads = 1,
+   check_geno = TRUE, check_fam = TRUE, check_bim = TRUE,
+   V = NULL, block_size = 500, simplify = TRUE) {
    standx <- match.arg(standx)
    standy <- match.arg(standy)
    divisor <- match.arg(divisor)
 
    divisors <- c(
-      "n1"=1L,
-      "none"=0L
+      "n1" = 1L,
+      "none" = 0L
    )
    div <- divisors[divisor]
 
-   if(!is.numeric(Y)) {
+   if (!is.numeric(Y)) {
       stop("Y must be a numeric matrix")
-   } else if(any(is.na(Y))) {
-       warning("Y cantains missing values, will be mean imputed")
+   } else if (any(is.na(Y))) {
+      warning("Y cantains missing values, will be mean imputed")
    }
 
    Y <- cbind(Y)
    # If Y is an integer matrix, Rcpp will throw exception
    storage.mode(Y) <- "numeric"
 
-   if(is.numeric(X)) {
-      if(any(is.na(X))) {
-	 warning("X cantains missing values, will be mean imputed")
+   if (is.numeric(X)) {
+      if (any(is.na(X))) {
+         warning("X cantains missing values, will be mean imputed")
       }
 
-      if(ncol(X) < 2) {
-	 stop("X must have at least two columns")
+      if (ncol(X) < 2) {
+         stop("X must have at least two columns")
       }
 
-      if(nrow(X) < 2) {
-	 stop("X must have at least two rows")
+      if (nrow(X) < 2) {
+         stop("X must have at least two rows")
       }
 
-      if(nrow(Y) != nrow(X)) {
+      if (nrow(Y) != nrow(X)) {
          stop("The number of rows in X and Y don't match")
       }
 
-      if(standx %in% c("binom", "binom2") && check_geno) {
-	 wx <- X %in% c(0:2, NA)
-      	 if(sum(wx) != length(X)) {
-      	    stop(
-      	       "Your data contains values other than {0, 1, 2}, ",
-      	       "standx='binom'/'binom2' can't be used here")
-      	 }
+      if (standx %in% c("binom", "binom2") && check_geno) {
+         wx <- X %in% c(0:2, NA)
+         if (sum(wx) != length(X)) {
+            stop(
+               "Your data contains values other than {0, 1, 2}, ",
+               "standx='binom'/'binom2' can't be used here"
+            )
+         }
       }
-   } else if(is.character(X)) {
-      if(!standx %in% c("binom", "binom2")) {
-	 stop("When using PLINK data, you must use standx='binom' or 'binom2'")
+   } else if (is.character(X)) {
+      if (!standx %in% c("binom", "binom2")) {
+         stop("When using PLINK data, you must use standx='binom' or 'binom2'")
       }
-      if(check_fam) {
-	 fam <- read.table(paste0(X, ".fam"), header=FALSE, sep="",
-	    stringsAsFactors=FALSE)
-	 if(nrow(Y) != nrow(fam)) {
-	    stop(paste0("The number of rows in ", X,
-		  ".fam and Y don't match"))
-	 }
+      if (check_fam) {
+         fam <- utils::read.table(paste0(X, ".fam"),
+            header = FALSE, sep = "",
+            stringsAsFactors = FALSE
+         )
+         if (nrow(Y) != nrow(fam)) {
+            stop(paste0(
+               "The number of rows in ", X,
+               ".fam and Y don't match"
+            ))
+         }
       }
-      if(check_bim) {
-	 bim <- read.table(paste0(X, ".bim"), header=FALSE, sep="",
-	    stringsAsFactors=FALSE)
-	 #if(nrow(Y) != nrow(fam)) {
-	 #   stop(paste0("The number of rows in ", X,
-	 #	  ".fam and Y don't match"))
-	 #}
-	 #rm(fam)
+      if (check_bim) {
+         bim <- utils::read.table(paste0(X, ".bim"),
+            header = FALSE, sep = "",
+            stringsAsFactors = FALSE
+         )
+         # if(nrow(Y) != nrow(fam)) {
+         #   stop(paste0("The number of rows in ", X,
+         # 	  ".fam and Y don't match"))
+         # }
+         # rm(fam)
       }
    } else {
       stop("X must be a numeric matrix or a string naming a PLINK fileset")
    }
 
-   #if(is.character(X)) {
-   #   fam <- read.table(paste0(X, ".fam"), header=FALSE, sep="",
+   # if(is.character(X)) {
+   #   fam <- utils::read.table(paste0(X, ".fam"), header=FALSE, sep="",
    #      stringsAsFactors=FALSE)
    #   if(nrow(Y) != nrow(fam)) {
    #      stop("The number of rows in X and Y don't match")
    #   }
    #   rm(fam)
-   #} else {
+   # } else {
    #   if(nrow(Y) != nrow(X)) {
    #      stop("The number of rows in X and Y don't match")
    #   }
-   #}
+   # }
 
-   if(is.null(lambda1) || any(lambda1 < 0)) {
+   if (is.null(lambda1) || any(lambda1 < 0)) {
       stop("lambda1 must be non-negative")
    }
-   if(is.null(lambda2) || any(lambda2 < 0)) {
+   if (is.null(lambda2) || any(lambda2 < 0)) {
       stop("lambda2 must be non-negative")
    }
 
    std <- c(
-      "none"=0L,
-      "sd"=1L,
-      "binom"=2L,
-      "binom2"=3L,
-      "center"=4L
+      "none" = 0L,
+      "sd" = 1L,
+      "binom" = 2L,
+      "binom2" = 3L,
+      "center" = 4L
    )
 
    standx_i <- std[standx]
    standy_i <- std[standy]
 
-   if(ndim < 1) {
+   if (ndim < 1) {
       stop("ndim can't be less than 1")
    }
    max_dim <- (min(ncol(X), nrow(X), ncol(Y), nrow(Y)))
-   if(ndim > max_dim) {
-      msg <- paste("You asked for ", ndim," dimensions, but only ",
-	 as.integer(max_dim), " allowed", sep="")
+   if (ndim > max_dim) {
+      msg <- paste("You asked for ", ndim, " dimensions, but only ",
+         as.integer(max_dim), " allowed",
+         sep = ""
+      )
       stop(msg)
    }
 
-   if(!is.null(V)) {
+   if (!is.null(V)) {
       V <- cbind(V)
-      if(nrow(V) != ncol(Y) || ncol(V) != ndim) {
+      if (nrow(V) != ncol(Y) || ncol(V) != ndim) {
          stop("dimensions of V must be (ncol(Y) x (ndim))")
       }
       useV <- TRUE
    } else {
       # Initialise the requested SCCA with a very mildly penalised SCCA, whih
       # is equivalent to SVD of crossprod(X, Y)
-      if(verbose) {
-	 cat("initialising V\n")
+      if (verbose) {
+         cat("initialising V\n")
       }
       V <- matrix(0.) # initialised to Gaussian internally
       useV <- FALSE
       l1 <- 1e-9
       l2 <- 1e-9
-      if(is.character(X)) {
-	 x0 <- try(scca_plink_internal(X, Y, l1, l2, ndim,
-	    standx_i, standy_i, div, seed, maxiter, tol,
-	     verbose, num_threads, block_size, useV, V))
+      if (is.character(X)) {
+         x0 <- try(scca_plink_internal(
+            X, Y, l1, l2, ndim,
+            standx_i, standy_i, div, seed, maxiter, tol,
+            verbose, num_threads, block_size, useV, V
+         ))
       } else {
-	 x0 <- try(scca_internal(X, Y, l1, l2, ndim,
-	    standx_i, standy_i, div, seed, maxiter, tol,
-	    verbose, num_threads, useV, V))
+         x0 <- try(scca_internal(
+            X, Y, l1, l2, ndim,
+            standx_i, standy_i, div, seed, maxiter, tol,
+            verbose, num_threads, useV, V
+         ))
       }
-      if(is(x0, "try-error")) {
-	 return(NULL)
+      if (inherits(x0, "try-error")) {
+         return(NULL)
       }
       V <- x0$V
    }
@@ -250,20 +264,22 @@ scca <- function(X, Y, lambda1=0, lambda2=0,
    # Convenience function to set correct dimnames
    scca_plink_internal2 <- function(X, Y, l1, l2, ndim, standx_i, standy_i,
       div, seed, maxiter, tol, verbose, num_threads, useV, V) {
-      s <- scca_plink_internal(X, Y, l1, l2, ndim,
-	 standx_i, standy_i, div, seed, maxiter, tol,
-	 verbose, num_threads, block_size, useV, V)
-      if(check_bim) {
-	 rownames(s$U) <- bim$V2
+      s <- scca_plink_internal(
+         X, Y, l1, l2, ndim,
+         standx_i, standy_i, div, seed, maxiter, tol,
+         verbose, num_threads, block_size, useV, V
+      )
+      if (check_bim) {
+         rownames(s$U) <- bim$V2
       }
-      if(check_fam) {
-	 rownames(s$Px) <- paste0(fam$V1, ":", fam$V2)
+      if (check_fam) {
+         rownames(s$Px) <- paste0(fam$V1, ":", fam$V2)
       }
-      if(!is.null(colnames(Y))) {
-	 rownames(s$V) <- colnames(Y)
+      if (!is.null(colnames(Y))) {
+         rownames(s$V) <- colnames(Y)
       }
-      if(!is.null(rownames(Y))) {
-	 rownames(s$Py) <- rownames(Y)
+      if (!is.null(rownames(Y))) {
+         rownames(s$Py) <- rownames(Y)
       }
       s
    }
@@ -271,17 +287,17 @@ scca <- function(X, Y, lambda1=0, lambda2=0,
    # Convenience function to set correct dimnames
    scca_internal2 <- function(...) {
       s <- scca_internal(...)
-      if(!is.null(colnames(X))) {
-	 rownames(s$U) <- colnames(X)
+      if (!is.null(colnames(X))) {
+         rownames(s$U) <- colnames(X)
       }
-      if(!is.null(colnames(Y))) {
-	 rownames(s$V) <- colnames(Y)
+      if (!is.null(colnames(Y))) {
+         rownames(s$V) <- colnames(Y)
       }
-      if(!is.null(rownames(X))) {
-	 rownames(s$Px) <- rownames(X)
+      if (!is.null(rownames(X))) {
+         rownames(s$Px) <- rownames(X)
       }
-      if(!is.null(rownames(Y))) {
-	 rownames(s$Py) <- rownames(Y)
+      if (!is.null(rownames(Y))) {
+         rownames(s$Py) <- rownames(Y)
       }
       s
    }
@@ -291,26 +307,28 @@ scca <- function(X, Y, lambda1=0, lambda2=0,
    res <- try(
       lapply(lambda1, function(l1) {
          lapply(lambda2, function(l2) {
-            s <- func(X, Y, l1, l2, ndim,
+            s <- func(
+               X, Y, l1, l2, ndim,
                standx_i, standy_i, div, seed, maxiter, tol,
-               verbose, num_threads, useV, V)
-	    s
+               verbose, num_threads, useV, V
+            )
+            s
          })
       })
    )
-   if(is(res, "try-error")) {
+   if (inherits(res, "try-error")) {
       NULL
    } else {
-      #if(!is.character(X)) {
-	 #rownames(res$result) <- colnames(X)
-      #}
-      if(simplify && length(lambda1) == 1 && length(lambda2) == 1) {
-	 x <- res[[1]][[1]]
-	 class(x) <- "scca"
-	 x
+      # if(!is.character(X)) {
+      # rownames(res$result) <- colnames(X)
+      # }
+      if (simplify && length(lambda1) == 1 && length(lambda2) == 1) {
+         x <- res[[1]][[1]]
+         class(x) <- "scca"
+         x
       } else {
-	 class(res) <- "scca-list"
-	 res
+         class(res) <- "scca-list"
+         res
       }
    }
 }
@@ -319,11 +337,10 @@ scca <- function(X, Y, lambda1=0, lambda2=0,
 #'
 #' @param x An scca object to be printed
 #' @param ... Ignored
-#' @export 
-print.scca <- function(x, ...)
-{
+#' @export
+print.scca <- function(x, ...) {
    cat("scca object; ndim=", length(x$d), "\n")
-   if(!x$converged) {
+   if (!x$converged) {
       cat("warning: model has not converged\n")
    }
    invisible(x)
@@ -333,12 +350,12 @@ print.scca <- function(x, ...)
 #'
 #' @param x A cv.scca object to be printed
 #' @param ... Ignored
-#' @export 
-print.cv.scca <- function(x, ...)
-{
+#' @export
+print.cv.scca <- function(x, ...) {
    cat(paste0(
       "cv.scca object; ndim=", x$ndim, "; ", x$nfolds,
-      "-fold cross-validation\n"))
+      "-fold cross-validation\n"
+   ))
    invisible(x)
 }
 
@@ -357,19 +374,21 @@ print.cv.scca <- function(x, ...)
 #'
 #' @param nfolds Integer. The number of cross-validation folds.
 #'
+#' @param folds A numeric vector of integers. The indices of the folds to use
+#'
 #' @param opt.dim Integer. Which dimension to select the optimal penalties
 #' for.
 #'
 #' @param parallel Logical. Whether to parallelise the cross-validation using
 #' the foreach package.
-#' 
+#'
 #' @param init Logical. Whether to initialise SCCA with the SVD of X'Y.
 #'
 #' @param verbose Logical. Whether to print more information.
 #'
 #' @param ... Other arguments that will be passed to \code{scca}.
-#' 
-#' @details 
+#'
+#' @details
 #' Note that the default penalties may not be appropriate for every dataset
 #' and for some values the algorithm may not converge (especially for small
 #' penalties).
@@ -380,8 +399,6 @@ print.cv.scca <- function(x, ...)
 #'    Dimension 2: along the lambda1 penalties;
 #'    Dimension 3: along the lambda2 penalties.
 #'
-#' @importFrom stats cor
-#'
 #' @examples
 #'
 #' #######################
@@ -391,57 +408,55 @@ print.cv.scca <- function(x, ...)
 #' n <- nrow(X)
 #' m <- ncol(X)
 #' k <- 5
-#' B <- matrix(rnorm(m * k), m, k)
-#' Y <- X %*% B + rnorm(n * k)
+#' B <- matrix(stats::rnorm(m * k), m, k)
+#' Y <- X %*% B + stats::rnorm(n * k)
 #'
-#' r <- cv.scca(X, Y, standx="sd", standy="sd", nfolds=3, ndim=2,
-#'    lambda1=seq(1e-3, 1e-1, length=10),
-#'    lambda2=seq(1e-4, 0.5, length=8))
+#' r <- cv.scca(X, Y,
+#'    standx = "sd", standy = "sd", nfolds = 3, ndim = 2,
+#'    lambda1 = seq(1e-3, 1e-1, length = 10),
+#'    lambda2 = seq(1e-4, 0.5, length = 8)
+#' )
 #'
-#' par(mfrow=c(1, 2))
-#' plot(r, dim=1)
-#' plot(r, dim=2)
-#' 
-#' @importFrom abind abind
-#' @importFrom graphics matplot
-#' @importFrom graphics legend
+#' par(mfrow = c(1, 2))
+#' plot(r, dim = 1)
+#' plot(r, dim = 2)
 #'
 #' @export
 cv.scca <- function(X, Y,
-   lambda1=seq(1e-6, 1e-3, length=5), lambda2=seq(1e-6, 1e-3, length=5),
-   ndim=3, nfolds=10, folds=NULL, opt.dim=1, parallel=FALSE, init=TRUE,
-   verbose=FALSE, ...)
-{
+   lambda1 = seq(1e-6, 1e-3, length = 5), lambda2 = seq(1e-6, 1e-3, length = 5),
+   ndim = 3, nfolds = 10, folds = NULL, opt.dim = 1, parallel = FALSE, init = TRUE,
+   verbose = FALSE, ...) {
    n <- nrow(Y)
-   if(is.character(X)) {
+   if (is.character(X)) {
       stop(
-	 "Cross-validation currently only supported when X is a numeric matrix")
+         "Cross-validation currently only supported when X is a numeric matrix"
+      )
    }
 
-   if(nfolds > nrow(Y)) {
+   if (nfolds > nrow(Y)) {
       stop("nfolds is too large for the number of samples")
    }
 
-   if(opt.dim <=0 || opt.dim > ndim) {
+   if (opt.dim <= 0 || opt.dim > ndim) {
       stop("opt.dim must be between 1 and ndim")
    }
 
-   if(!is.logical(init)) stop("init muct be TRUE or FALSE")
+   if (!is.logical(init)) stop("init muct be TRUE or FALSE")
 
-   if(!is.null(folds)) {
+   if (!is.null(folds)) {
       folds <- as.integer(folds)
-      if(length(folds) != n) {
-	 stop(
-	    "'folds' must be of same number of rows as X and Y")
+      if (length(folds) != n) {
+         stop(
+            "'folds' must be of same number of rows as X and Y"
+         )
       }
-      if(any(diff(sort(folds)) > 1)) {
-	 stop("'folds' must be a set of contiguous integers from 1 to nfolds")
+      if (any(diff(sort(folds)) > 1)) {
+         stop("'folds' must be a set of contiguous integers from 1 to nfolds")
       }
       warning("'folds' will override 'nfolds' parameter")
       nfolds <- max(folds)
-   }
-   else {
-      folds <- sample(1:nfolds, n, replace=TRUE)
+   } else {
+      folds <- sample(1:nfolds, n, replace = TRUE)
    }
 
    xpred <- array(0, c(n, ndim, length(lambda1), length(lambda2)))
@@ -451,40 +466,48 @@ cv.scca <- function(X, Y,
    converged <- array(FALSE, c(nfolds, length(lambda1), length(lambda2)))
 
    # https://cran.r-project.org/doc/manuals/r-release/R-exts.html#Suggested-packages
-   if(parallel && requireNamespace("foreach", quietly=TRUE)) {
-      res <- foreach::`%dopar%`(foreach::foreach(fold=1:nfolds), {
+   if (parallel && requireNamespace("foreach", quietly = TRUE)) {
+      res <- foreach::`%dopar%`(foreach::foreach(fold = 1:nfolds), {
          w <- folds != fold
-	 V0 <- NULL
-	 if(init) {
-	    V0 <- matrix(rnorm(ncol(Y) * ndim), ncol(Y), ndim)
-	    s0 <- scca(X[w,], Y[w,], ndim=ndim, verbose=verbose,
-	       lambda1=1e-9, lambda2=1e-9, simplify=FALSE, V=V0, ...)
-	    V0 <- s0$V
-	 }
-         scca(X[w,], Y[w,], ndim=ndim, verbose=verbose,
-	    lambda1=lambda1, lambda2=lambda2, simplify=TRUE, V=V0, ...)
+         V0 <- NULL
+         if (init) {
+            V0 <- matrix(stats::rnorm(ncol(Y) * ndim), ncol(Y), ndim)
+            s0 <- scca(X[w, ], Y[w, ],
+               ndim = ndim, verbose = verbose,
+               lambda1 = 1e-9, lambda2 = 1e-9, simplify = FALSE, V = V0, ...
+            )
+            V0 <- s0$V
+         }
+         scca(X[w, ], Y[w, ],
+            ndim = ndim, verbose = verbose,
+            lambda1 = lambda1, lambda2 = lambda2, simplify = TRUE, V = V0, ...
+         )
       })
    } else {
       res <- lapply(1:nfolds, function(fold) {
          w <- folds != fold
-	 V0 <- NULL
-	 if(verbose) {
-	    cat("-> fold: ", fold, "\n")
-	 }
-	 if(init) {
-	    if(verbose) {
-	       cat("start init\n")
-	    }
-	    V0 <- matrix(rnorm(ncol(Y) * ndim), ncol(Y), ndim)
-	    s0 <- scca(X[w,], Y[w,], ndim=ndim, verbose=verbose,
-	       lambda1=1e-12, lambda2=1e-12, simplify=TRUE, V=V0, ...)
-	    V0 <- s0$V 
-	    if(verbose) {
-	       cat("end init\n")
-	    }
-	 }
-	 scca(X[w,], Y[w,], ndim=ndim, verbose=verbose,
-	    lambda1=lambda1, lambda2=lambda2, simplify=FALSE, V=V0, ...)
+         V0 <- NULL
+         if (verbose) {
+            cat("-> fold: ", fold, "\n")
+         }
+         if (init) {
+            if (verbose) {
+               cat("start init\n")
+            }
+            V0 <- matrix(stats::rnorm(ncol(Y) * ndim), ncol(Y), ndim)
+            s0 <- scca(X[w, ], Y[w, ],
+               ndim = ndim, verbose = verbose,
+               lambda1 = 1e-12, lambda2 = 1e-12, simplify = TRUE, V = V0, ...
+            )
+            V0 <- s0$V
+            if (verbose) {
+               cat("end init\n")
+            }
+         }
+         scca(X[w, ], Y[w, ],
+            ndim = ndim, verbose = verbose,
+            lambda1 = lambda1, lambda2 = lambda2, simplify = FALSE, V = V0, ...
+         )
       })
    }
 
@@ -494,63 +517,63 @@ cv.scca <- function(X, Y,
    # If the model has not converged for one dimension, then
    # we consider the whole model to have not converged, since all dimensions
    # are evaluated sequentially (depend on previous ones)
-   for(fold in 1:nfolds) {
-      for(i in seq(along=lambda1)) {
-	 for(j in seq(along=lambda2)) {
-	    x <- res[[fold]][[i]][[j]]
-	    w <- folds == fold
-	    converged[fold, i, j] <- x$converged
-	    if(x$converged) {
-	       xpred[w, , i, j] <- X[w,] %*% x$U
-	       ypred[w, , i, j] <- Y[w,] %*% x$V
-	    } else {
-	       xpred[w, , i, j] <- NA
-	       ypred[w, , i, j] <- NA
-	    }
-	 }
+   for (fold in 1:nfolds) {
+      for (i in seq(along = lambda1)) {
+         for (j in seq(along = lambda2)) {
+            x <- res[[fold]][[i]][[j]]
+            w <- folds == fold
+            converged[fold, i, j] <- x$converged
+            if (x$converged) {
+               xpred[w, , i, j] <- X[w, ] %*% x$U
+               ypred[w, , i, j] <- Y[w, ] %*% x$V
+            } else {
+               xpred[w, , i, j] <- NA
+               ypred[w, , i, j] <- NA
+            }
+         }
       }
    }
 
    # It's possible that for the same penalties, a model from one set of
    # training folds will converge but another will not.
-   for(i in seq(along=lambda1)) {
-      for(j in seq(along=lambda2)) {
-	 mx <- sapply(res, function(x) colSums(x[[i]][[j]]$U != 0, na.rm=TRUE))
-	 my <- sapply(res, function(x) colSums(x[[i]][[j]]$V != 0, na.rm=TRUE))
-	 nzx[,i,j] <- rowMeans(rbind(mx))
-	 nzy[,i,j] <- rowMeans(rbind(my))
+   for (i in seq(along = lambda1)) {
+      for (j in seq(along = lambda2)) {
+         mx <- sapply(res, function(x) colSums(x[[i]][[j]]$U != 0, na.rm = TRUE))
+         my <- sapply(res, function(x) colSums(x[[i]][[j]]$V != 0, na.rm = TRUE))
+         nzx[, i, j] <- rowMeans(rbind(mx))
+         nzy[, i, j] <- rowMeans(rbind(my))
       }
    }
 
    r <- lapply(1:ndim, function(k) {
-      r <- sapply(seq(along=lambda1), function(i) {
-	 sapply(seq(along=lambda2), function(j) {
-	    m <- suppressWarnings(cor(xpred[,k,i,j], ypred[,k,i,j]))
-	    cbind(m)
-	 })
+      r <- sapply(seq(along = lambda1), function(i) {
+         sapply(seq(along = lambda2), function(j) {
+            m <- suppressWarnings(stats::cor(xpred[, k, i, j], ypred[, k, i, j]))
+            cbind(m)
+         })
       })
       cbind(r) # otherwise abind breaks for 1-length penalties
    })
 
-   r <- abind(r, along=3)
+   r <- abind::abind(r, along = 3)
    r <- aperm(r, c(3, 2, 1))
 
-   r.mx <- max(r[opt.dim,,], na.rm=TRUE)
-   w <- which(r[opt.dim,,] == r.mx, arr.ind=TRUE)
+   r.mx <- max(r[opt.dim, , ], na.rm = TRUE)
+   w <- which(r[opt.dim, , ] == r.mx, arr.ind = TRUE)
 
    res2 <- list(
-      ndim=ndim,
-      lambda1=lambda1,
-      lambda2=lambda2,
-      opt.dim=opt.dim,
-      best.lambda1=lambda1[w[1]],
-      best.lambda2=lambda2[w[2]],
-      best.corr=r.mx,
-      corr=r,
-      nzero.x=nzx,
-      nzero.y=nzy,
-      nfolds=nfolds,
-      converged=converged
+      ndim = ndim,
+      lambda1 = lambda1,
+      lambda2 = lambda2,
+      opt.dim = opt.dim,
+      best.lambda1 = lambda1[w[1]],
+      best.lambda2 = lambda2[w[2]],
+      best.corr = r.mx,
+      corr = r,
+      nzero.x = nzx,
+      nzero.y = nzy,
+      nfolds = nfolds,
+      converged = converged
    )
    class(res2) <- "cv.scca"
    res2
@@ -562,7 +585,9 @@ cv.scca <- function(X, Y,
 #'
 #' @param dim Integer. Which dimension to plot (all will be plotted by
 #' default).
-#' 
+#'
+#' @param type String. The type of weight to use.
+#'
 #' @param ... Other arguments that will be passed to \code{plot}.
 #'
 #' @details
@@ -582,70 +607,73 @@ cv.scca <- function(X, Y,
 #' n <- nrow(X)
 #' m <- ncol(X)
 #' k <- 5
-#' B <- matrix(rnorm(m * k), m, k)
-#' Y <- X %*% B + rnorm(n * k)
+#' B <- matrix(stats::rnorm(m * k), m, k)
+#' Y <- X %*% B + stats::rnorm(n * k)
 #'
-#' r <- cv.scca(X, Y, standx="sd", standy="sd", nfolds=3, ndim=2,
-#'    lambda1=seq(1e-3, 1e-1, length=10),
-#'    lambda2=seq(1e-4, 0.5, length=8))
+#' r <- cv.scca(X, Y,
+#'    standx = "sd", standy = "sd", nfolds = 3, ndim = 2,
+#'    lambda1 = seq(1e-3, 1e-1, length = 10),
+#'    lambda2 = seq(1e-4, 0.5, length = 8)
+#' )
 #'
-#' par(mfrow=c(1, 2))
-#' plot(r, dim=1)
-#' plot(r, dim=2)
-#' 
-#' @importFrom abind abind
-#' @importFrom graphics matplot
-#' @importFrom graphics legend
+#' par(mfrow = c(1, 2))
+#' plot(r, dim = 1)
+#' plot(r, dim = 2)
 #'
 #' @export
-plot.cv.scca <- function(x, dim=NULL, type=c("nzero", "penalty"), ...)
-{
-   if(class(x) != "cv.scca") {
+plot.cv.scca <- function(x, dim = NULL, type = c("nzero", "penalty"), ...) {
+   if (class(x) != "cv.scca") {
       stop("x is not of class 'cv.scca'")
    }
 
    type <- match.arg(type)
 
-   if(is.null(dim)) {
-      if(type == "nzero") {
-	 for(i in 1:x$ndim) {
-      	    matplot(x$nzero.x[1,,], x$corr[i,,],
-      	       type="b", xlab="# of variables in X with non-zero weight",
-      	          ylab="Pearson correlation", log="x",
-      	          main=paste0("Canonical dimension ", i))
-      	 }
+   if (is.null(dim)) {
+      if (type == "nzero") {
+         for (i in 1:x$ndim) {
+            graphics::matplot(x$nzero.x[1, , ], x$corr[i, , ],
+               type = "b", xlab = "# of variables in X with non-zero weight",
+               ylab = "Pearson correlation", log = "x",
+               main = paste0("Canonical dimension ", i)
+            )
+         }
       } else {
-	 for(i in 1:x$ndim) {
-      	    matplot(x$lambda1, x$corr[i,,],
-      	       type="b", xlab="lambda1",
-      	          ylab="Pearson correlation", log="x",
-      	          main=paste0("Canonical dimension ", i))
-	 }
+         for (i in 1:x$ndim) {
+            graphics::matplot(x$lambda1, x$corr[i, , ],
+               type = "b", xlab = "lambda1",
+               ylab = "Pearson correlation", log = "x",
+               main = paste0("Canonical dimension ", i)
+            )
+         }
       }
-   } else if(is.numeric(dim) && dim > 0 && dim <= x$ndim) {
-      if(type == "nzero") {
-	 matplot(x$nzero.x[dim,,], x$corr[dim,,],
-	    type="b", xlab="# of variables in X with non-zero weight",
-	    ylab="Pearson correlation", log="x",
-	    main=paste0("Canonical dimension ", dim))
+   } else if (is.numeric(dim) && dim > 0 && dim <= x$ndim) {
+      if (type == "nzero") {
+         graphics::matplot(x$nzero.x[dim, , ], x$corr[dim, , ],
+            type = "b", xlab = "# of variables in X with non-zero weight",
+            ylab = "Pearson correlation", log = "x",
+            main = paste0("Canonical dimension ", dim)
+         )
       } else {
-	 matplot(x$lambda1, x$corr[dim,,],
-	    type="b", xlab="lambda1",
-	    ylab="Pearson correlation", log="x",
-	    main=paste0("Canonical dimension ", dim))
+         graphics::matplot(x$lambda1, x$corr[dim, , ],
+            type = "b", xlab = "lambda1",
+            ylab = "Pearson correlation", log = "x",
+            main = paste0("Canonical dimension ", dim)
+         )
       }
    } else {
       stop(paste("dim must be a positive integer, <=", x$ndim))
    }
-   legend("bottomright", legend=round(x$lambda2, 6),
-      title="lambda2", lwd=2, lty=1:length(x$lambda2),
-      col=1:length(x$lambda2))
+   graphics::legend("bottomright",
+      legend = round(x$lambda2, 6),
+      title = "lambda2", lwd = 2,
+      lty = seq_along(x$lambda2),
+      col = seq_along(x$lambda2)
+   )
    invisible(x)
 }
 
 #' @export plot2d
-plot2d <- function(x, ...)
-{
+plot2d <- function(x, ...) {
    UseMethod("plot2d")
 }
 
@@ -657,10 +685,10 @@ plot2d <- function(x, ...)
 #'
 #' @param dim Integer. Which dimension to plot (all will be plotted by
 #' default).
-#' 
+#'
 #' @param plot Logical. Whether to plot (print) the ggplot2 object or just
 #' return it.
-#' 
+#'
 #' @details
 #'    Plots the cross-validated Pearson correlation, as a 2D surface with the
 #'    lambda1 and lambda2 penalties on the axes.
@@ -676,45 +704,45 @@ plot2d <- function(x, ...)
 #' n <- nrow(X)
 #' m <- ncol(X)
 #' k <- 5
-#' B <- matrix(rnorm(m * k), m, k)
-#' Y <- X %*% B + rnorm(n * k)
+#' B <- matrix(stats::rnorm(m * k), m, k)
+#' Y <- X %*% B + stats::rnorm(n * k)
 #'
-#' r <- cv.scca(X, Y, standx="sd", standy="sd", nfolds=3, ndim=2,
-#'    lambda1=seq(1e-3, 1e-1, length=10),
-#'    lambda2=seq(1e-4, 0.5, length=8))
+#' r <- cv.scca(X, Y,
+#'    standx = "sd", standy = "sd", nfolds = 3, ndim = 2,
+#'    lambda1 = seq(1e-3, 1e-1, length = 10),
+#'    lambda2 = seq(1e-4, 0.5, length = 8)
+#' )
 #'
-#' g <- plot2d(r, dim=1, plot=FALSE)
+#' g <- plot2d(r, dim = 1, plot = FALSE)
 #' print(g)
-#' 
-#' @importFrom abind abind
-#' @importFrom ggplot2 ggplot aes geom_raster geom_contour scale_fill_viridis_c scale_x_continuous scale_y_continuous geom_point theme_bw
 #'
-#' @S3method plot2d cv.scca
 #'
 #' @export
-plot2d.cv.scca <- function(x, dim=1, plot=FALSE)
-{
+plot2d.cv.scca <- function(x, dim = 1, plot = FALSE, ...) {
    dim <- as.integer(dim)
-   if(!is.integer(dim) || dim < 1 || dim > x$ndim) {
-      stop(paste("dim must be positive integer, <=", x$ndim)) 
+   if (!is.integer(dim) || dim < 1 || dim > x$ndim) {
+      stop(paste("dim must be positive integer, <=", x$ndim))
    }
-   rd <- data.frame(r=as.numeric(x$corr[dim,,]),
-      nz.x=as.numeric(x$nzero.x[dim,,]),
-      nz.y=as.numeric(x$nzero.y[dim,,]),
-      lambda1=rep(x$lambda1, length(x$lambda2)),
-      lambda2=rep(x$lambda2, each=length(x$lambda1)))
-   g1 <- ggplot(rd, aes(x=lambda1, y=lambda2, fill=r))
-   g1 <- g1 + geom_raster()
-   g1 <- g1 + geom_contour(aes(z=r), bins=50, colour="white") + theme_bw()
-   g1 <- g1 + scale_fill_viridis_c("Correlation")
-   g1 <- g1 + scale_x_continuous(expression(lambda[1]))
-   g1 <- g1 + scale_y_continuous(expression(lambda[2]))
-   g1 <- g1 + geom_point(aes(x=x.best.lambda1, y=x.best.lambda2),
-      data=data.frame(x$best.lambda1, x$best.lambda2),
-      shape="+", size=8, fill="black")
-   if(plot) {
+   rd <- data.frame(
+      r = as.numeric(x$corr[dim, , ]),
+      nz.x = as.numeric(x$nzero.x[dim, , ]),
+      nz.y = as.numeric(x$nzero.y[dim, , ]),
+      lambda1 = rep(x$lambda1, length(x$lambda2)),
+      lambda2 = rep(x$lambda2, each = length(x$lambda1))
+   )
+   g1 <- ggplot2::ggplot(rd) +
+      ggplot2::aes(x = .data[["lambda1"]], y = .data[["lambda2"]], fill = .data[["r"]]) +
+      ggplot2::geom_raster() +
+      ggplot2::geom_contour(ggplot2::aes(z = r), bins = 50, colour = "white") +
+      ggplot2::scale_fill_viridis_c("Correlation") +
+      ggplot2::scale_x_continuous(expression(lambda[1])) +
+      ggplot2::scale_y_continuous(expression(lambda[2])) +
+      ggplot2::geom_point(ggplot2::aes(x = .data[["x.best.lambda1"]], y = .data[["x.best.lambda2"]]),
+         data = data.frame(x$best.lambda1, x$best.lambda2),
+         shape = "+", size = 8, fill = "black"
+      )
+   if (plot) {
       print(g1)
    }
    invisible(g1)
 }
-

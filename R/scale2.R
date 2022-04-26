@@ -18,25 +18,23 @@
 #' }
 #'
 #' @export
-scale2 <- function(X, type=c("2", "1"), impute=TRUE)
-{
+scale2 <- function(X, type = c("2", "1"), impute = TRUE) {
    type <- match.arg(type)
    mult <- ifelse(type == "1", 1, 2)
 
    sum2 <- nrow(X) - colSums(apply(X, 2, is.na))
-   p <- colSums(X, na.rm=TRUE) / (2 * sum2)
+   p <- colSums(X, na.rm = TRUE) / (2 * sum2)
    xsd <- sqrt(mult * p * (1 - p))
    names(p) <- names(xsd) <- colnames(X)
 
    s <- sweep(
-      sweep(X, MARGIN=2, STATS=2 * p, FUN="-"),
-         MARGIN=2, STATS=xsd, FUN="/"
+      sweep(X, MARGIN = 2, STATS = 2 * p, FUN = "-"),
+      MARGIN = 2, STATS = xsd, FUN = "/"
    )
-   if(impute) {
+   if (impute) {
       s[is.na(s)] <- 0
    }
    attr(s, "scaled:center") <- 2 * p
    attr(s, "scaled:scale") <- xsd
    s
 }
-

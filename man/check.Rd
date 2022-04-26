@@ -30,7 +30,7 @@ one of "binom" (old Eigenstrat-style), "binom2" (new Eigenstrat-style),
 "sd" (zero-mean unit-variance), "center" (zero mean), or "none".}
 
 \item{divisor}{A character string indicating whether to divide the
-eigenvalues by number of columns of X ("p"), the number of 
+eigenvalues by number of columns of X ("p"), the number of
 rows of X minus 1 ("n1") or none ("none").}
 
 \item{block_size}{Integer. Block size for PCA on PLINK files.}
@@ -42,16 +42,16 @@ contains values other than {0, 1, 2}, when stand="binom". This can be
 be set to FALSE if you are sure your matrix only contains these values
 (only matters when using stand="binom").}
 
-\item{check_fam}{Logical. Whether to check that the number of row in 
+\item{check_fam}{Logical. Whether to check that the number of row in
 the PLINK fam file (if X is a character string) matches the number of
 rows in the eigenvectors.}
 }
 \value{
 \code{check} returns a list containing the following components:
-\describe{  
+\describe{
    \item{err}{A numeric vector. The squared error along each dimension k.}
    \item{mse}{A numeric value. The mean squared error; the sum of the
- squared errors divided by N * ndim.}
+	 squared errors divided by N * ndim.}
    \item{rmse}{A numeric value. The root mean squared error, the square
    root of mse.}
 }
@@ -64,7 +64,7 @@ Check the accuracy of Principal Component Analysis
 defined as
    \deqn{[1/(nK) \sum_{k=1}^K ||(1/m) XX' U_k - U_k d^2_k||_F^2]^{1/2}}
 
-Note: this definition is sensitive to the magnitude of the eigenvalues and 
+Note: this definition is sensitive to the magnitude of the eigenvalues and
 therefore requires specifiying the same standardisation that was used in
 the original eigen-decomposition, and the same divisor of XX' (usually the
 number of SNPs, p).

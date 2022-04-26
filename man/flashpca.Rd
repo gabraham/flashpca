@@ -30,7 +30,7 @@ one of "binom" (old Eigenstrat-style), "binom2" (new Eigenstrat-style),
 "sd" (zero-mean unit-variance), "center" (zero mean), or "none".}
 
 \item{divisor}{A character string indicating whether to divide the
-eigenvalues by number of columns of X ("p"), the number of 
+eigenvalues by number of columns of X ("p"), the number of
 rows of X minus 1 ("n1") or none ("none").}
 
 \item{maxiter}{Integer. How many iterations to use in PCA.}
@@ -55,14 +55,14 @@ deviations used in standardizing the matrix X.}
 }
 \value{
 \code{flashpca} returns a list containing the following components:
-\describe{  
+\describe{
    \item{values:}{a numeric vector. The eigenvalues of X X' / m.}
    \item{vectors:}{a numeric matrix. The eigenvectors of X X' / m.}
    \item{projection:}{a numeric matrix. Equivalent to X V.}
    \item{loadings:}{a numeric matrix. The matrix of variable loadings, i.e., V
    from SVD.}
    \item{scale:}{a list of two elements, ``center'' and ''scale'', which was
- used to standardise the input matrix X.}
+	 used to standardise the input matrix X.}
 }
 }
 \description{
@@ -74,13 +74,13 @@ The default decomposition is of X X' / m, where m is the number of SNPs
 
    The data is standardised by default. \code{stand = "binom"} uses the old Eigensoft
    (Price 2006) formulation of
-       \deqn{p_j = sum_{i=1}^n X_{i,j} / (2 * n)}
-       \deqn{mean_j = 2 * p}
-       \deqn{sd_j = sqrt(p * (1 - p)),}
+	       \deqn{p_j = sum_{i=1}^n X_{i,j} / (2 * n)}
+	       \deqn{mean_j = 2 * p}
+	       \deqn{sd_j = sqrt(p * (1 - p)),}
    where j is the index for the SNP and i is the index for the sample.
    Alternatively, `stand = "binom2"' uses the newer formula, which is
    similar to the above except for
-       \deqn{sd_j = sqrt(2 * p * (1 - p)).}
+	       \deqn{sd_j = sqrt(2 * p * (1 - p)).}
 }
 \examples{
 
@@ -91,15 +91,15 @@ set.seed(123)
 data(hm3.chr1)
 ndim <- 10
 X <- scale2(hm3.chr1$bed)
-f1 <- flashpca(X, ndim=ndim, stand="none")
+f1 <- flashpca(X, ndim = ndim, stand = "none")
 
 # prcomp's is too slow for this example
-r <- eigen(tcrossprod(X) / ncol(X), symmetric=TRUE)
+r <- eigen(tcrossprod(X) / ncol(X), symmetric = TRUE)
 
 ## Compare eigenvalues
 eval <- cbind(r$values[1:ndim], f1$values)
 cor(eval)
-mean((eval[,1] - eval[,2])^2)
+mean((eval[, 1] - eval[, 2])^2)
 
 ## Compare eigenvectors
 diag(cor(r$vectors[, 1:ndim], f1$vectors))
@@ -107,14 +107,16 @@ diag(cor(r$vectors[, 1:ndim], f1$vectors))
 ####################################
 # HapMap3 chr1 example, PLINK format
 
-bedf <- gsub("\\\\.bed", "",
-   system.file("extdata", "data_chr1.bed", package="flashpcaR"))
+bedf <- gsub(
+   "\\\\.bed", "",
+   system.file("extdata", "data_chr1.bed", package = "flashpcaR")
+)
 
-f2 <- flashpca(bedf, ndim=ndim) 
+f2 <- flashpca(bedf, ndim = ndim)
 
 eval <- cbind(r$values[1:ndim], f2$values)
 cor(eval)
-mean((eval[,1] - eval[,2])^2)
+mean((eval[, 1] - eval[, 2])^2)
 
 ## Compare eigenvectors
 diag(cor(r$vectors[, 1:ndim], f2$vectors))

@@ -43,7 +43,7 @@ variance where variance is 2 * p * (1 - p),
 that if you use "binom" for non-SNP data you may get garbage. Note that
 currently the same standardization is applied to both X and Y. If you
 require different standardizations, it's best to standardise yourself
-and then choose standx="none". When X is a PLINK dataset name, standx must be one of "binom2" 
+and then choose standx="none". When X is a PLINK dataset name, standx must be one of "binom2"
 or "binom".}
 
 \item{standy}{Character. Stanardisation of Y.}
@@ -69,7 +69,7 @@ X and Y contain values other than {0, 1, 2}, when standx/standy="binom"/"binom2"
 be set to FALSE if you are sure your matrices only contain these values
 (only matters when using "binom" or "binom2").}
 
-\item{check_fam}{Logical. Whether to check that the number of rows in 
+\item{check_fam}{Logical. Whether to check that the number of rows in
 the PLINK fam file (if X is a character string) matches the number of
 rows in the eigenvectors.}
 
@@ -87,11 +87,11 @@ list when only one model is fitted.}
 \value{
 \code{scca} returns a list containing the following components:
 
-\describe{  
+\describe{
    \item{U:}{Top ndim left canonical vectors of X^T Y.}
    \item{V:}{Top ndim right canonical vectors of X^T Y.}
-   \item{d:}{Top ndim canonical covariances, i.e., diag(cov(X U, Y V)). 
- Note that we don't divide by n-1.}
+   \item{d:}{Top ndim canonical covariances, i.e., diag(cov(X U, Y V)).
+	 Note that we don't divide by n-1.}
    \item{Px:}{X * U.}
    \item{Py:}{Y * V.}
 }
@@ -108,18 +108,22 @@ X <- scale2(hm3.chr1$bed)
 n <- nrow(X)
 m <- ncol(X)
 k <- 10
-B <- matrix(rnorm(m * k), m, k)
-Y <- X \%*\% B + rnorm(n * k)
+B <- matrix(stats::rnorm(m * k), m, k)
+Y <- X \%*\% B + stats::rnorm(n * k)
 
-s1 <- scca(X, Y, lambda1=1e-2, lambda2=1e-2, ndim=5,
-  standx="none", standy="sd")
+s1 <- scca(X, Y,
+   lambda1 = 1e-2, lambda2 = 1e-2, ndim = 5,
+   standx = "none", standy = "sd"
+)
 
 ## The canonical correlations
-diag(cor(s1$Px, s1$Py))
+diag(stats::cor(s1$Px, s1$Py))
 
 ## Example with PLINK-format SNP genotype data
-f <- system.file("extdata", "data_chr1.bed", package="flashpcaR")
-s2 <- scca(gsub("\\\\.bed", "", f), Y, lambda1=1e-2, lambda2=1e-2,
-   ndim=3, standx="binom2", standy="sd")
+f <- system.file("extdata", "data_chr1.bed", package = "flashpcaR")
+s2 <- scca(gsub("\\\\.bed", "", f), Y,
+   lambda1 = 1e-2, lambda2 = 1e-2,
+   ndim = 3, standx = "binom2", standy = "sd"
+)
 
 }

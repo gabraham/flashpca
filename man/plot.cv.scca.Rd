@@ -12,6 +12,8 @@
 \item{dim}{Integer. Which dimension to plot (all will be plotted by
 default).}
 
+\item{type}{String. The type of weight to use.}
+
 \item{...}{Other arguments that will be passed to \code{plot}.}
 }
 \description{
@@ -34,15 +36,17 @@ X <- scale2(hm3.chr1$bed)
 n <- nrow(X)
 m <- ncol(X)
 k <- 5
-B <- matrix(rnorm(m * k), m, k)
-Y <- X \%*\% B + rnorm(n * k)
+B <- matrix(stats::rnorm(m * k), m, k)
+Y <- X \%*\% B + stats::rnorm(n * k)
 
-r <- cv.scca(X, Y, standx="sd", standy="sd", nfolds=3, ndim=2,
-   lambda1=seq(1e-3, 1e-1, length=10),
-   lambda2=seq(1e-4, 0.5, length=8))
+r <- cv.scca(X, Y,
+   standx = "sd", standy = "sd", nfolds = 3, ndim = 2,
+   lambda1 = seq(1e-3, 1e-1, length = 10),
+   lambda2 = seq(1e-4, 0.5, length = 8)
+)
 
-par(mfrow=c(1, 2))
-plot(r, dim=1)
-plot(r, dim=2)
+par(mfrow = c(1, 2))
+plot(r, dim = 1)
+plot(r, dim = 2)
 
 }

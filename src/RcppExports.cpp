@@ -6,6 +6,11 @@
 
 using namespace Rcpp;
 
+#ifdef RCPP_USE_GLOBAL_ROSTREAM
+Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
+Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
+#endif
+
 // flashpca_internal
 List flashpca_internal(const Eigen::Map<Eigen::MatrixXd> X, const int stand, const unsigned int ndim, const unsigned int divisor, const unsigned int maxiter, const double tol, const long seed, const bool verbose, const bool do_loadings, const bool return_scale);
 RcppExport SEXP _flashpcaR_flashpca_internal(SEXP XSEXP, SEXP standSEXP, SEXP ndimSEXP, SEXP divisorSEXP, SEXP maxiterSEXP, SEXP tolSEXP, SEXP seedSEXP, SEXP verboseSEXP, SEXP do_loadingsSEXP, SEXP return_scaleSEXP) {

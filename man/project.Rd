@@ -46,13 +46,13 @@ contains values other than {0, 1, 2}, when stand="binom". This can be
 be set to FALSE if you are sure your matrix only contains these values
 (only matters when using stand="binom").}
 
-\item{check_bim}{Logical. Whether to check that the number of rows in 
+\item{check_bim}{Logical. Whether to check that the number of rows in
 the PLINK bim file (if X is a character string) matches the number of
 rows in the loadings.}
 }
 \value{
 \code{project} returns a list containing the following components:
-\describe{  
+\describe{
    \item{projection}{A numeric matrix. The projections of the new data
   onto the principal components.}
 }
