@@ -1,4 +1,4 @@
-# FlashPCA2
+# flashpcaR
 
 FlashPCA performs fast principal component analysis (PCA) of single nucleotide
 polymorphism (SNP) data, similar to smartpca from EIGENSOFT
@@ -23,30 +23,31 @@ Install the development version from GitHub:
 remotes::install_github("umr1283/flashpcaR")
 ```
 
-## PCA
+## Example
 
-### On a numeric matrix
+### PCA
 
-   ```R
-   data(hm3.chr1)
-   X <- scale2(hm3.chr1$bed)
-   dim(X)
-   f <- flashpca(X, ndim = 10, scale = "none")
-   ```
+#### On a numeric matrix
 
-### On PLINK data
+```R
+data(hm3.chr1)
+X <- scale2(hm3.chr1$bed)
+dim(X)
+f <- flashpca(X, ndim = 10, scale = "none")
+```
 
-You can supply a path to a PLINK dataset (with extensions .bed/.bim/.fam, all
-lowercase):
+#### On PLINK data
+
+You can supply a path to a PLINK dataset (with extensions .bed/.bim/.fam, all lowercase):
 
 ```r
 (fn <- gsub("\\.bed", "", system.file("extdata", "data_chr1.bed", package = "flashpcaR")))
 f <- flashpca(fn, ndim = 10)
 ```
 
-## UCCA (aka univariate canonical correlation analysis; aka ANOVA of each SNP on multiple phenotypes)
+### UCCA (aka univariate canonical correlation analysis; aka ANOVA of each SNP on multiple phenotypes)
 
-### On a numeric matrix
+#### On a numeric matrix
 
 Use HapMap3 genotypes, standardise them, simulate some phenotypes, and test each
 SNP for association with all phenotypes:
@@ -61,7 +62,7 @@ f1 <- ucca(X, Y, standx = "none", standy = "sd")
 head(f1$result)
 ```
 
-### On PLINK data
+#### On PLINK data
 
 ```r
 (fn <- gsub("\\.bed", "", system.file("extdata", "data_chr1.bed", package = "flashpcaR")))
@@ -69,9 +70,9 @@ f2 <- ucca(fn, Y, standx = "binom2", standy = "sd")
 head(f2$result)
 ```
 
-## Sparse Canonical Correlation Analysis (SCCA)
+### Sparse Canonical Correlation Analysis (SCCA)
 
-### On a numeric matrix
+#### On a numeric matrix
 
 Use HapMap3 genotypes, standardise them, simulate some phenotypes, and run
 sparse canonical correlation analysis over all SNPs and all phenotypes:
@@ -100,7 +101,7 @@ cv1 <- cv.scca(
 plot(cv1, dim = 1)
 ```
 
-### On PLINK data
+#### On PLINK data
 
 ```r
 fn <- gsub("\\.bed", "", system.file("extdata", "data_chr1.bed", package = "flashpcaR"))
