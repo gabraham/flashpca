@@ -48,4 +48,5 @@ r <- cv.scca(X, Y,
 g <- plot2d(r, dim = 1, plot = FALSE)
 print(g)
 
+
 }
