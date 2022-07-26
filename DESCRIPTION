@@ -34,6 +34,6 @@ Suggests:
    rmarkdown,
    qqman
 NeedsCompilation: yes
-RoxygenNote: 7.1.2
+RoxygenNote: 7.2.0
 Encoding: UTF-8
 VignetteBuilder: knitr
