@@ -21,5 +21,6 @@
 #'
 #' @useDynLib flashpcaR
 #'
+#' @import Rcpp
 #'
 NULL
